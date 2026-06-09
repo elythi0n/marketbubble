@@ -44,11 +44,15 @@ async function fetchViaGQL(login: string): Promise<StreamStatusPayload | null> {
     if (!user) return null;
 
     const stream = user.stream;
+    const live = stream !== null && stream !== undefined;
     return {
-      live: stream !== null && stream !== undefined,
+      live,
       viewerCount: stream?.viewersCount ?? 0,
       title: stream?.title ?? user.lastBroadcast?.title ?? "",
-      thumbnail: stream?.previewImageURL ?? undefined,
+      // GQL omits a preview, but Twitch serves a public live thumbnail at a predictable URL.
+      thumbnail: live
+        ? stream?.previewImageURL ?? `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-440x248.jpg`
+        : undefined,
     };
   } catch {
     return null;

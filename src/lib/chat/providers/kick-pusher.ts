@@ -1,8 +1,9 @@
 "use client";
 
-import { parseSegments } from "@/lib/feed/segments";
-import type { Badge, FeedMessage, Segment } from "@/lib/feed/types";
+import { parseSegments, type EmoteMeta } from "@/lib/feed/segments";
+import type { Badge, Segment } from "@/lib/feed/types";
 import { initKickBadges, getKickBadgeUrl } from "@/lib/badges/kick";
+import { getEmoteRecord, initGlobalEmotes, initKickChannelEmotes } from "@/lib/emotes/registry";
 import type { ChatProvider, ChatSink, ProviderHandle } from "../provider";
 
 const PUSHER_URL =
@@ -12,8 +13,11 @@ function formatClock(ms: number): string {
   return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-/** Parse inline Kick emote tokens: [emote:123:emoteName] */
-function parseKickContent(content: string): Segment[] {
+/**
+ * Parse inline Kick emote tokens ([emote:123:emoteName]); the plain-text runs between them are run
+ * through the 3rd-party emote registry (7TV global + the channel's 7TV set) just like Twitch.
+ */
+function parseKickContent(content: string, emotes: Record<string, EmoteMeta>): Segment[] {
   const EMOTE_RE = /\[emote:(\d+):([^\]]+)\]/g;
   const segments: Segment[] = [];
   let last = 0;
@@ -21,7 +25,7 @@ function parseKickContent(content: string): Segment[] {
 
   while ((match = EMOTE_RE.exec(content)) !== null) {
     if (match.index > last) {
-      segments.push(...parseSegments(content.slice(last, match.index)));
+      segments.push(...parseSegments(content.slice(last, match.index), emotes));
     }
     const [, id, name] = match;
     segments.push({
@@ -32,7 +36,7 @@ function parseKickContent(content: string): Segment[] {
     last = match.index + match[0].length;
   }
 
-  if (last < content.length) segments.push(...parseSegments(content.slice(last)));
+  if (last < content.length) segments.push(...parseSegments(content.slice(last), emotes));
   return segments;
 }
 
@@ -84,6 +88,7 @@ export function createKickProvider(config: KickPusherConfig): ChatProvider {
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       let reconnectDelay = 2000;
       let chatroomId: number | null = null;
+      const channelKey = `kick:${config.slug}`;
 
       const subscribe = () => {
         if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -125,7 +130,7 @@ export function createKickProvider(config: KickPusherConfig): ChatProvider {
               author: msg.sender.username,
               authorColor: msg.sender.identity?.color || undefined,
               badges: mapKickBadges(msg.sender.identity?.badges ?? [], config.slug),
-              segments: parseKickContent(msg.content),
+              segments: parseKickContent(msg.content, getEmoteRecord(channelKey)),
               ts: formatClock(tsMs),
               tsMs,
               channel: config.slug,
@@ -165,8 +170,11 @@ export function createKickProvider(config: KickPusherConfig): ChatProvider {
           try {
             const res = await fetch(`/api/kick/channel?slug=${encodeURIComponent(config.slug)}`);
             if (!res.ok) throw new Error(`status ${res.status}`);
-            const json = await res.json() as { chatroomId: number };
+            const json = await res.json() as { chatroomId: number; userId?: number };
             chatroomId = json.chatroomId;
+            // Third-party emotes: 7TV by Kick user id, plus the shared global sets. Non-blocking.
+            initGlobalEmotes();
+            if (json.userId) initKickChannelEmotes(String(json.userId), channelKey);
           } catch {
             if (!stopped) {
               sink.status?.("error");

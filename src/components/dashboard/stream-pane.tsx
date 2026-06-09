@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Play } from "lucide-react";
+import { ExternalLink, MonitorPlay, Play } from "lucide-react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
 import { ClipsDialog, ClipSourceIcon } from "./clips-dialog";
-import { useDemoMode } from "@/lib/demo-mode-context";
 import { useStockDrawer } from "@/lib/markets/stock-drawer-context";
 import { useTickers } from "@/lib/markets/tickers-context";
 import { formatChange, formatPrice } from "@/lib/markets/types";
 import { useChannel } from "@/lib/streamers/channel-context";
+import { useStageMode } from "@/lib/stage-mode-context";
 import type { Clip } from "@/lib/streamers/clips";
 import { getHandle, hasVideo, primaryPlatform, type Streamer } from "@/lib/streamers/mock";
 import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
@@ -92,7 +92,7 @@ function OfflinePanel({ channel, target }: { channel: Streamer; target: Date | n
 
       {/* Recent clips / videos */}
       <section className="mx-auto mt-9 max-w-5xl">
-        <h3 className="mb-3 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Recent clips</h3>
+        <h3 className="mb-3 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Recent broadcasts</h3>
         <div className="flex gap-4 overflow-x-auto pb-1 mb-scroll">
           {clips.map((clip) => (
             <ClipCard key={clip.id} clip={clip} onClick={() => setDialogClip(clip)} />
@@ -144,12 +144,19 @@ function OfflinePanel({ channel, target }: { channel: Streamer; target: Date | n
   );
 }
 
-function StreamEmbed({ channel }: { channel: Streamer }) {
-  const platform = channel.livePlatform ?? primaryPlatform(channel);
-  const [parent, setParent] = useState("localhost");
+/** Twitch rejects bare IPs (and IPv6) as the embed `parent`; localhost and real domains are fine. */
+function isTwitchEmbeddableHost(host: string): boolean {
+  if (!host || host.includes(":")) return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false;
+  return true;
+}
 
+export function StreamEmbed({ channel }: { channel: Streamer }) {
+  const platform = channel.livePlatform ?? primaryPlatform(channel);
+  // Resolved on the client only; Twitch needs the real embedding host as `parent`.
+  const [host, setHost] = useState<string | null>(null);
   useEffect(() => {
-    setParent(window.location.hostname);
+    setHost(window.location.hostname);
   }, []);
 
   if (platform === "kick") {
@@ -167,10 +174,34 @@ function StreamEmbed({ channel }: { channel: Streamer }) {
   }
 
   const twitchHandle = getHandle(channel, "twitch");
+  if (host === null) return <div className="relative z-10 flex-1" />;
+
+  // Twitch can't embed on a bare IP, so offer a direct link instead of a misconfigured player.
+  if (!isTwitchEmbeddableHost(host)) {
+    return (
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+        <PlatformGlyph platform="twitch" className="size-10 opacity-70" />
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Twitch&apos;s player can&apos;t embed on an IP address ({host}). Open the app on{" "}
+          <span className="font-mono text-foreground">localhost</span> or the deployed domain to watch inline.
+        </p>
+        <a
+          href={`https://twitch.tv/${twitchHandle}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/[0.05] px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.09]"
+        >
+          <ExternalLink className="size-3.5" />
+          Watch {channel.name} on Twitch
+        </a>
+      </div>
+    );
+  }
+
   return (
     <iframe
-      key={`twitch-${twitchHandle}-${parent}`}
-      src={`https://player.twitch.tv/?channel=${twitchHandle}&parent=${parent}&muted=false`}
+      key={`twitch-${twitchHandle}-${host}`}
+      src={`https://player.twitch.tv/?channel=${twitchHandle}&parent=${host}&muted=false`}
       className="relative z-10 flex-1 w-full border-0"
       allow="autoplay; fullscreen"
       allowFullScreen
@@ -185,9 +216,9 @@ function StreamEmbed({ channel }: { channel: Streamer }) {
  */
 export function StreamPane() {
   const { selectedId, streamers } = useChannel();
-  const { isDemo } = useDemoMode();
+  const { isStage } = useStageMode();
   const channel: Streamer = streamers.find((s) => s.id === selectedId) ?? streamers[0];
-  const offline = isDemo ? false : !channel.live;
+  const offline = !channel.live;
   const target = channel.schedule ? nextOccurrence(channel.schedule, new Date()) : null;
 
   return (
@@ -232,19 +263,14 @@ export function StreamPane() {
 
       {offline ? (
         <OfflinePanel channel={channel} target={target} />
-      ) : isDemo ? (
-        /* Demo mode — plays /public/demo-stream.mp4 when present, dark frame otherwise. */
-        <video
-          key="demo"
-          src="/demo-stream.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="relative z-10 flex-1 w-full object-cover"
-        />
+      ) : isStage ? (
+        /* The single player moves to the Stage overlay while it's open (avoids a second audio source). */
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3 text-center">
+          <MonitorPlay className="size-8 text-muted-foreground/70" />
+          <p className="text-sm text-muted-foreground">Playing in Stage</p>
+        </div>
       ) : (
-        /* Live mode — embedded platform player. */
+        /* Embedded platform player for the selected channel; real streams in both demo and live. */
         <StreamEmbed channel={channel} />
       )}
     </div>

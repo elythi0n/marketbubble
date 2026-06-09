@@ -10,6 +10,8 @@
   font-size: calc(13.5px * var(--feed-scale, 1));
   line-height: 1.5;
   color: var(--foreground);
+  overflow-wrap: anywhere;
+  word-break: break-word;
   transition: background-color 0.1s ease;
 }
 .row:hover {
@@ -17,42 +19,46 @@
 }
 
 /*
- * Header line: platform, time, channel, badges, and username all on one row (meta de-emphasized,
- * username prominent). The message itself drops to its own line for clean reading.
+ * Everything flows inline like native chat: platform, time, channel, badges and username (meta
+ * de-emphasized, username prominent) are followed directly by the message and its emotes, all
+ * wrapping together on one continuous line.
  */
-.header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.42em;
-  line-height: 1.3;
-}
 .metaGlyph {
-  flex: none;
+  display: inline-block;
   width: 0.95em;
   height: 0.95em;
-  opacity: 0.85;
+  vertical-align: -0.15em;
+  opacity: 0.8;
+  margin-right: 0.4em;
 }
 .channel {
-  font-size: 0.8em;
+  font-size: 0.85em;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--feed-text-2);
+  margin-right: 0.45em;
 }
 .channel::before {
   content: "·";
-  margin-right: 0.42em;
-  opacity: 0.55;
+  margin-right: 0.45em;
+  opacity: 0.5;
 }
 
-/* The message body, on its own line under the header. */
-.message {
-  margin-top: 0.12em;
-  line-height: 1.48;
-  word-break: break-word;
-  color: rgb(255 255 255 / 0.88);
+/* Separator between username and message. */
+.colon {
+  margin-right: 0.4em;
+  color: var(--feed-text-2);
+  font-weight: 600;
 }
-.action .message {
+
+/* The message body, inline right after the username. */
+.body {
+  color: rgb(255 255 255 / 0.9);
+}
+.action .author {
+  margin-right: 0.4em;
+}
+.action .body {
   font-style: italic;
   color: color-mix(in srgb, var(--foreground) 86%, var(--plat-twitch));
 }
@@ -96,12 +102,12 @@
 }
 
 .ts {
-  flex: none;
   color: var(--feed-text-2);
   font-family: var(--font-mono);
   font-size: 0.8em;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+  margin-right: 0.45em;
 }
 
 .reply {
@@ -119,6 +125,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3em;
+  vertical-align: middle;
+  margin-right: 0.42em;
 }
 /* Text chip (demo). Real providers pass badge image URLs -> .badgeImg, like virta feed-core. */
 .badge {
@@ -135,10 +143,12 @@
   white-space: nowrap;
 }
 .badgeImg {
+  display: inline-block;
   width: 1.3em;
   height: 1.3em;
   border-radius: 3px;
   object-fit: contain;
+  vertical-align: middle;
 }
 .badgeMore {
   color: var(--feed-text-2);
@@ -154,6 +164,8 @@
 }
 
 .emote {
+  /* Override Tailwind preflight's `img { display: block }`, which would stack emotes vertically. */
+  display: inline-block;
   height: 1.55em;
   width: auto;
   vertical-align: middle;

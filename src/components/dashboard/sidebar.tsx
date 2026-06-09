@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { PanelLeftClose, PanelLeftOpen, Play } from "lucide-react";
 
@@ -8,8 +9,9 @@ const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
 import { useChannel } from "@/lib/streamers/channel-context";
-import { hasVideo, primaryPlatform, type Streamer } from "@/lib/streamers/mock";
+import { hasVideo, type Streamer } from "@/lib/streamers/mock";
 import { cn } from "@/lib/utils";
+import { MarketBubbleLogo } from "./market-bubble-logo";
 import { StreamerAvatar } from "./streamer-avatar";
 
 function formatViewers(n: number): string {
@@ -33,24 +35,16 @@ const SOCIALS = [
   },
 ];
 
-/** Expanded channel card with a stream thumbnail. */
-function ChannelCard({ streamer, active, onSelect }: { streamer: Streamer; active: boolean; onSelect: () => void }) {
+/** Thumbnail + identity layout shared by the expanded card and the collapsed hover preview. */
+function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-current={active ? "true" : undefined}
-      className={cn(
-        "group block w-full overflow-hidden rounded-lg border text-left transition-colors",
-        active ? "border-white/20 bg-white/[0.05]" : "border-transparent hover:bg-white/[0.04]",
-      )}
-    >
+    <>
       <div className={cn("relative flex aspect-video items-center justify-center overflow-hidden bg-[#141416]", !streamer.live && "opacity-70")}>
         {streamer.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={streamer.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <PlatformGlyph platform={primaryPlatform(streamer)} className="size-8 opacity-[0.08]" tinted={false} />
+          <MarketBubbleLogo className="size-12 text-foreground opacity-[0.08]" />
         )}
         {streamer.live ? (
           <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-[#46c45a]/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-[#46c45a]">
@@ -68,7 +62,7 @@ function ChannelCard({ streamer, active, onSelect }: { streamer: Streamer; activ
             {formatViewers(streamer.viewers)}
           </span>
         ) : null}
-        {streamer.live ? (
+        {hover && streamer.live ? (
           <span className="absolute flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/35 opacity-0 transition-opacity group-hover:opacity-100">
             <Play className="size-3.5 translate-x-px fill-foreground text-foreground" />
           </span>
@@ -87,10 +81,73 @@ function ChannelCard({ streamer, active, onSelect }: { streamer: Streamer; activ
               ))}
             </span>
           </span>
-          <span className="truncate text-[0.68rem] text-muted-foreground">{statusText(streamer)}</span>
+          <span className="truncate text-[0.68rem] text-muted-foreground">
+            {streamer.live && streamer.title ? streamer.title : statusText(streamer)}
+          </span>
         </div>
       </div>
+    </>
+  );
+}
+
+/** Expanded channel card with a stream thumbnail. */
+function ChannelCard({ streamer, active, onSelect }: { streamer: Streamer; active: boolean; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-current={active ? "true" : undefined}
+      className={cn(
+        "group block w-full overflow-hidden rounded-lg border text-left transition-colors",
+        active ? "border-white/20 bg-white/[0.05]" : "border-transparent hover:bg-white/[0.04]",
+      )}
+    >
+      <ChannelCardBody streamer={streamer} />
     </button>
+  );
+}
+
+/** Collapsed avatar button that reveals a full preview card (thumbnail + title) on hover. */
+function CollapsedStreamerButton({ streamer, active, onSelect }: { streamer: Streamer; active: boolean; onSelect: () => void }) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+        onMouseEnter={(e) => setRect(e.currentTarget.getBoundingClientRect())}
+        onMouseLeave={() => setRect(null)}
+        aria-current={active ? "true" : undefined}
+        className={cn(
+          "group relative flex w-full items-center justify-center rounded-lg p-0.5 transition-colors",
+          active ? "bg-white/[0.08]" : "hover:bg-white/[0.05]",
+        )}
+      >
+        {active ? (
+          <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#e4e4e4]" aria-hidden />
+        ) : null}
+        <StreamerAvatar streamer={streamer} size={38} rounded="lg" />
+      </button>
+
+      {rect
+        ? createPortal(
+            <div
+              className="pointer-events-none fixed z-[120] w-[248px] overflow-hidden rounded-lg border border-white/12 bg-[#1b1b1f] shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+              style={{
+                left: rect.right + 10,
+                top: Math.min(rect.top - 6, window.innerHeight - 210),
+              }}
+            >
+              <ChannelCardBody streamer={streamer} hover={false} />
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
@@ -144,31 +201,15 @@ export function Sidebar() {
           </ul>
         ) : (
           <ul className="flex flex-col gap-2">
-            {sorted.map((streamer) => {
-              const active = streamer.id === selectedId;
-              return (
-                <li key={streamer.id}>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      select(streamer.id);
-                    }}
-                    title={`${streamer.name} · ${statusText(streamer)}`}
-                    aria-current={active ? "true" : undefined}
-                    className={cn(
-                      "group relative flex w-full items-center justify-center rounded-lg p-0.5 transition-colors",
-                      active ? "bg-white/[0.08]" : "hover:bg-white/[0.05]",
-                    )}
-                  >
-                    {active ? (
-                      <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#e4e4e4]" aria-hidden />
-                    ) : null}
-                    <StreamerAvatar streamer={streamer} size={38} rounded="lg" />
-                  </button>
-                </li>
-              );
-            })}
+            {sorted.map((streamer) => (
+              <li key={streamer.id}>
+                <CollapsedStreamerButton
+                  streamer={streamer}
+                  active={streamer.id === selectedId}
+                  onSelect={() => select(streamer.id)}
+                />
+              </li>
+            ))}
           </ul>
         )}
       </div>

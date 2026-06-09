@@ -10,15 +10,59 @@ export interface KickStreamPayload {
 
 const UNKNOWN: KickStreamPayload = { live: null, viewerCount: 0, title: "" };
 
+const UA =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+interface KickLivestream {
+  viewers?: number;
+  session_title?: string;
+  /** Live preview on images.kick.com; absent from the plain channel endpoint, present here. */
+  thumbnail?: { src?: string };
+}
+
+/**
+ * Primary path: the dedicated livestream JSON endpoint. Unlike the HTML page (Cloudflare-blocked)
+ * and the plain channel endpoint (thumbnail often null), this reliably returns the live preview
+ * thumbnail along with viewers and title. `data` is null when the channel is offline.
+ */
+async function fetchViaApi(slug: string): Promise<KickStreamPayload | null> {
+  try {
+    const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(slug)}/livestream`, {
+      headers: { "User-Agent": UA, Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 30 },
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { data: KickLivestream | null };
+    const ls = json.data;
+    if (!ls) return { live: false, viewerCount: 0, title: "" };
+    return {
+      live: true,
+      viewerCount: ls.viewers ?? 0,
+      title: ls.session_title ?? "",
+      thumbnail: ls.thumbnail?.src || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug");
   if (!slug) return NextResponse.json({ error: "missing slug" }, { status: 400 });
 
+  const viaApi = await fetchViaApi(slug);
+  if (viaApi) {
+    return NextResponse.json(viaApi, {
+      headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=15" },
+    });
+  }
+
+  // Fallback: scrape the HTML page (often Cloudflare-blocked server-side, but worth a try).
   try {
     const res = await fetch(`https://kick.com/${encodeURIComponent(slug)}`, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": UA,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
       },

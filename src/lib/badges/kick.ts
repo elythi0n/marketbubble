@@ -1,15 +1,9 @@
 "use client";
 
-const STATIC: Record<string, string> = {
-  broadcaster:   "https://files.kick.com/images/badges/broadcaster/badge_image",
-  channel_owner: "https://files.kick.com/images/badges/broadcaster/badge_image",
-  moderator:     "https://files.kick.com/images/badges/moderator/badge_image",
-  og:            "https://files.kick.com/images/badges/og/badge_image",
-  vip:           "https://files.kick.com/images/badges/vip/badge_image",
-  verified:      "https://files.kick.com/images/badges/verified/badge_image",
-  staff:         "https://files.kick.com/images/badges/staff/badge_image",
-  sub_gifter:    "https://files.kick.com/images/badges/sub_gifter/badge_image",
-};
+// Kick renders role badges (broadcaster, moderator, vip, og, staff, sub_gifter, verified) as inline
+// SVGs, not CDN images — there's no public image URL (the old files.kick.com/images/badges/* paths
+// 403). So those resolve to no URL and the feed renders a styled text chip (MOD, VIP, …) instead.
+// Only subscriber badges are real channel-uploaded images.
 
 interface SubBadgeTier {
   months: number;
@@ -49,5 +43,6 @@ export function getKickBadgeUrl(slug: string, type: string, months?: number): st
     }
     return undefined;
   }
-  return STATIC[type];
+  // Role badges have no image; the feed shows a text chip.
+  return undefined;
 }

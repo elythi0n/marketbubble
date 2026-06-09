@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { StreamStatusPayload } from "@/app/api/twitch/stream/route";
 import type { KickStreamPayload } from "@/app/api/kick/stream/route";
 import type { Platform } from "@/lib/feed/types";
-import { getHandle, MOCK_STREAMERS, type Streamer } from "./mock";
+import { getHandle, type Streamer } from "./mock";
 
 const POLL_MS = 60_000;
 const SELECTED_POLL_MS = 30_000;
@@ -19,30 +19,25 @@ interface MergedStatus {
 }
 
 /**
- * Returns the full streamer roster with real-time live status merged in.
- * Roster is fetched from /api/streamers. Live status is polled from Twitch and Kick
- * every 60 s and immediately whenever selectedId changes.
+ * Returns the given roster with real-time live status (live/offline, viewer count, title,
+ * thumbnail) merged in. Status is polled from Twitch and Kick every 60 s, with the selected
+ * streamer refreshed every 30 s. Re-polls immediately when the roster itself changes (e.g. when
+ * switching between the live show roster and the demo roster).
  */
-export function useStreamers(selectedId?: string): Streamer[] {
-  const [roster, setRoster] = useState<Streamer[]>(MOCK_STREAMERS);
-  // Seed live from mock so the initial render doesn't flash the offline panel while polls are in-flight.
-  // Viewers start at 0 — real count arrives from the first poll (~500 ms) and AnimatedNumber counts up.
-  const [statuses, setStatuses] = useState<Record<string, MergedStatus>>(() =>
-    Object.fromEntries(
-      MOCK_STREAMERS.map((s) => [s.id, { live: s.live, viewers: 0, title: s.title, thumbnail: undefined }]),
-    ),
-  );
+export interface UseStreamersResult {
+  streamers: Streamer[];
+  /** True once a full-roster poll has completed for the current roster (real live status known). */
+  polled: boolean;
+}
+
+export function useStreamers(roster: Streamer[], selectedId?: string): UseStreamersResult {
+  const [statuses, setStatuses] = useState<Record<string, MergedStatus>>({});
+  const [polledKey, setPolledKey] = useState<string | null>(null);
 
   const rosterRef = useRef(roster);
   rosterRef.current = roster;
-
-  // Fetch the configured roster once on mount.
-  useEffect(() => {
-    fetch("/api/streamers")
-      .then((r) => r.json())
-      .then((data: Streamer[]) => { if (Array.isArray(data)) setRoster(data); })
-      .catch(() => { /* keep MOCK_STREAMERS */ });
-  }, []);
+  // Stable signature of the current roster; drives re-polling when the set of channels changes.
+  const rosterKey = roster.map((s) => s.id).join(",");
 
   // Poll live status for a single streamer — both Twitch and Kick.
   async function pollOne(s: Streamer): Promise<[string, MergedStatus] | null> {
@@ -119,6 +114,7 @@ export function useStreamers(selectedId?: string): Streamer[] {
 
   // Poll all streamers.
   async function pollAll() {
+    const key = rosterRef.current.map((s) => s.id).join(",");
     const results = await Promise.allSettled(rosterRef.current.map(pollOne));
     const next: Record<string, MergedStatus> = {};
     for (const r of results) {
@@ -130,14 +126,15 @@ export function useStreamers(selectedId?: string): Streamer[] {
     if (Object.keys(next).length > 0) {
       setStatuses((prev) => ({ ...prev, ...next }));
     }
+    setPolledKey(key);
   }
 
-  // Full-roster polling loop.
+  // Full-roster polling loop. Re-runs when the roster set changes so a new roster polls right away.
   useEffect(() => {
     pollAll();
     const id = setInterval(pollAll, POLL_MS);
     return () => clearInterval(id);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rosterKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Immediate re-poll + 30 s refresh loop for the selected streamer.
   // Matches the API cache TTL so every tick gets genuinely fresh data.
@@ -158,9 +155,9 @@ export function useStreamers(selectedId?: string): Streamer[] {
     pollSelected();
     const id = setInterval(pollSelected, SELECTED_POLL_MS);
     return () => clearInterval(id);
-  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedId, rosterKey]);
 
-  return roster.map((s) => {
+  const streamers = roster.map((s) => {
     const st = statuses[s.id];
     if (!st) return s;
     return {
@@ -172,4 +169,6 @@ export function useStreamers(selectedId?: string): Streamer[] {
       thumbnail: st.thumbnail,
     };
   });
+
+  return { streamers, polled: polledKey === rosterKey };
 }

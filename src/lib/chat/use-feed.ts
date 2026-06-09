@@ -12,11 +12,12 @@ export interface UseFeedResult {
 }
 
 /**
- * Subscribe a component to a set of providers through a single aggregator. The factory is invoked
- * once on mount; pass a stable list (e.g. built from channel state) and re-key the component to
- * rebuild when channels change.
+ * Subscribe a component to a set of providers through a single aggregator. The aggregator is
+ * (re)built whenever `depsKey` changes, tearing down old connections and opening fresh ones while
+ * leaving the React subtree mounted. The latest factory is always read, so callers don't need to
+ * memoize it.
  */
-export function useFeed(makeProviders: () => ChatProvider[]): UseFeedResult {
+export function useFeed(makeProviders: () => ChatProvider[], depsKey = ""): UseFeedResult {
   const [messages, setMessages] = useState<readonly FeedMessage[]>([]);
   const [statuses, setStatuses] = useState<Readonly<Record<string, ProviderStatus>>>({});
   const factoryRef = useRef(makeProviders);
@@ -33,7 +34,7 @@ export function useFeed(makeProviders: () => ChatProvider[]): UseFeedResult {
       offStatus();
       aggregator.stop();
     };
-  }, []);
+  }, [depsKey]);
 
   return { messages, statuses };
 }

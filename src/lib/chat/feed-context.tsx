@@ -24,11 +24,17 @@ function defaultProviders(): ChatProvider[] {
 export function FeedProvider({
   children,
   makeProviders = defaultProviders,
+  providersKey,
 }: {
   children: ReactNode;
   makeProviders?: () => ChatProvider[];
+  /**
+   * Changing this string rebuilds the chat connections (e.g. when the channel set changes) without
+   * remounting the React subtree, so consumer UI state like sidebar expansion is preserved.
+   */
+  providersKey?: string;
 }) {
-  const value = useFeed(makeProviders);
+  const value = useFeed(makeProviders, providersKey);
   return <FeedContext.Provider value={value}>{children}</FeedContext.Provider>;
 }
 

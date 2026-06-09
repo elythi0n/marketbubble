@@ -1,11 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 import { MarketBubbleLogo } from "@/components/dashboard/market-bubble-logo";
 
 const MESSAGES = ["Make Money", "Command Attention", "Leverage AI"];
+
+// Layout effect on the client (set the tagline before paint, no flash); plain effect on the server.
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 const logoVariants: Variants = {
   // Immediately visible, then a quick bounce-in (jumps closer, springs back), then zooms out on exit.
@@ -17,10 +20,19 @@ const logoVariants: Variants = {
 export function Preloader() {
   const [show, setShow] = useState(true);
   const [slow, setSlow] = useState(false);
-  // One random tagline per load (client-picked to avoid hydration mismatch).
+  // Rotate through the taglines across reloads (persisted index), so each load shows the next one.
+  // Client-only to avoid a hydration mismatch.
   const [tagline, setTagline] = useState(MESSAGES[0]);
-  useEffect(() => {
-    setTagline(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
+  useIsomorphicLayoutEffect(() => {
+    let i = 0;
+    try {
+      i = Number(localStorage.getItem("mb-tagline-i") ?? "0") % MESSAGES.length;
+      if (!Number.isInteger(i) || i < 0) i = 0;
+      localStorage.setItem("mb-tagline-i", String((i + 1) % MESSAGES.length));
+    } catch {
+      /* localStorage unavailable */
+    }
+    setTagline(MESSAGES[i]);
   }, []);
 
   useEffect(() => {

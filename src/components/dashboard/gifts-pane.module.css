@@ -111,6 +111,12 @@
   font-size: 0.72rem;
   color: var(--muted-foreground);
 }
+/* Source channel the gift arrived on (the feed merges every live channel). */
+.channel {
+  color: var(--foreground);
+  font-weight: 550;
+  opacity: 0.85;
+}
 
 .amount {
   flex: none;

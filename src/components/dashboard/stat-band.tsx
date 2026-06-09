@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { useFeedStats } from "@/lib/chat/feed-context";
 import { formatChange } from "@/lib/markets/types";
@@ -9,37 +9,7 @@ import { useTickers } from "@/lib/markets/tickers-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { type Streamer } from "@/lib/streamers/mock";
 import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
-
-function AnimatedNumber({ value, format = (n: number) => Math.round(n).toLocaleString() }: { value: number; format?: (n: number) => string }) {
-  const mv = useMotionValue(value);
-  const [shown, setShown] = useState(value);
-  useEffect(() => {
-    const controls = animate(mv, value, {
-      duration: 0.7,
-      ease: [0.22, 1, 0.36, 1],
-      onUpdate: (v) => setShown(v),
-    });
-    return () => controls.stop();
-  }, [value, mv]);
-  return <>{format(shown)}</>;
-}
-
-function AnimatedSwap({ swapKey, children }: { swapKey: string; children: ReactNode }) {
-  return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.span
-        key={swapKey}
-        initial={{ y: 9, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -9, opacity: 0 }}
-        transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-        className="inline-flex items-baseline gap-1.5"
-      >
-        {children}
-      </motion.span>
-    </AnimatePresence>
-  );
-}
+import { AnimatedNumber, AnimatedSwap } from "./animated-stat";
 
 function StatCell({ label, emphasis, children }: { label: string; emphasis?: boolean; children: ReactNode }) {
   return (
@@ -88,11 +58,17 @@ export function StatBand() {
   const topMover = [...tickers].sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))[0] ?? null;
   const moverUp = (topMover?.changePct ?? 0) >= 0;
 
-  const viewers = channel.live ? channel.viewers : 0;
+  // The band is a combined overview of every streamer, not just the selected one: viewers sum across
+  // all live channels, and chat-derived stats reflect the unified feed.
+  const liveStreamers = streamers.filter((s) => s.live);
+  const anyLive = liveStreamers.length > 0;
+  const viewers = liveStreamers.reduce((sum, s) => sum + (s.viewers || 0), 0);
+  // When nothing is live, fall back to a schedule for the countdown (selected channel's, else any).
+  const scheduleStreamer = channel?.schedule ? channel : streamers.find((s) => s.schedule);
 
-  const showChatters = channel.live && uniqueChatters > 0;
-  const showTrending = channel.live && !!topCashtag;
-  const showGifts = channel.live && giftCount > 0;
+  const showChatters = anyLive && uniqueChatters > 0;
+  const showTrending = anyLive && !!topCashtag;
+  const showGifts = anyLive && giftCount > 0;
 
   const cellVariants = {
     hidden: { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0, overflow: "hidden" },
@@ -103,13 +79,13 @@ export function StatBand() {
     <div className="relative z-20 flex h-[3.25rem] flex-none items-center overflow-x-auto border-b border-white/[0.07] bg-[#141416] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="mx-auto flex items-stretch divide-x divide-white/[0.07]">
 
-        {/* Viewers when live, countdown when offline */}
-        {channel.live !== false ? (
+        {/* Combined viewers across all live streamers; countdown when none are live. */}
+        {anyLive ? (
           <StatCell label="Viewers" emphasis>
             <AnimatedNumber value={viewers} />
           </StatCell>
-        ) : channel.schedule ? (
-          <NextStreamCell schedule={channel.schedule} />
+        ) : scheduleStreamer?.schedule ? (
+          <NextStreamCell schedule={scheduleStreamer.schedule} />
         ) : (
           <StatCell label="Viewers">
             <span className="text-muted-foreground/60">—</span>

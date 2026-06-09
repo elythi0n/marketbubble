@@ -10,6 +10,8 @@ export interface XChatMessage {
   text: string;
   timestamp: string; // ISO 8601
   badges?: string[];
+  /** Broadcaster/source handle this message belongs to (used as the feed's source label). */
+  channel?: string;
 }
 
 const MAX_BUFFER = 200;

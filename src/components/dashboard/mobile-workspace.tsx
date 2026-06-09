@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
-import { useDemoMode } from "@/lib/demo-mode-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { getHandle, type Streamer } from "@/lib/streamers/mock";
 import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
@@ -86,9 +85,8 @@ function MobileOfflineView({ channel }: { channel: Streamer }) {
 export function MobileWorkspace() {
   const [tab, setTab] = useState<"chat" | "gifts">("chat");
   const { selectedId, streamers } = useChannel();
-  const { isDemo } = useDemoMode();
   const channel = streamers.find((s) => s.id === selectedId) ?? streamers[0];
-  const offline = isDemo ? false : !channel.live;
+  const offline = !channel.live;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

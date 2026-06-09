@@ -19,6 +19,12 @@ export interface Streamer {
   schedule?: StreamSchedule;
   /** YouTube channel handle (without @), used to fetch recent videos as clip fallback. */
   youtube?: string;
+  /**
+   * X accounts whose live broadcasts feed this show's chat: each entry is an @handle or a
+   * broadcast link. A streamer can list several (their own X plus a shared show account like
+   * MarketBubble); the server bridge de-duplicates shared accounts across the roster.
+   */
+  xBroadcasts?: string[];
 }
 
 /** Returns the handle for a specific platform, falling back to the first defined handle. */
@@ -45,6 +51,7 @@ export function avatarUrl(s: Streamer): string | null {
   const h = getHandle(s, p);
   if (p === "twitch") return `https://unavatar.io/twitch/${h}?fallback=false`;
   if (p === "x") return `https://unavatar.io/twitter/${h}?fallback=false`;
+  if (p === "kick") return `/api/kick/avatar?slug=${encodeURIComponent(h)}`;
   return null;
 }
 

@@ -7,7 +7,9 @@ export interface Clip {
   title: string;
   channel: string;
   platform: ClipSource;
-  /** mm:ss, empty string when unknown */
+  /** Short highlight, a full past broadcast (VOD), or an uploaded video. Drives how it's embedded. */
+  kind?: "clip" | "vod" | "video";
+  /** mm:ss or h:mm:ss, empty string when unknown */
   duration: string;
   views: number;
   thumbnail?: string;

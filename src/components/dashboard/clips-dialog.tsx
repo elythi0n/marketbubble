@@ -36,7 +36,10 @@ function embedUrl(clip: Clip, hostname: string): string | null {
     return `https://www.youtube.com/embed/${clip.id}?autoplay=1&rel=0&modestbranding=1`;
   }
   if (clip.platform === "twitch") {
-    return `https://clips.twitch.tv/embed?clip=${clip.id}&parent=${hostname}&autoplay=true`;
+    // Full broadcasts (VODs) play through the video player; short clips use the clip embed.
+    return clip.kind === "vod"
+      ? `https://player.twitch.tv/?video=${clip.id}&parent=${hostname}&autoplay=true`
+      : `https://clips.twitch.tv/embed?clip=${clip.id}&parent=${hostname}&autoplay=true`;
   }
   return null;
 }
@@ -186,7 +189,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
               <div className="flex w-[260px] flex-none flex-col">
                 <div className="flex flex-none items-center justify-between border-b border-white/[0.06] px-3 py-2.5">
                   <span className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Clips
+                    Videos
                   </span>
                   <button
                     type="button"
@@ -208,7 +211,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                     />
                   ))}
                   {clips.length === 0 && (
-                    <p className="px-3 py-8 text-center text-[0.72rem] text-muted-foreground/40">No clips</p>
+                    <p className="px-3 py-8 text-center text-[0.72rem] text-muted-foreground/40">No videos</p>
                   )}
                 </div>
               </div>

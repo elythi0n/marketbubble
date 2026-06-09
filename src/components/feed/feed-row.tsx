@@ -221,34 +221,31 @@ function FeedRowImpl({
         </span>
       ) : null}
 
-      {/* Header line: who · when · where, all together. */}
-      <div className={styles.header}>
-        <PlatformGlyph platform={message.platform} className={styles.metaGlyph} />
-        {showTimestamps ? <span className={styles.ts}>{message.ts}</span> : null}
-        {showSource && message.channel ? <span className={styles.channel}>{message.channel}</span> : null}
-        {badges.length > 0 ? (
-          <span className={styles.badges}>
-            {badges.slice(0, 3).map((b, i) =>
-              b.url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} className={styles.badgeImg} src={b.url} alt={b.title ?? b.set} title={b.title ?? b.set} />
-              ) : (
-                <span key={i} className={styles.badge} style={{ color: badgeColor(b.set) }} title={b.title ?? b.set}>
-                  {badgeLabel(b.set)}
-                </span>
-              ),
-            )}
-            {badges.length > 3 ? <span className={styles.badgeMore}>+{badges.length - 3}</span> : null}
-          </span>
-        ) : null}
-        <HoverCard className={styles.author} content={<ViewerInfo message={message} />}>
-          <span style={authorStyle}>{message.author}</span>
-        </HoverCard>
-        {message.combo && message.combo > 1 ? <span className={styles.combo}>×{message.combo}</span> : null}
-      </div>
-
-      {/* Message line: the content, on its own row for readability. */}
-      <div className={styles.message}>
+      {/* One inline flow: meta · username · message, wrapping together like native chat. */}
+      <PlatformGlyph platform={message.platform} className={styles.metaGlyph} />
+      {showTimestamps ? <span className={styles.ts}>{message.ts}</span> : null}
+      {showSource && message.channel ? <span className={styles.channel}>{message.channel}</span> : null}
+      {badges.length > 0 ? (
+        <span className={styles.badges}>
+          {badges.slice(0, 3).map((b, i) =>
+            b.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} className={styles.badgeImg} src={b.url} alt={b.title ?? b.set} title={b.title ?? b.set} />
+            ) : (
+              <span key={i} className={styles.badge} style={{ color: badgeColor(b.set) }} title={b.title ?? b.set}>
+                {badgeLabel(b.set)}
+              </span>
+            ),
+          )}
+          {badges.length > 3 ? <span className={styles.badgeMore}>+{badges.length - 3}</span> : null}
+        </span>
+      ) : null}
+      <HoverCard className={styles.author} content={<ViewerInfo message={message} />}>
+        <span style={authorStyle}>{message.author}</span>
+      </HoverCard>
+      {isAction ? null : <span className={styles.colon}>:</span>}
+      {message.combo && message.combo > 1 ? <span className={styles.combo}>×{message.combo}</span> : null}
+      <span className={styles.body}>
         {message.deleted && !showDeleted ? (
           <span className={styles.tombstone}>message deleted</span>
         ) : message.deleted ? (
@@ -256,7 +253,7 @@ function FeedRowImpl({
         ) : (
           message.segments.map(renderSegment)
         )}
-      </div>
+      </span>
     </div>
   );
 }

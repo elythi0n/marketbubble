@@ -67,7 +67,10 @@ export function GiftsPane() {
                     <span className={styles.name}>{g.author}</span>
                     <PlatformGlyph platform={g.platform} className={styles.nameGlyph} />
                   </div>
-                  <span className={styles.detail}>{view.detail}</span>
+                  <span className={styles.detail}>
+                    {view.detail}
+                    {g.channel ? <span className={styles.channel}> · {g.channel}</span> : null}
+                  </span>
                 </div>
                 {view.amount ? <span className={styles.amount}>{view.amount}</span> : null}
                 <span className={styles.time}>{g.ts}</span>

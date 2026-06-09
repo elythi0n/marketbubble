@@ -22,7 +22,7 @@ function toFeedMessage(msg: XChatMessage): FeedMessage {
     segments: parseSegments(msg.text),
     ts: formatClock(tsMs),
     tsMs,
-    channel: msg.authorHandle,
+    channel: msg.channel ?? msg.authorHandle,
   };
 }
 

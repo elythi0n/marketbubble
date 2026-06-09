@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clapperboard, Radio } from "lucide-react";
+import { Clapperboard, MonitorPlay, Radio } from "lucide-react";
 
-import { useDemoMode } from "@/lib/demo-mode-context";
+import { DEMO_ENABLED, useDemoMode } from "@/lib/demo-mode-context";
+import { useStageMode } from "@/lib/stage-mode-context";
 import { NAV_SECTIONS } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MarketBubbleLogo } from "./market-bubble-logo";
 
 export function TopNav() {
   const pathname = usePathname();
   const { isDemo, toggle } = useDemoMode();
+  const { setStage } = useStageMode();
 
   return (
     <header className="relative z-30 grid h-14 flex-none grid-cols-[1fr_auto_1fr] items-center border-b border-white/[0.07] bg-[#141416] px-4">
@@ -54,27 +57,69 @@ export function TopNav() {
         })}
       </nav>
 
-      {/* Right: mode toggle + Polymarket */}
-      <div className="flex items-center justify-self-end gap-3">
-        <button
-          type="button"
-          onClick={toggle}
-          aria-pressed={isDemo}
-          title={isDemo ? "Switch to live mode" : "Switch to demo mode"}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.68rem] font-semibold tracking-wide transition-colors",
-            isDemo
-              ? "border-[#a8a8f8]/30 bg-[#a8a8f8]/10 text-[#a8a8f8]"
-              : "border-white/10 bg-transparent text-muted-foreground hover:border-white/20 hover:text-foreground",
-          )}
-        >
-          {isDemo ? (
-            <Clapperboard className="size-3" />
-          ) : (
-            <Radio className="size-3" />
-          )}
-          {isDemo ? "Demo" : "Live"}
-        </button>
+      {/* Right: mode controls + Polymarket */}
+      <TooltipProvider>
+      <div className="flex items-center justify-self-end gap-2.5">
+        {/* Live / Demo segmented control (hidden when demo is disabled for this build) */}
+        {DEMO_ENABLED ? (
+        <div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.02] p-0.5">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={() => { if (isDemo) toggle(); }}
+                  aria-pressed={!isDemo}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
+                    !isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Radio className={cn("size-3", !isDemo && "text-[#46c45a]")} />
+                  Live
+                </button>
+              }
+            />
+            <TooltipContent>Show the real show channels and their live status</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={() => { if (!isDemo) toggle(); }}
+                  aria-pressed={isDemo}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
+                    isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Clapperboard className="size-3" />
+                  Demo
+                </button>
+              }
+            />
+            <TooltipContent>Preview with a curated set of busy live channels</TooltipContent>
+          </Tooltip>
+        </div>
+        ) : null}
+
+        {/* Stage: broadcast overlay (OBS-ready) — icon-only, before Polymarket */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                type="button"
+                onClick={() => setStage(true)}
+                aria-label="Open Stage"
+                className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <MonitorPlay className="size-5" />
+              </button>
+            }
+          />
+          <TooltipContent>Open the broadcast overlay (chat, ticker, identity over the stream)</TooltipContent>
+        </Tooltip>
 
         <a
           href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"
@@ -91,6 +136,7 @@ export function TopNav() {
           />
         </a>
       </div>
+      </TooltipProvider>
     </header>
   );
 }
