@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "MarketBubble Chat Bridge",
+  "version": "1.0.0",
+  "description": "Bridges X livestream chat to the MarketBubble dashboard in real time.",
+  "permissions": ["storage", "alarms", "tabs", "scripting"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/i/broadcasts/*",
+        "https://x.com/*/live",
+        "https://twitter.com/i/broadcasts/*",
+        "https://twitter.com/*/live"
+      ],
+      "js": ["src/content.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ],
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "MarketBubble Chat Bridge",
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}

@@ -1,0 +1,260 @@
+/*
+ * Chat rows flow inline like Twitch. All sizes derive from the row font-size, which scales with
+ * `--feed-scale` (driven by the chat zoom control) so children grow/shrink together via `em`.
+ */
+.row {
+  display: block;
+  padding: 4px 12px 5px 10px;
+  border-left: 2.5px solid transparent;
+  font-family: var(--font-sans);
+  font-size: calc(13.5px * var(--feed-scale, 1));
+  line-height: 1.5;
+  color: var(--foreground);
+  transition: background-color 0.1s ease;
+}
+.row:hover {
+  background: rgb(255 255 255 / 0.04);
+}
+
+/*
+ * Header line: platform, time, channel, badges, and username all on one row (meta de-emphasized,
+ * username prominent). The message itself drops to its own line for clean reading.
+ */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.42em;
+  line-height: 1.3;
+}
+.metaGlyph {
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+  opacity: 0.85;
+}
+.channel {
+  font-size: 0.8em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--feed-text-2);
+}
+.channel::before {
+  content: "·";
+  margin-right: 0.42em;
+  opacity: 0.55;
+}
+
+/* The message body, on its own line under the header. */
+.message {
+  margin-top: 0.12em;
+  line-height: 1.48;
+  word-break: break-word;
+  color: rgb(255 255 255 / 0.88);
+}
+.action .message {
+  font-style: italic;
+  color: color-mix(in srgb, var(--foreground) 86%, var(--plat-twitch));
+}
+
+.compact {
+  font-size: calc(12.5px * var(--feed-scale, 1));
+  line-height: 1.46;
+  padding-top: 1.5px;
+  padding-bottom: 1.5px;
+}
+.comfortable {
+  font-size: calc(14.5px * var(--feed-scale, 1));
+  line-height: 1.62;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.twitch {
+  border-left-color: color-mix(in srgb, var(--plat-twitch) 80%, transparent);
+}
+.kick {
+  border-left-color: color-mix(in srgb, var(--plat-kick) 80%, transparent);
+}
+.x {
+  border-left-color: color-mix(in srgb, var(--plat-x) 65%, transparent);
+}
+
+.highlighted {
+  background: color-mix(in srgb, var(--feed-link) 14%, transparent);
+}
+.highlighted:hover {
+  background: color-mix(in srgb, var(--feed-link) 18%, transparent);
+}
+
+.glyph {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  opacity: 0.92;
+}
+
+.ts {
+  flex: none;
+  color: var(--feed-text-2);
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.reply {
+  display: block;
+  margin-bottom: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--feed-text-2);
+  font-size: 0.85em;
+  opacity: 0.78;
+}
+
+.badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+/* Text chip (demo). Real providers pass badge image URLs -> .badgeImg, like virta feed-core. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16em 0.45em;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 34%, transparent);
+  font-size: 0.6em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.badgeImg {
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 3px;
+  object-fit: contain;
+}
+.badgeMore {
+  color: var(--feed-text-2);
+  font-size: 0.62em;
+  font-weight: 600;
+  align-self: center;
+}
+
+.author {
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.emote {
+  height: 1.55em;
+  width: auto;
+  vertical-align: middle;
+  margin: -0.15em 1px 0;
+}
+.mention {
+  color: var(--feed-link);
+  font-weight: 600;
+}
+.cashtag {
+  color: #d8b25a;
+  font-weight: 650;
+  cursor: help;
+}
+.link {
+  color: var(--feed-link);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--feed-link) 40%, transparent);
+}
+.link:hover {
+  text-decoration: none;
+  border-bottom-color: var(--feed-link);
+}
+
+.tombstone {
+  color: var(--feed-text-2);
+  font-style: italic;
+  opacity: 0.7;
+}
+.struck {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+.combo {
+  vertical-align: middle;
+  margin-left: 0.36em;
+  padding: 0 0.36em;
+  height: 1.12em;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.5em;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--feed-text-2);
+  font-family: var(--font-mono);
+  font-size: 0.74em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Event bands */
+.event {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5em;
+  padding: 6px 12px;
+  margin: 2px 0;
+  border-left: 3px solid var(--ev, var(--feed-link));
+  background: color-mix(in srgb, var(--ev, var(--feed-link)) 10%, transparent);
+  font-size: calc(12.5px * var(--feed-scale, 1));
+  line-height: 1.45;
+}
+.event.big {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ev, var(--feed-link)) 26%, transparent);
+  background: color-mix(in srgb, var(--ev, var(--feed-link)) 16%, transparent);
+}
+.evSub,
+.evResub,
+.evGiftsub,
+.evAnnouncement {
+  --ev: var(--feed-link);
+}
+.evRaid,
+.evHost {
+  --ev: var(--feed-warn);
+}
+.evFollow {
+  --ev: var(--feed-ok);
+}
+.evModeration {
+  --ev: var(--feed-danger);
+}
+.evSystem {
+  --ev: var(--feed-text-2);
+}
+.eventLabel {
+  flex: none;
+  font-size: 0.76em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ev, var(--feed-link));
+}
+.eventText {
+  min-width: 0;
+}
+.eventText b {
+  font-weight: 650;
+}
+.eventCount {
+  flex: none;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--ev, var(--feed-link));
+}

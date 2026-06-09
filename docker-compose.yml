@@ -1,0 +1,46 @@
+# MarketBubble: Next.js app + an always-on chat relay.
+#
+# The relay holds the live Twitch/Kick chat connection and tallies top chatters (persisted to the
+# relay-data volume); the app reads it server-side via RELAY_URL. The relay is the always-on piece
+# that a serverless host (Vercel) can't run — there, deploy this relay separately (any small VPS /
+# Fly / Render) and set RELAY_URL on the app to its public URL. With no relay, the leaderboard's
+# top-chatters falls back to sample data.
+#
+#   docker compose up --build
+
+services:
+  relay:
+    image: node:22-alpine
+    working_dir: /srv
+    command: node relay/server.mjs
+    environment:
+      PORT: "8787"
+      CHANNELS: "fazebanks" # Twitch login(s) to follow
+      CHATTERS_FILE: "/data/chatters.json" # lightweight persistence across restarts
+      # KICK_CHATROOM_ID: ""              # set to also tally Kick chat
+      # TWITCH_CLIENT_ID: ""              # optional: auto-pick the top live channel
+      # TWITCH_CLIENT_SECRET: ""
+    volumes:
+      - ./relay:/srv/relay:ro
+      - relay-data:/data
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+    environment:
+      RELAY_URL: "http://relay:8787" # server-side (internal docker network)
+      NEXT_PUBLIC_RELAY_URL: "http://localhost:8787" # browser-side (SSE feed)
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - relay
+    restart: unless-stopped
+
+volumes:
+  relay-data:

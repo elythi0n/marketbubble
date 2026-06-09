@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Bridge — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #141416;
+      --card:      #1b1b1f;
+      --surface:   #202024;
+      --border:    rgba(255,255,255,0.08);
+      --border-hi: rgba(255,255,255,0.13);
+      --border-lo: rgba(255,255,255,0.04);
+      --text:      #ededed;
+      --muted:     rgba(255,255,255,0.38);
+      --faint:     rgba(255,255,255,0.16);
+      --accent:    #e4e4e4;
+      --green:     #46c45a;
+      --red:       #ef6a61;
+      --mono: "SF Mono","Fira Code","Cascadia Code",Consolas,monospace;
+    }
+
+    html { background: var(--bg); min-height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px 80px;
+    }
+
+    /* ─── Page header ─────────────────────────────────────────── */
+    .page-hd {
+      width: 100%; max-width: 560px;
+      display: flex; align-items: center; gap: 14px;
+      padding: 36px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .hd-logo { width: 38px; height: 38px; color: var(--text); flex-shrink: 0; }
+    .hd-titles { flex: 1; }
+    .hd-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .hd-sub  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    .conn-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border-radius: 8px;
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      border: 1px solid var(--border); color: var(--faint);
+      transition: all 0.2s;
+    }
+    .conn-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .conn-pill.ok  { color: var(--green); border-color: rgba(70,196,90,0.22); background: rgba(70,196,90,0.06); }
+    .conn-pill.err { color: var(--red);   border-color: rgba(239,106,97,0.22); background: rgba(239,106,97,0.06); }
+
+    /* ─── Shell ───────────────────────────────────────────────── */
+    .shell { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* ─── Card ────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .card-hd {
+      padding: 11px 18px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--faint);
+    }
+    .card-bd { padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; }
+    .card-bd.compact { gap: 12px; padding: 16px 18px; }
+
+    /* ─── Status row ──────────────────────────────────────────── */
+    .status-row { display: flex; gap: 10px; }
+    .stat-block {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .stat-block .sb-label {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--faint); margin-bottom: 6px;
+    }
+    .stat-block .sb-val {
+      font-size: 13px; font-weight: 600;
+      font-family: var(--mono);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--muted);
+    }
+    .stat-block .sb-val.ok  { color: var(--green); }
+    .stat-block .sb-val.err { color: var(--red); }
+
+    /* ─── Field ───────────────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field-lbl {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .field-hint { font-size: 11px; color: var(--faint); line-height: 1.5; }
+    .field-input {
+      padding: 9px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      border-radius: 9px;
+      color: var(--text);
+      font-size: 12px; font-family: var(--mono);
+      outline: none; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-input:focus {
+      border-color: rgba(228,228,228,0.28);
+      box-shadow: 0 0 0 3px rgba(228,228,228,0.05);
+    }
+    .field-input::placeholder { color: rgba(255,255,255,0.14); }
+
+    hr { border: none; border-top: 1px solid var(--border-lo); }
+
+    code {
+      font-family: var(--mono); font-size: 10px;
+      background: rgba(255,255,255,0.08);
+      color: var(--accent); padding: 1px 5px; border-radius: 4px;
+    }
+
+    /* ─── Two-column grid ─────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ─── Interval picker ─────────────────────────────────────── */
+    .interval-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .iv-pill {
+      padding: 6px 14px; border-radius: 8px;
+      font-size: 11px; font-weight: 600;
+      border: 1px solid var(--border-hi);
+      background: transparent; color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .iv-pill:hover { color: var(--text); border-color: rgba(255,255,255,0.22); }
+    .iv-pill.active { background: var(--accent); color: #141416; border-color: transparent; }
+
+    /* ─── Streamer list ───────────────────────────────────────── */
+    .streamer-list { display: flex; flex-direction: column; gap: 6px; }
+    .streamer-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .streamer-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+    .streamer-handle { font-size: 12px; font-weight: 600; font-family: var(--mono); color: var(--text); }
+    .streamer-empty { font-size: 11px; color: var(--faint); padding: 10px 0; }
+    .streamer-source { font-size: 10px; color: var(--faint); margin-top: 4px; }
+
+    /* ─── Actions ─────────────────────────────────────────────── */
+    .actions { display: flex; align-items: center; gap: 8px; }
+    .btn {
+      padding: 8px 18px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn-primary { background: var(--accent); color: #141416; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border-hi);
+    }
+    .btn-ghost:hover { color: var(--text); opacity: 1; background: rgba(255,255,255,0.05); }
+
+    .toast {
+      font-size: 11px; font-weight: 600;
+      padding: 5px 10px; border-radius: 6px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+    .toast.ok  { background: rgba(70,196,90,0.1);  color: var(--green); }
+    .toast.err { background: rgba(239,106,97,0.1); color: var(--red); }
+
+    /* ─── Steps ───────────────────────────────────────────────── */
+    .steps { display: flex; flex-direction: column; }
+    .step {
+      display: flex; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border-lo);
+    }
+    .step:last-child  { border-bottom: none; padding-bottom: 0; }
+    .step:first-child { padding-top: 0; }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border-hi);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: var(--faint);
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-text { font-size: 12px; color: var(--muted); line-height: 1.55; }
+  </style>
+</head>
+<body>
+
+  <div class="page-hd">
+    <svg class="hd-logo" viewBox="0 0 400 400" fill="currentColor" aria-hidden="true">
+      <path d="m121 57.1l-9 0.3v96.9l0.3 0.5 10 0.8-0.8 3.1h-34.1l-0.3-3.1 8.3-0.8 1.8-17.2 0.5-76h-0.8l-33.6 99-3.4-0.3-31.2-96.3-0.6 87.6 11.2 4 0.2 3.1-27.2 0.3-0.3-3.4 9.3-1.6 1-4-0.2-92.6-9.8-0.8 0.2-4 10.3 1.4 17.2-1.4 26.2 78.6 27-79.4 13.8 1.6 14.5-0.8z"/>
+      <path d="m182.9 159.3c-11.1 1.6-18 2.4-20.1-9.8-3.4 6.3-8.4 11.1-16.9 11.1-8.7 0-19.3-2.9-19.3-16.9v-10.9c2.9-13.7 22.7-15.3 36.2-20.9v-8.2c0-8.5-3.9-16.7-10.8-16.7-3.2 0-6.9 0-9.5 1.6 0.5 3.2 0.2 17.5-6.7 17.5-4.2 0-6.3-1.9-6.3-8.5 0-8.7 13.2-13.5 22-13.5 11.1 0 23.8 0.6 23.8 20.7v34.4c0 11.9 1.3 18.2 8.2 16.1zm-20.1-42.3c-11.2 1.3-20.7 4.7-23.1 12.1v15.9c1.1 5 5.3 10.6 10.4 10.3 7.1-0.5 10-5.3 12.7-10.3z"/>
+      <path d="m186.1 85.2l21.2 0.3-0.3 13.4c4-7.6 9.5-14.5 17-14.5 14.2 0 14.8 22.7 3.7 22.7-8 0-4.3-12.4-6.1-17.9-8.5-1.4-15.4 15-15.4 23.8l0.3 41 9.5 1-0.2 3.7h-29.4l-0.3-3.7h8v-65.1l-7.7-0.2z"/>
+      <path d="m253.6 121.7l6.1-3.7 13.5-27.5-9.3-1.1 0.5-4.2 26 0.5v4.5h-8.8l-13.2 19.9 24.4 44.4 6 1.1v3.1h-26.7l-0.3-3.1 5.9-0.6-17.2-32.5-6.9-0.3v99.3 84.6h-122.8l-59.3 61.2v-60.9h-57.9l7.1-10.1h61.2l0.2 43.7 42.6-44.2h117v-245.3l-8.7 1.1-0.8-1.3 15.3-18.3 14.8 17.2-0.8 2.1-7.9-1z"/>
+      <path d="m352 116.9l-40.2-0.5c0.5 16.7 3.2 39.7 17.7 39.7 8.8 0 16.4-4.2 17.5-16.4l4 2.4c-2.7 10-8.5 18.5-21.5 18.5-22.2 0-31.5-12.2-31.5-40 0-18.2 8.5-36.2 26.5-36.2 19.9 0 28.6 9.5 29.9 32.5zm-13.8-5c-0.5-11.4-1-24.9-11.1-24.9-10.8 0-14.3 13-15.3 24.6z"/>
+      <path d="m361.6 73l12.7-5.8 0.5 18h12.7l-0.3 5h-11.9l-0.5 59.3c1.3 7.9 9.8 7.7 9.8-2.7h2.9c-0.3 17.2-23.3 18.3-25.9-0.2l0.2-56.4h-7.9l0.2-5h7.7l-0.2-10.6z"/>
+      <path d="m59.4 173.6c15.8 0 33.6 0.5 33.6 23.3 0 12.4-4.8 24-19.6 24 18.5 1.9 25.7 8.8 25.7 27.6 0 19.3-12 30.9-29.2 30.9h-44.9l-0.3-4.8 7.7-0.2c2.6-14.6 1.8-67.2-0.3-96.3l-7.1-0.8v-4zm-10.6 45.3l17.2 0.2c6.9 0 10-4.7 10-15.1 0-20.3-1-23.8-20.9-27.2l-6.6 2.6v39.5zm0 52.3l5.3 3.7 14.6-0.7c11.3-0.6 15.8-10.4 15.8-24.4 0-14.3-7.4-25.1-19-25.1h-16.7z"/>
+      <path d="m123.7 206.9c0.2 13.8-0.3 34.9 0.2 56.9 2.4 15.6 20.1 13.8 24.4-1.9l2.1-7.1-0.3-43.1-9.8-1.6 0.3-2.7 23-0.2c-1.3 22.2-0.5 47.3 0 62.2l1.3 5.5h5.9v4.8l-19.9 0.2-0.5-14c-5.8 17.2-39.4 24.4-40-5.8v-49l-7.4-1v-3.2z"/>
+      <path d="m191.9 216.2l-0.5-42.6-20.4-0.3v2.6l7.4 0.8-0.2 103.5h7.6l4.3-12.2c4 8.2 9.2 13.8 16.1 13.8 15.9 0 25.7-7.7 25.7-39.2 0-24.3-9.5-37.3-24.4-37-6.8 0.5-12.4 2.6-15.6 10.6zm13.5 60.6c-7.1 0.5-13.5-6.9-14.5-21.2-0.3-15.6-2.7-44.5 12.1-46.3 8.8 1.6 12.8 6.9 13.8 20.4 2.7 18 1.6 46.5-11.4 47.1z"/>
+      <path d="m253.6 215.1v1.1c3.2-6.1 8.2-10.6 16.1-10.6 15.4 0 24.9 9.5 25.2 36 0.2 24.6-8.8 40.2-26 40.5-7.1 0-11.3-3.2-15.3-9.8v1.3l-0.3-1.3-2.9-17.2 3.2-28.6zm12.2-5.8c-6.9 0.8-12.2 11.6-12.5 20.9v24.3c0.3 10.3 5.1 22.2 13.3 22.8 12.1 0.8 13.5-11.1 14.2-26.5 0.6-21.2-0.7-39.9-15-41.5z"/>
+      <path d="m295.9 173.6h22.5l-1.3 11.9 0.3 83.9 2.3 6.8 6.7-1.3v4.5h-31.3v-4.8l7.7 1.6 1.3-7.1-0.2-92.6h-8z"/>
+      <path d="m381.1 237.1h-40.5c-0.2 15.3 2.7 39.7 17.2 39.7 8.2 0.2 15.4-3.5 17.8-18l3.9 1.3c-1.8 9.8-8.2 22-22.7 22-19.3 0-29.9-10.9-30.4-40.5 0-16.2 6.6-37.1 30.1-37.3 14.8 0 24.4 12.1 25.4 32.8zm-14-4.3v-14.5l-7.9-10.3h-5.1c-9.8 2.1-13.5 13.2-13.7 25.6l16.1 0.6z"/>
+    </svg>
+    <div class="hd-titles">
+      <div class="hd-name">Chat Bridge</div>
+      <div class="hd-sub">Extension settings</div>
+    </div>
+    <div class="conn-pill" id="connPill">
+      <span class="dot"></span>
+      <span id="connLabel">not configured</span>
+    </div>
+  </div>
+
+  <div class="shell">
+
+    <!-- Status overview -->
+    <div class="status-row">
+      <div class="stat-block">
+        <div class="sb-label">Server</div>
+        <div class="sb-val" id="sbServer">—</div>
+      </div>
+      <div class="stat-block">
+        <div class="sb-label">Monitored</div>
+        <div class="sb-val" id="sbStreamers">—</div>
+      </div>
+      <div class="stat-block">
+        <div class="sb-label">Flush rate</div>
+        <div class="sb-val" id="sbFlush">—</div>
+      </div>
+    </div>
+
+    <!-- API Configuration -->
+    <div class="card">
+      <div class="card-hd">API Configuration</div>
+      <div class="card-bd">
+        <div class="field">
+          <div class="field-lbl">Dashboard URL</div>
+          <div class="field-hint">Root URL of your deployed dashboard — no trailing slash.</div>
+          <input class="field-input" id="apiUrl" type="url"
+            placeholder="https://marketbubble.com"
+            autocomplete="off" spellcheck="false" />
+        </div>
+        <hr />
+        <div class="field">
+          <div class="field-lbl">API Key</div>
+          <div class="field-hint">Must match the <code>X_CHAT_API_KEY</code> environment variable on your server.</div>
+          <input class="field-input" id="apiKey" type="password"
+            placeholder="sk_live_…"
+            autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btnSave">Save & Verify</button>
+          <button class="btn btn-ghost"   id="btnClear">Clear</button>
+          <span class="toast" id="toast"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capture Settings + Monitored Streamers -->
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-hd">Capture Settings</div>
+        <div class="card-bd compact">
+          <div class="field">
+            <div class="field-lbl">Flush interval</div>
+            <div class="field-hint">How often batched messages are sent to the server.</div>
+            <div class="interval-pills" id="ivPills">
+              <button class="iv-pill" data-ms="500">500 ms</button>
+              <button class="iv-pill" data-ms="1000">1 s</button>
+              <button class="iv-pill" data-ms="2000">2 s</button>
+              <button class="iv-pill" data-ms="5000">5 s</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">Monitored Streamers</div>
+        <div class="card-bd compact">
+          <div class="streamer-list" id="streamerList">
+            <div class="streamer-empty">Not configured yet.</div>
+          </div>
+          <div class="streamer-source">Pulled from <code>/x.json</code> on save</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- How it works -->
+    <div class="card">
+      <div class="card-hd">How it works</div>
+      <div class="card-bd compact">
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">On save, the extension fetches <code>/x.json</code> from your server to build a streamer whitelist — only matching tabs will activate.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Open an X livestream matching a whitelisted handle. Chat is captured using WebSocket frames, <code>fetch()</code> responses, and DOM mutation — whichever fires first.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Messages are batched at the configured interval and pushed to <code>/api/x/chat</code> with the API key in the request header.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">The dashboard merges X messages into the unified chat feed alongside Twitch and Kick in real time.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-text">The popup shows live message counts and warns you if X's chat format changes unexpectedly.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

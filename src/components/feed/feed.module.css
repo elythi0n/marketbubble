@@ -1,0 +1,111 @@
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  /* Disable browser scroll-anchoring so the viewport never jumps when new
+     messages extend the list below the current reading position. */
+  overflow-anchor: none;
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+}
+
+.item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--feed-text-2);
+}
+
+.emptyIcon {
+  width: 40px;
+  height: 40px;
+  color: rgb(255 255 255 / 0.10);
+  flex: none;
+}
+
+.emptyLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.32);
+  letter-spacing: 0.01em;
+}
+
+.emptySubtext {
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 0.18);
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+.pill {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: #2c2c33;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow:
+    0 8px 24px -6px rgb(0 0 0 / 0.75),
+    0 0 0 1px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+  transition:
+    transform 0.14s ease,
+    background-color 0.14s ease,
+    border-color 0.14s ease;
+}
+.pill:hover {
+  background: #363640;
+  border-color: rgb(255 255 255 / 0.26);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.pillArrow {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
+/* Read helper — fade new rows in as they trickle through the throttle queue */
+@keyframes feedItemIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.readHelper .item {
+  animation: feedItemIn 0.16s ease-out both;
+}
