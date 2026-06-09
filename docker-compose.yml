@@ -1,46 +1,93 @@
-# MarketBubble: Next.js app + an always-on chat relay.
+# MarketBubble production stack: Next.js app + chat relay.
 #
-# The relay holds the live Twitch/Kick chat connection and tallies top chatters (persisted to the
-# relay-data volume); the app reads it server-side via RELAY_URL. The relay is the always-on piece
-# that a serverless host (Vercel) can't run — there, deploy this relay separately (any small VPS /
-# Fly / Render) and set RELAY_URL on the app to its public URL. With no relay, the leaderboard's
-# top-chatters falls back to sample data.
+# Quick start:
+#   cp .env.example .env    # fill in values (especially NEXT_PUBLIC_SITE_URL)
+#   docker compose up --build -d
 #
-#   docker compose up --build
+# The app listens on APP_PORT (default 3000). Put Caddy/nginx in front for HTTPS.
+# The relay is internal-only (not published to the host); the app reaches it at http://relay:8787.
+#
+# Relay is not published to the host. For local relay debugging, add to docker-compose.override.yml:
+#   services.relay.ports: ["8787:8787"]
+
+name: marketbubble
 
 services:
   relay:
     image: node:22-alpine
     working_dir: /srv
     command: node relay/server.mjs
+    restart: unless-stopped
+    expose:
+      - "8787"
     environment:
       PORT: "8787"
-      CHANNELS: "fazebanks" # Twitch login(s) to follow
-      CHATTERS_FILE: "/data/chatters.json" # lightweight persistence across restarts
-      # KICK_CHATROOM_ID: ""              # set to also tally Kick chat
-      # TWITCH_CLIENT_ID: ""              # optional: auto-pick the top live channel
-      # TWITCH_CLIENT_SECRET: ""
+      ALLOW_ORIGIN: ${RELAY_ALLOW_ORIGIN:-${NEXT_PUBLIC_SITE_URL:-*}}
+      CHANNELS: ${RELAY_CHANNELS:-fazebanks}
+      CHATTERS_FILE: /data/chatters.json
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      KICK_CHATROOM_ID: ${RELAY_KICK_CHATROOM_ID:-}
+      KICK_CHANNEL: ${RELAY_KICK_CHANNEL:-}
     volumes:
       - ./relay:/srv/relay:ro
       - relay-data:/data
-    ports:
-      - "8787:8787"
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - internal
 
   app:
     build:
       context: .
+      dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
-    environment:
-      RELAY_URL: "http://relay:8787" # server-side (internal docker network)
-      NEXT_PUBLIC_RELAY_URL: "http://localhost:8787" # browser-side (SSE feed)
-      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
-    ports:
-      - "3000:3000"
-    depends_on:
-      - relay
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_DEMO_DISABLED: ${NEXT_PUBLIC_DEMO_DISABLED:-}
     restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      # Public site URL (also baked into the client bundle at build time via NEXT_PUBLIC_SITE_URL).
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      # Server-side relay (Docker internal DNS). Do not point this at localhost from inside the container.
+      RELAY_URL: http://relay:8787
+      # Twitch — live status, viewer counts, badges, clips
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      # X extension POST auth + optional server bridge extras
+      X_CHAT_API_KEY: ${X_CHAT_API_KEY:-}
+      X_BROADCAST_SOURCES: ${X_BROADCAST_SOURCES:-}
+      X_WEB_BEARER: ${X_WEB_BEARER:-}
+      X_GQL_USER_BY_SCREEN_NAME: ${X_GQL_USER_BY_SCREEN_NAME:-}
+      X_GQL_USER_TWEETS: ${X_GQL_USER_TWEETS:-}
+      # Optional roster override (JSON string); otherwise streamers.json is used
+      STREAMERS_JSON: ${STREAMERS_JSON:-}
+      X_MENTION_QUERIES: ${X_MENTION_QUERIES:-}
+    volumes:
+      # Edit on the host without rebuilding the image
+      - ./streamers.json:/app/streamers.json:ro
+      - ./public/x.json:/app/public/x.json:ro
+    depends_on:
+      relay:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
 
 volumes:
   relay-data:
+
+networks:
+  internal:
+    driver: bridge

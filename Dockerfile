@@ -1,8 +1,6 @@
 # Production image for Next.js standalone output.
-# From repository root:
-#   docker compose -f app/homepage/docker-compose.yml build
-# From this directory:
-#   docker build -t homepage-minimal .
+#   docker compose up --build -d
+#   docker build --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.com -t marketbubble .
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -15,7 +13,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_DEMO_DISABLED=
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+ENV NEXT_PUBLIC_DEMO_DISABLED=${NEXT_PUBLIC_DEMO_DISABLED}
 RUN npm run build
 
 FROM node:22-alpine AS runner

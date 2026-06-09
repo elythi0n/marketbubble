@@ -40,13 +40,15 @@ A live stream dashboard built for finance and markets content. It combines a uni
 |---|---|---|---|---|
 | Twitch | Anonymous IRC WebSocket | Twitch player iframe | GQL + Helix API | GQL + Helix API |
 | Kick | Anonymous Pusher WebSocket | Kick player iframe | Page scraping | Page scraping |
-| X (live broadcasts) | Via Chrome extension | None | None | None |
+| X (live broadcasts) | Server broadcast bridge + optional Chrome extension | Link to x.com | Guest GraphQL + broadcasts/show | broadcasts/show + chat occupancy |
 
-X has no public chat API. The companion extension runs in your browser and forwards messages to the dashboard.
+X has no official third-party chat API. The server watches each streamer's `xBroadcasts` list (handles or broadcast links), discovers live broadcasts via guest GraphQL, and reads chat over the same WebSocket the X web player uses. Live/offline comes from `broadcasts/show` (RUNNING state); viewer count from `total_watching` and live occupancy frames on the chat socket. No extension required for plain live broadcasts.
+
+The optional Chrome extension still works and complements the bridge: it forwards chat from your browser (including Spaces) into the same feed. Both paths de-duplicate by message id.
 
 ## Chrome extension
 
-The extension captures X livestream chat from your browser and forwards it to the dashboard in real time.
+Optional. Use it when you want chat from Spaces or prefer browser-side capture. Plain X live broadcasts are already covered by the server bridge when `xBroadcasts` is configured.
 
 **How it works**
 
@@ -97,10 +99,13 @@ Create `streamers.json` at the project root, or set the `STREAMERS_JSON` environ
     "name": "Your Name",
     "handles": { "twitch": "yourhandle", "kick": "yourhandle", "x": "YourHandle" },
     "platforms": ["twitch", "kick", "x"],
+    "xBroadcasts": ["YourHandle", "MarketBubble"],
     "schedule": { "label": "FRIDAYS 3PM ET", "weekday": 5, "hour": 15 }
   }
 ]
 ```
+
+`handles.x` is the creator's profile handle (avatar, social links). `xBroadcasts` is what the server watches for live chat: each entry is an `@handle` or a broadcast link. List a shared show account (e.g. `MarketBubble`) alongside the creator's own handle; duplicates across streamers are de-duplicated automatically.
 
 ### Environment variables
 
@@ -108,7 +113,8 @@ Create `streamers.json` at the project root, or set the `STREAMERS_JSON` environ
 |---|---|---|
 | `TWITCH_CLIENT_ID` | Recommended | Twitch Helix API for viewer counts and badges |
 | `TWITCH_CLIENT_SECRET` | Recommended | Twitch app access token |
-| `X_CHAT_API_KEY` | For X chat | Authenticates the Chrome extension |
+| `X_CHAT_API_KEY` | For X chat extension | Authenticates the Chrome extension |
+| `X_BROADCAST_SOURCES` | Optional | Extra `@handles` or broadcast links for the server bridge (additive to `xBroadcasts`) |
 | `RELAY_URL` | Optional | Relay server for persistent leaderboard chatters |
 | `X_MENTION_QUERIES` | Optional | Comma-separated search terms for the X mentions pane |
 | `STREAMERS_JSON` | Optional | JSON channel roster as an alternative to streamers.json |
@@ -117,7 +123,7 @@ Without Twitch credentials the app falls back to the public anonymous GQL endpoi
 
 ## Relay (optional)
 
-Live chat connects directly from each visitor's browser — no relay needed for chat. The relay's only role is providing a persistent top-chatters leaderboard across sessions.
+Live chat connects directly from each visitor's browser. No relay needed for chat. The relay's only role is providing a persistent top-chatters leaderboard across sessions.
 
 Without a relay the leaderboard falls back to message counts from the current X chat session buffer, which resets on server restart.
 
