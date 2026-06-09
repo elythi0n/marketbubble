@@ -214,7 +214,7 @@ export function ChatPane() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search chat"
               aria-label="Search chat"
-              className="min-w-0 flex-1 bg-transparent text-[0.82rem] text-foreground outline-none placeholder:text-muted-foreground/45"
+              className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground/45 md:text-[0.82rem]"
             />
             {query ? (
               <button

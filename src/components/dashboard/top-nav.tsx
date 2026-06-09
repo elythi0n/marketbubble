@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Clapperboard, MonitorPlay, Radio } from "lucide-react";
 
 import { DEMO_ENABLED, useDemoMode } from "@/lib/demo-mode-context";
+import { walburn } from "@/lib/fonts";
 import { useStageMode } from "@/lib/stage-mode-context";
 import { NAV_SECTIONS } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -45,13 +46,15 @@ export function TopNav() {
               href={section.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "font-brand-wordmark rounded-md px-3.5 py-1.5 text-[0.82rem] uppercase tracking-[0.06em] transition-colors",
+                "rounded-md px-3.5 py-1.5 transition-colors",
                 active
                   ? "bg-white/[0.07] text-foreground"
                   : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
               )}
             >
-              {section.label}
+              <span className={cn(walburn.className, "text-sm uppercase tracking-[0.06em]")}>
+                {section.label}
+              </span>
             </Link>
           );
         })}

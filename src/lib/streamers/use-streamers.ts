@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { StreamStatusPayload } from "@/app/api/twitch/stream/route";
-import type { KickStreamPayload } from "@/app/api/kick/stream/route";
 import type { Platform } from "@/lib/feed/types";
+import { fetchKickStreamStatus } from "./kick-status";
 import { getHandle, type Streamer } from "./mock";
 
 const POLL_MS = 60_000;
@@ -56,7 +56,7 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
 
     if (s.platforms.includes("twitch")) {
       promises.push(
-        fetch(`/api/twitch/stream?login=${encodeURIComponent(getHandle(s, "twitch"))}`)
+        fetch(`/api/twitch/stream?login=${encodeURIComponent(getHandle(s, "twitch"))}`, { cache: "no-store" })
           .then((r) => r.ok ? r.json() as Promise<StreamStatusPayload> : null)
           .then((d) => {
             if (d?.live !== null && d?.live !== undefined) {
@@ -73,10 +73,9 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
 
     if (s.platforms.includes("kick")) {
       promises.push(
-        fetch(`/api/kick/stream?slug=${encodeURIComponent(getHandle(s, "kick"))}`)
-          .then((r) => r.ok ? r.json() as Promise<KickStreamPayload> : null)
+        fetchKickStreamStatus(getHandle(s, "kick"))
           .then((d) => {
-            if (d?.live !== null && d?.live !== undefined) {
+            if (d) {
               kickLive = !!d.live;
               kickViewers = d.viewerCount ?? 0;
               kickTitle = d.title ?? "";
@@ -114,18 +113,21 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
 
   // Poll all streamers.
   async function pollAll() {
-    const key = rosterRef.current.map((s) => s.id).join(",");
-    const results = await Promise.allSettled(rosterRef.current.map(pollOne));
+    const roster = rosterRef.current;
+    const key = roster.map((s) => s.id).join(",");
+    const results = await Promise.allSettled(roster.map(pollOne));
     const next: Record<string, MergedStatus> = {};
-    for (const r of results) {
+    roster.forEach((s, i) => {
+      const r = results[i];
       if (r.status === "fulfilled" && r.value) {
         const [id, status] = r.value;
         next[id] = status;
+      } else {
+        // Don't keep stale live/viewers when a poll fails or APIs are unreachable.
+        next[s.id] = { live: false, viewers: 0, title: s.title ?? "" };
       }
-    }
-    if (Object.keys(next).length > 0) {
-      setStatuses((prev) => ({ ...prev, ...next }));
-    }
+    });
+    setStatuses(next);
     setPolledKey(key);
   }
 

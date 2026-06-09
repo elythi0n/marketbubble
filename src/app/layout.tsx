@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Schibsted_Grotesk } from "next/font/google";
 
 import "./globals.css";
+import { walburn } from "@/lib/fonts";
 import { NewsDrawer } from "@/components/markets/news-drawer";
 import { StockDrawer } from "@/components/markets/stock-drawer";
 import { Preloader } from "@/components/preloader";
@@ -46,10 +47,21 @@ export const metadata: Metadata = {
     description: siteDescription,
   },
   robots: { index: true, follow: true },
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#141416",
+  width: "device-width",
+  initialScale: 1,
 };
 
 function JsonLd() {
@@ -81,7 +93,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${sans.variable} ${geistMono.variable}`}
+      className={`dark ${sans.variable} ${geistMono.variable} ${walburn.variable}`}
     >
       <body className="h-full font-sans antialiased">
         <JsonLd />

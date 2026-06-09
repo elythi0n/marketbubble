@@ -18,6 +18,12 @@ export async function GET() {
     return NextResponse.json(normalised);
   } catch (err) {
     console.error("[/api/streamers]", err);
-    return NextResponse.json(MOCK_STREAMERS);
+    const normalised = MOCK_STREAMERS.map((s) => ({
+      ...s,
+      live: false,
+      viewers: 0,
+      title: s.title ?? "",
+    }));
+    return NextResponse.json(normalised);
   }
 }

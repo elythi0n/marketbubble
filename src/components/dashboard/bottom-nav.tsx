@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LineChart, Radio, Trophy, Users } from "lucide-react";
 import type { ComponentType } from "react";
 
+import { walburn } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { MarketBubbleLogo } from "./market-bubble-logo";
 
@@ -20,12 +21,12 @@ function NavLink({ href, label, icon: Icon, active }: { href: string; label: str
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[0.62rem] font-medium transition-colors",
+        "flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors",
         active ? "text-foreground" : "text-muted-foreground",
       )}
     >
       <Icon className="size-5" strokeWidth={active ? 2.4 : 2} />
-      {label}
+      <span className={cn(walburn.className, "text-[0.62rem] uppercase tracking-[0.04em]")}>{label}</span>
     </Link>
   );
 }

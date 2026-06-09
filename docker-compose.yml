@@ -1,22 +1,30 @@
 # MarketBubble production stack: Next.js app + chat relay.
 #
-# Quick start:
-#   cp .env.example .env    # fill in values (especially NEXT_PUBLIC_SITE_URL)
+# Local dev (build from source):
+#   cp .env.example .env
 #   docker compose up --build -d
 #
-# The app listens on APP_PORT (default 3000). Put Caddy/nginx in front for HTTPS.
-# The relay is internal-only (not published to the host); the app reaches it at http://relay:8787.
+# GHCR deploy (Coolify — pull pre-built images, no host file mounts):
+#   docker build --build-arg NEXT_PUBLIC_SITE_URL=https://your-domain.com \
+#     -t ghcr.io/elythi0n/marketbubble:latest .
+#   docker build -f relay/Dockerfile -t ghcr.io/elythi0n/marketbubble-relay:latest .
+#   docker push ghcr.io/elythi0n/marketbubble:latest
+#   docker push ghcr.io/elythi0n/marketbubble-relay:latest
 #
-# Relay is not published to the host. For local relay debugging, add to docker-compose.override.yml:
-#   services.relay.ports: ["8787:8787"]
+# The app listens on APP_PORT (default 3000). Put Caddy/nginx in front for HTTPS.
+# The relay is internal-only; the app reaches it at http://relay:8787.
+#
+# Optional local overrides (live-edit streamers without rebuild):
+#   docker-compose.override.yml with streamers.json / relay volume mounts.
 
 name: marketbubble
 
 services:
   relay:
-    image: node:22-alpine
-    working_dir: /srv
-    command: node relay/server.mjs
+    image: ghcr.io/elythi0n/marketbubble-relay:latest
+    build:
+      context: .
+      dockerfile: relay/Dockerfile
     restart: unless-stopped
     expose:
       - "8787"
@@ -30,7 +38,6 @@ services:
       KICK_CHATROOM_ID: ${RELAY_KICK_CHATROOM_ID:-}
       KICK_CHANNEL: ${RELAY_KICK_CHANNEL:-}
     volumes:
-      - ./relay:/srv/relay:ro
       - relay-data:/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health"]
@@ -42,6 +49,7 @@ services:
       - internal
 
   app:
+    image: ghcr.io/elythi0n/marketbubble:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -53,26 +61,17 @@ services:
       - "${APP_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
-      # Public site URL (also baked into the client bundle at build time via NEXT_PUBLIC_SITE_URL).
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
-      # Server-side relay (Docker internal DNS). Do not point this at localhost from inside the container.
       RELAY_URL: http://relay:8787
-      # Twitch — live status, viewer counts, badges, clips
       TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
       TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
-      # X extension POST auth + optional server bridge extras
       X_CHAT_API_KEY: ${X_CHAT_API_KEY:-}
       X_BROADCAST_SOURCES: ${X_BROADCAST_SOURCES:-}
       X_WEB_BEARER: ${X_WEB_BEARER:-}
       X_GQL_USER_BY_SCREEN_NAME: ${X_GQL_USER_BY_SCREEN_NAME:-}
       X_GQL_USER_TWEETS: ${X_GQL_USER_TWEETS:-}
-      # Optional roster override (JSON string); otherwise streamers.json is used
       STREAMERS_JSON: ${STREAMERS_JSON:-}
       X_MENTION_QUERIES: ${X_MENTION_QUERIES:-}
-    volumes:
-      # Edit on the host without rebuilding the image
-      - ./streamers.json:/app/streamers.json:ro
-      - ./public/x.json:/app/public/x.json:ro
     depends_on:
       relay:
         condition: service_healthy

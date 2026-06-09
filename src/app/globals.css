@@ -2,15 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Brand display face for the wordmark (self-hosted from the MarketBubble brand kit). */
-@font-face {
-  font-family: "Walburn";
-  src: url("/fonts/walburn-regular.woff2") format("woff2");
-  font-display: swap;
-  font-style: normal;
-  font-weight: 400;
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -201,6 +192,20 @@
   html::-webkit-scrollbar-corner {
     background: var(--marketing-scrollbar-track);
   }
+
+  /* iOS Safari auto-zooms focused inputs below 16px — keep form controls at least that size on mobile. */
+  @media (max-width: 767px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+}
+
+/* Outside @layer so this beats Tailwind's layered font-sans on links and headings. */
+.font-brand-wordmark {
+  font-family: var(--font-walburn), ui-sans-serif, sans-serif;
 }
 
 @layer utilities {
@@ -218,11 +223,6 @@
   .marketing-shell-root {
     height: 100%;
     background-color: var(--graphite-floor);
-  }
-
-  /** MarketBubble brand wordmark (Walburn display face). */
-  .font-brand-wordmark {
-    font-family: "Walburn", var(--font-sans-brand), "Inter", sans-serif;
   }
 
   /*
