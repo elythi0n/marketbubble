@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { useControl } from "@/lib/control/client";
 import { useDemoMode } from "@/lib/demo-mode-context";
 import { DEMO_STREAMERS } from "./demo";
 import { MOCK_STREAMERS, type Streamer } from "./mock";
@@ -12,6 +13,8 @@ const MERGE_KEY = "mb-merge-all";
 interface ChannelContextValue {
   /** Real-time enriched roster (live status + viewer count from Twitch). */
   streamers: Streamer[];
+  /** True once a full-roster live-status poll has completed (live flags are real, not defaults). */
+  polled: boolean;
   selectedId: string;
   select: (id: string) => void;
   /**
@@ -52,7 +55,13 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
       .catch(() => { /* keep MOCK_STREAMERS */ });
   }, []);
 
-  const baseRoster = isDemo ? DEMO_STREAMERS : liveRoster;
+  // Live roster override from /admin (pushed over the control stream); demo ignores it.
+  const { roster: rosterOverride } = useControl();
+  const baseRoster = isDemo
+    ? DEMO_STREAMERS
+    : rosterOverride && rosterOverride.length > 0
+      ? (rosterOverride as unknown as Streamer[])
+      : liveRoster;
   const { streamers, polled } = useStreamers(baseRoster, selectedId);
 
   // When the active roster swaps (toggling demo, or the live roster loading), keep the selection
@@ -81,7 +90,7 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
   }, [polled, streamers, selectedId]);
 
   return (
-    <ChannelContext.Provider value={{ streamers, selectedId, select: setSelectedId, mergeAll, setMergeAll }}>
+    <ChannelContext.Provider value={{ streamers, polled, selectedId, select: setSelectedId, mergeAll, setMergeAll }}>
       {children}
     </ChannelContext.Provider>
   );

@@ -35,6 +35,16 @@ export const DEMO_STREAMERS: Streamer[] = [
     title: "Variety",
   },
   {
+    // Twitch only — the "jynxzi" Kick account is an unverified squatter, not him.
+    id: "jynxzi",
+    name: "Jynxzi",
+    handles: { twitch: "jynxzi" },
+    platforms: ["twitch"],
+    live: false,
+    viewers: 0,
+    title: "Rainbow Six Siege",
+  },
+  {
     id: "odablock",
     name: "Odablock",
     handles: { kick: "odablock" },

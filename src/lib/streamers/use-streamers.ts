@@ -15,6 +15,8 @@ interface MergedStatus {
   viewers: number;
   title: string;
   livePlatform?: Platform;
+  livePlatforms?: Platform[];
+  viewersByPlatform?: Partial<Record<Platform, number>>;
   thumbnail?: string;
 }
 
@@ -108,7 +110,18 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
     const title = livePlatform === "kick" ? kickTitle : twitchTitle;
     const thumbnail = livePlatform === "kick" ? kickThumb : twitchThumb;
 
-    return [s.id, { live, viewers, title, livePlatform, thumbnail }];
+    const livePlatforms: Platform[] = [];
+    const viewersByPlatform: Partial<Record<Platform, number>> = {};
+    if (twitchLive) {
+      livePlatforms.push("twitch");
+      viewersByPlatform.twitch = twitchViewers;
+    }
+    if (kickLive) {
+      livePlatforms.push("kick");
+      viewersByPlatform.kick = kickViewers;
+    }
+
+    return [s.id, { live, viewers, title, livePlatform, livePlatforms, viewersByPlatform, thumbnail }];
   }
 
   // Poll all streamers.
@@ -168,6 +181,8 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
       viewers: st.viewers,
       title: st.title || s.title,
       livePlatform: st.livePlatform,
+      livePlatforms: st.livePlatforms,
+      viewersByPlatform: st.viewersByPlatform,
       thumbnail: st.thumbnail,
     };
   });

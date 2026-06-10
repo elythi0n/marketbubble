@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ExternalLink, MonitorPlay, Play } from "lucide-react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import type { Platform } from "@/lib/feed/types";
+import { cn } from "@/lib/utils";
 import { ClipsDialog, ClipSourceIcon } from "./clips-dialog";
 import { useStockDrawer } from "@/lib/markets/stock-drawer-context";
 import { useTickers } from "@/lib/markets/tickers-context";
@@ -151,8 +153,8 @@ function isTwitchEmbeddableHost(host: string): boolean {
   return true;
 }
 
-export function StreamEmbed({ channel }: { channel: Streamer }) {
-  const platform = channel.livePlatform ?? primaryPlatform(channel);
+export function StreamEmbed({ channel, platform: platformProp }: { channel: Streamer; platform?: Platform }) {
+  const platform = platformProp ?? channel.livePlatform ?? primaryPlatform(channel);
   // Resolved on the client only; Twitch needs the real embedding host as `parent`.
   const [host, setHost] = useState<string | null>(null);
   useEffect(() => {
@@ -221,12 +223,21 @@ export function StreamPane() {
   const offline = !channel.live;
   const target = channel.schedule ? nextOccurrence(channel.schedule, new Date()) : null;
 
+  // Manual player choice when simulcasting (e.g. Kick's player is region-blocked for some viewers).
+  const [playerPlatform, setPlayerPlatform] = useState<Platform | null>(null);
+  useEffect(() => setPlayerPlatform(null), [channel.id]);
+  const livePlatforms = channel.livePlatforms ?? [];
+  const activePlatform =
+    playerPlatform && livePlatforms.includes(playerPlatform)
+      ? playerPlatform
+      : (channel.livePlatform ?? primaryPlatform(channel));
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[#0c0c0e]">
       <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-10%,rgba(255,255,255,0.05),transparent_60%)]" />
       {!offline ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.05]">
-          <PlatformGlyph platform={channel.livePlatform ?? primaryPlatform(channel)} className="size-64" tinted={false} />
+          <PlatformGlyph platform={activePlatform} className="size-64" tinted={false} />
         </div>
       ) : null}
 
@@ -250,6 +261,24 @@ export function StreamPane() {
           </span>
         ) : (
           <>
+            {livePlatforms.length > 1 ? (
+              <span className="flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.04] p-0.5" title="Choose which platform's player to watch">
+                {livePlatforms.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPlayerPlatform(p)}
+                    aria-label={`Watch on ${p}`}
+                    className={cn(
+                      "flex size-6 items-center justify-center rounded transition-all",
+                      p === activePlatform ? "bg-white/[0.1]" : "opacity-45 hover:opacity-100",
+                    )}
+                  >
+                    <PlatformGlyph platform={p} className="size-3.5" />
+                  </button>
+                ))}
+              </span>
+            ) : null}
             <span className="flex items-center gap-1.5 rounded-md bg-[#46c45a]/15 px-2 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-[#46c45a]">
               <span className="size-1.5 rounded-full bg-[#46c45a]" />
               Live
@@ -271,7 +300,7 @@ export function StreamPane() {
         </div>
       ) : (
         /* Embedded platform player for the selected channel; real streams in both demo and live. */
-        <StreamEmbed channel={channel} />
+        <StreamEmbed channel={channel} platform={activePlatform} />
       )}
     </div>
   );

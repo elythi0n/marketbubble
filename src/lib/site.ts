@@ -9,6 +9,7 @@ export const NAV_SECTIONS = [
   { label: "Stream", href: "/" },
   { label: "Markets", href: "/markets" },
   { label: "Leaderboard", href: "/leaderboard" },
+  { label: "About", href: "/about" },
 ] as const;
 
 export function getSiteUrl(): string {

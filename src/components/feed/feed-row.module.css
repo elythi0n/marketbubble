@@ -93,6 +93,23 @@
   background: color-mix(in srgb, var(--feed-link) 18%, transparent);
 }
 
+/* The channel's broadcaster chatting — matches the HOST badge color, fading toward the body. */
+.broadcaster {
+  border-left-color: var(--feed-danger);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--feed-danger) 10%, transparent),
+    color-mix(in srgb, var(--feed-danger) 3%, transparent) 70%
+  );
+}
+.broadcaster:hover {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--feed-danger) 14%, transparent),
+    color-mix(in srgb, var(--feed-danger) 5%, transparent) 70%
+  );
+}
+
 .glyph {
   display: inline-block;
   width: 1em;
@@ -161,6 +178,13 @@
   font-weight: 650;
   white-space: nowrap;
   cursor: help;
+}
+.authorClickable {
+  cursor: pointer;
+}
+.authorClickable:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .emote {

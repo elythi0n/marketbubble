@@ -44,6 +44,14 @@ export function getMessages(): XChatMessage[] {
   return [...buffer];
 }
 
+/** Empties the buffer (admin action — e.g. before a fresh show session). */
+export function clearMessages(): number {
+  const n = buffer.length;
+  buffer.length = 0;
+  seen.clear();
+  return n;
+}
+
 export function getTopChatters(limit = 15): Array<{ name: string; platform: "x"; count: number }> {
   const counts = new Map<string, number>();
   for (const msg of buffer) {

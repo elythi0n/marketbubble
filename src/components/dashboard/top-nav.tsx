@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clapperboard, MonitorPlay, Radio } from "lucide-react";
 
+import { useFlag } from "@/lib/control/client";
 import { DEMO_ENABLED, useDemoMode } from "@/lib/demo-mode-context";
 import { walburn } from "@/lib/fonts";
 import { useStageMode } from "@/lib/stage-mode-context";
@@ -16,6 +17,7 @@ export function TopNav() {
   const pathname = usePathname();
   const { isDemo, toggle } = useDemoMode();
   const { setStage } = useStageMode();
+  const demoOn = useFlag("demo");
 
   return (
     <header className="relative z-30 grid h-14 flex-none grid-cols-[1fr_auto_1fr] items-center border-b border-white/[0.07] bg-[#141416] px-4">
@@ -60,11 +62,12 @@ export function TopNav() {
         })}
       </nav>
 
-      {/* Right: mode controls + Polymarket */}
+      {/* Right: mode controls + Polymarket. Live/Demo and Stage act on the dashboard, so they only
+          show on the Stream page. */}
       <TooltipProvider>
       <div className="flex items-center justify-self-end gap-2.5">
         {/* Live / Demo segmented control (hidden when demo is disabled for this build) */}
-        {DEMO_ENABLED ? (
+        {DEMO_ENABLED && demoOn && pathname === "/" ? (
         <div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.02] p-0.5">
           <Tooltip>
             <TooltipTrigger
@@ -108,21 +111,23 @@ export function TopNav() {
         ) : null}
 
         {/* Stage: broadcast overlay (OBS-ready) — icon-only, before Polymarket */}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <button
-                type="button"
-                onClick={() => setStage(true)}
-                aria-label="Open Stage"
-                className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <MonitorPlay className="size-5" />
-              </button>
-            }
-          />
-          <TooltipContent>Open the broadcast overlay (chat, ticker, identity over the stream)</TooltipContent>
-        </Tooltip>
+        {pathname === "/" ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={() => setStage(true)}
+                  aria-label="Open Stage"
+                  className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <MonitorPlay className="size-5" />
+                </button>
+              }
+            />
+            <TooltipContent>Open the broadcast overlay (chat, ticker, identity over the stream)</TooltipContent>
+          </Tooltip>
+        ) : null}
 
         <a
           href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"

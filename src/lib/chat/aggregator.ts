@@ -30,6 +30,12 @@ export class ChatAggregator {
     this.providers.push(provider);
   }
 
+  /** Pre-loads persisted history (before start); live messages append after it. */
+  seed(messages: readonly FeedMessage[]): void {
+    if (messages.length === 0) return;
+    this.messages = messages.slice(-this.cap);
+  }
+
   start(): void {
     this.handles = this.providers.map((provider) =>
       provider.start({
@@ -66,8 +72,16 @@ export class ChatAggregator {
 
   private enqueue(msg: FeedMessage): void {
     this.pending.push(msg);
+    // Hidden tabs throttle timers to ~1/min while WebSockets keep delivering; without a cap the
+    // pending buffer can balloon during a long background stint. Older overflow is what the 500-cap
+    // buffer would discard at the next flush anyway.
+    if (this.pending.length > 4 * this.cap) {
+      this.pending.splice(0, this.pending.length - 2 * this.cap);
+    }
     if (this.flushTimer == null) {
-      this.flushTimer = setTimeout(() => this.flush(), this.flushMs);
+      // No point painting at 11Hz in a hidden tab — batch once a second until it's visible again.
+      const hidden = typeof document !== "undefined" && document.visibilityState === "hidden";
+      this.flushTimer = setTimeout(() => this.flush(), hidden ? 1000 : this.flushMs);
     }
   }
 

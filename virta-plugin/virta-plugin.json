@@ -1,0 +1,33 @@
+{
+  "id": "com.marketbubble.controlroom",
+  "name": "MarketBubble",
+  "version": "1.0.0",
+  "publisher": "MarketBubble",
+  "description": "MarketBubble control room: show status, top chatters, Polymarket predictions, and the live X chat feed, inside Virta.",
+  "tags": ["marketbubble", "show", "markets"],
+  "engines": { "virta": ">=1.0.0" },
+  "scopes": ["ui", "http"],
+  "http_endpoints": ["https://marketbubble.virta.lol", "http://localhost:3000"],
+  "contributes": {
+    "panels": [{ "kind": "marketbubble", "title": "MarketBubble", "icon": "stream" }]
+  },
+  "main": { "gui": "gui/index.html" },
+  "config": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "api_base_url": {
+        "type": "string",
+        "title": "MarketBubble URL",
+        "description": "Base URL of the MarketBubble dashboard deployment.",
+        "default": "https://marketbubble.virta.lol"
+      },
+      "api_key": {
+        "type": "string",
+        "title": "API key",
+        "description": "The dashboard's X_CHAT_API_KEY (same key the Chrome extension uses). Public show data works without it; it authenticates operator endpoints."
+      }
+    },
+    "required": ["api_base_url"]
+  }
+}

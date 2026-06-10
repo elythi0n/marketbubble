@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+import { useFlag } from "@/lib/control/client";
 import { MOCK_PREDICTIONS, type PredictionRow } from "@/lib/markets/predictions";
 
 const POLL_MS = 60_000;
 
 export function PredictionsPane() {
+  const enabled = useFlag("predictions");
   const [rows, setRows] = useState<PredictionRow[]>(MOCK_PREDICTIONS);
 
   useEffect(() => {
@@ -22,6 +24,14 @@ export function PredictionsPane() {
     const id = setInterval(load, POLL_MS);
     return () => clearInterval(id);
   }, []);
+
+  if (!enabled) {
+    return (
+      <div className="flex h-full items-center justify-center bg-card px-6 text-center text-sm text-muted-foreground">
+        Predictions are turned off by the operator.
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">

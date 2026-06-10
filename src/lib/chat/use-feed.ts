@@ -17,14 +17,22 @@ export interface UseFeedResult {
  * leaving the React subtree mounted. The latest factory is always read, so callers don't need to
  * memoize it.
  */
-export function useFeed(makeProviders: () => ChatProvider[], depsKey = ""): UseFeedResult {
+export function useFeed(
+  makeProviders: () => ChatProvider[],
+  depsKey = "",
+  seedMessages?: () => readonly FeedMessage[],
+): UseFeedResult {
   const [messages, setMessages] = useState<readonly FeedMessage[]>([]);
   const [statuses, setStatuses] = useState<Readonly<Record<string, ProviderStatus>>>({});
   const factoryRef = useRef(makeProviders);
   factoryRef.current = makeProviders;
+  const seedRef = useRef(seedMessages);
+  seedRef.current = seedMessages;
 
   useEffect(() => {
     const aggregator = new ChatAggregator();
+    const seed = seedRef.current?.();
+    if (seed && seed.length > 0) aggregator.seed(seed);
     for (const provider of factoryRef.current()) aggregator.register(provider);
     const offFeed = aggregator.subscribe(setMessages);
     const offStatus = aggregator.subscribeStatus(setStatuses);

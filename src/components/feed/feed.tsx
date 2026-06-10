@@ -13,6 +13,7 @@ interface FeedProps {
   density?: FeedDensity;
   showTimestamps?: boolean;
   showSource?: boolean;
+  showDeleted?: boolean;
   emptyLabel?: string;
   emptySubtext?: string;
   emptyIcon?: ComponentType<LucideProps>;
@@ -20,6 +21,14 @@ interface FeedProps {
   scale?: number;
   /** When true, incoming rows animate in — pairs with the useReadHelper throttle. */
   readHelper?: boolean;
+  /** When set, author names become clickable (used for the author focus filter). */
+  onAuthorClick?: (author: string) => void;
+  /** When set, chat rows get a right-click context menu. */
+  onRowContextMenu?: (e: React.MouseEvent, message: FeedMessage) => void;
+  /** When set, rows are clickable (used to jump from search results back to the live feed). */
+  onRowClick?: (message: FeedMessage) => void;
+  /** Scroll to and flash a message; bump `nonce` to re-trigger for the same id. */
+  jumpTo?: { id: string; nonce: number } | null;
 }
 
 /**
@@ -31,11 +40,16 @@ export function Feed({
   density = "cozy",
   showTimestamps = true,
   showSource = false,
+  showDeleted = false,
   emptyLabel = "Waiting for chat…",
   emptySubtext,
   emptyIcon: EmptyIcon,
   scale = 1,
   readHelper = false,
+  onAuthorClick,
+  onRowContextMenu,
+  onRowClick,
+  jumpTo = null,
 }: FeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [stick, setStick] = useState(true);
@@ -89,6 +103,40 @@ export function Feed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scale]);
 
+  // The virtualizer caches a measured size per item key forever; with message ids rotating
+  // through a capped buffer that map grows without bound over a long session. Periodically drop
+  // entries for ids no longer in the buffer (they can never be read again).
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  useEffect(() => {
+    const id = setInterval(() => {
+      const cache = (virtualizer as unknown as { itemSizeCache?: Map<unknown, number> }).itemSizeCache;
+      if (!cache || cache.size <= 1500) return;
+      const live = new Set<unknown>(messagesRef.current.map((m) => m.id));
+      for (const key of cache.keys()) {
+        if (!live.has(key)) cache.delete(key);
+      }
+    }, 60_000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Jump-to-message (from a clicked search result): unstick, center the row, flash it briefly.
+  const [flashId, setFlashId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!jumpTo) return;
+    const index = messages.findIndex((m) => m.id === jumpTo.id);
+    if (index < 0) return;
+    setStick(false);
+    stickRef.current = false;
+    setAnchorMs(messages[messages.length - 1]?.tsMs ?? null);
+    virtualizer.scrollToIndex(index, { align: "center" });
+    setFlashId(jumpTo.id);
+    const timer = setTimeout(() => setFlashId(null), 1800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTo?.nonce]);
+
   const unread = anchorMs == null ? 0 : messages.reduce((n, m) => (m.tsMs > anchorMs ? n + 1 : n), 0);
   const virtualItems = virtualizer.getVirtualItems();
 
@@ -111,14 +159,18 @@ export function Feed({
                 key={vi.key}
                 data-index={vi.index}
                 ref={virtualizer.measureElement}
-                className={styles.item}
+                className={`${styles.item}${flashId === messages[vi.index]?.id ? ` ${styles.flash}` : ""}${onRowClick ? ` ${styles.clickable}` : ""}`}
                 style={{ transform: `translateY(${vi.start}px)` }}
+                onClick={onRowClick ? () => onRowClick(messages[vi.index]) : undefined}
               >
                 <FeedRow
                   message={messages[vi.index]}
                   density={density}
                   showTimestamps={showTimestamps}
                   showSource={showSource}
+                  showDeleted={showDeleted}
+                  onAuthorClick={onAuthorClick}
+                  onRowContextMenu={onRowContextMenu}
                 />
               </div>
             ))}

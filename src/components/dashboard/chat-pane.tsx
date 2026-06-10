@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Eye, Layers, MessagesSquare, Search, X, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AtSign, Check, Eye, Layers, ListFilter, MessagesSquare, Search, X, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Feed } from "@/components/feed/feed";
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
@@ -9,12 +9,21 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useReadHelper } from "@/hooks/use-read-helper";
 import { useFeedContext } from "@/lib/chat/feed-context";
 import type { ProviderStatus } from "@/lib/chat/provider";
+import { useChatRowMenu } from "./chat-row-menu";
+import { markDockActivity } from "@/lib/dock-activity";
+import { useSettings } from "@/lib/settings/settings-context";
+import { useFilteredMessages } from "@/lib/settings/use-filtered-messages";
 import { useChannel } from "@/lib/streamers/channel-context";
+import { primaryPlatform, type Streamer } from "@/lib/streamers/mock";
 import { useStageMode } from "@/lib/stage-mode-context";
 import { PLATFORM_LABEL, PLATFORMS, type FeedMessage } from "@/lib/feed/types";
+import { cn } from "@/lib/utils";
+
+const HIDDEN_KEY = "mb-hidden-channels-v1";
 
 const MIN_SCALE = 0.8;
 const MAX_SCALE = 1.6;
+const DEFAULT_SCALE = 1.2;
 const STEP = 0.1;
 
 const STATUS_LABEL: Record<ProviderStatus, string> = {
@@ -40,6 +49,105 @@ function matchesQuery(m: FeedMessage, q: string): boolean {
   return false;
 }
 
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
+/** Per-channel visibility for the merged feed: a dropdown of live channels with checkboxes. */
+function ChannelFilter({
+  liveStreamers,
+  hiddenIds,
+  onToggle,
+  onShowAll,
+}: {
+  liveStreamers: Streamer[];
+  hiddenIds: readonly string[];
+  onToggle: (id: string) => void;
+  onShowAll: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const hidden = new Set(hiddenIds);
+  const visibleCount = liveStreamers.filter((s) => !hidden.has(s.id)).length;
+  const filtering = visibleCount < liveStreamers.length;
+
+  return (
+    <div className="relative flex items-center">
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-label="Choose which channels show in the merged feed"
+              className={cn(
+                "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 transition-colors",
+                filtering
+                  ? "bg-white/[0.08] text-foreground hover:bg-white/[0.12]"
+                  : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground",
+              )}
+            >
+              <ListFilter className="size-4" />
+              {filtering ? (
+                <span className="font-mono text-[0.64rem] tabular-nums leading-none">
+                  {visibleCount}/{liveStreamers.length}
+                </span>
+              ) : null}
+            </button>
+          }
+        />
+        <TooltipContent>Choose which channels show in the merged feed</TooltipContent>
+      </Tooltip>
+
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} aria-hidden />
+          <div className="absolute left-0 top-full z-[100] mt-1.5 w-56 rounded-lg border border-white/12 bg-[#1b1b1f] p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+            <p className="px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Channels in feed</p>
+            {liveStreamers.map((s) => {
+              const shown = !hidden.has(s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => onToggle(s.id)}
+                  role="menuitemcheckbox"
+                  aria-checked={shown}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.8rem] text-foreground/90 transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                >
+                  <span
+                    className={cn(
+                      "flex size-4 flex-none items-center justify-center rounded border transition-colors",
+                      shown ? "border-transparent bg-foreground text-background" : "border-white/20 bg-white/[0.04]",
+                    )}
+                  >
+                    {shown ? <Check className="size-3" strokeWidth={3} /> : null}
+                  </span>
+                  <PlatformGlyph platform={primaryPlatform(s)} className="size-3.5 flex-none" />
+                  <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                  <span className="flex-none font-mono text-[0.64rem] tabular-nums text-muted-foreground">
+                    {formatCount(s.viewers)}
+                  </span>
+                </button>
+              );
+            })}
+            {filtering ? (
+              <button
+                type="button"
+                onClick={onShowAll}
+                className="mt-0.5 flex w-full items-center justify-center rounded-md border-t border-white/[0.06] px-2 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+              >
+                Show all channels
+              </button>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function chatEmptyState(statuses: Readonly<Record<string, ProviderStatus>>): { label: string; subtext: string } {
   const vals = Object.values(statuses) as ProviderStatus[];
   if (vals.length === 0 || vals.every((s) => s === "connecting")) {
@@ -55,19 +163,88 @@ export function ChatPane() {
   const { messages, statuses } = useFeedContext();
   const { mergeAll, setMergeAll, selectedId, streamers } = useChannel();
   const { isStage } = useStageMode();
+  const { settings } = useSettings();
   const selectedName = streamers.find((s) => s.id === selectedId)?.name ?? "Channel";
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(DEFAULT_SCALE);
   const [readHelper, setReadHelper] = useState(false);
   const [query, setQuery] = useState("");
+  const [focusAuthor, setFocusAuthor] = useState<string | null>(null);
 
-  const { displayed, queueDepth } = useReadHelper(messages, readHelper);
+  // Per-channel visibility in the merged feed, persisted across reloads.
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HIDDEN_KEY);
+      if (raw) setHiddenIds(JSON.parse(raw) as string[]);
+    } catch {}
+  }, []);
+  const saveHidden = (next: string[]) => {
+    setHiddenIds(next);
+    try {
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify(next));
+    } catch {}
+  };
+  const toggleChannel = (id: string) =>
+    saveHidden(hiddenIds.includes(id) ? hiddenIds.filter((x) => x !== id) : [...hiddenIds, id]);
+
+  const liveStreamers = streamers.filter((s) => s.live);
+
+  // Messages carry the platform handle as `channel`; map handles back to roster entries.
+  const handleToStreamer = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of streamers) for (const h of Object.values(s.handles)) if (h) map.set(h.toLowerCase(), s.id);
+    return map;
+  }, [streamers]);
+
+  // Display pipeline: filter rules (mute/highlight) → channel visibility → author focus.
+  const filtered = useFilteredMessages(messages);
+  const base = useMemo(() => {
+    let out = filtered;
+    if (mergeAll && hiddenIds.length > 0) {
+      const hidden = new Set(hiddenIds);
+      out = out.filter((m) => {
+        if (!m.channel) return true;
+        const id = handleToStreamer.get(m.channel.toLowerCase());
+        return !id || !hidden.has(id);
+      });
+    }
+    if (focusAuthor) {
+      const f = focusAuthor.toLowerCase();
+      out = out.filter((m) => m.author.toLowerCase() === f);
+    }
+    return out;
+  }, [filtered, mergeAll, hiddenIds, handleToStreamer, focusAuthor]);
+
+  const { displayed, queueDepth } = useReadHelper(base, readHelper);
+
+  // New-activity dot on the Chat tab while it's in the background.
+  const lastMsgId = messages.length > 0 ? messages[messages.length - 1].id : null;
+  useEffect(() => {
+    if (lastMsgId) markDockActivity("chat");
+  }, [lastMsgId]);
+
+  // Click a search result to jump the live feed to that message.
+  const [jumpTo, setJumpTo] = useState<{ id: string; nonce: number } | null>(null);
+
+  // Clicking an author focuses them; clicking the same author again clears the focus.
+  const onAuthorClick = useCallback((author: string) => {
+    setFocusAuthor((cur) => (cur?.toLowerCase() === author.toLowerCase() ? null : author));
+  }, []);
+
+  const { onRowContextMenu, menuElement } = useChatRowMenu({
+    focusAuthor,
+    setFocusAuthor,
+    onHideChannel: mergeAll ? (id) => (hiddenIds.includes(id) ? undefined : saveHidden([...hiddenIds, id])) : undefined,
+  });
 
   // When searching, filter the full buffer (bypassing the read-helper throttle).
   const q = query.trim().toLowerCase();
-  const shown = q ? messages.filter((m) => matchesQuery(m, q)) : displayed;
+  const shown = q ? base.filter((m) => matchesQuery(m, q)) : displayed;
   const emptyState = q
     ? { label: "No matches", subtext: `No messages match “${query.trim()}”` }
-    : chatEmptyState(statuses);
+    : focusAuthor
+      ? { label: "No messages yet", subtext: `Nothing from ${focusAuthor} in the buffer` }
+      : chatEmptyState(statuses);
 
   // While Stage is open, chat lives there; don't also render this feed behind the overlay.
   if (isStage) {
@@ -86,8 +263,8 @@ export function ChatPane() {
       <TooltipProvider>
         {/* Options bar */}
         <header className="flex h-11 flex-none items-center gap-1.5 border-b border-white/[0.07] px-3">
-          {/* Zoom group */}
-          <div className="flex items-center gap-0.5">
+          {/* Zoom stepper: one bordered pill, like the segmented controls everywhere else. */}
+          <div className="flex h-8 items-center rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -96,17 +273,34 @@ export function ChatPane() {
                     onClick={() => zoom(-STEP)}
                     disabled={scale <= MIN_SCALE}
                     aria-label="Make chat smaller"
-                    className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-35 disabled:hover:bg-transparent"
+                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                   >
-                    <ZoomOut className="size-4" />
+                    <ZoomOut className="size-3.5" />
                   </button>
                 }
               />
               <TooltipContent>Make chat smaller</TooltipContent>
             </Tooltip>
-            <span className="min-w-[2.6ch] text-center font-mono text-[0.64rem] tabular-nums text-muted-foreground">
-              {Math.round(scale * 100)}%
-            </span>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    onClick={() => setScale(DEFAULT_SCALE)}
+                    disabled={scale === DEFAULT_SCALE}
+                    aria-label="Reset chat zoom"
+                    className={`min-w-[4ch] rounded-md px-1 py-1 text-center font-mono text-[0.64rem] tabular-nums transition-colors ${
+                      scale === DEFAULT_SCALE
+                        ? "text-muted-foreground/70"
+                        : "text-foreground hover:bg-white/[0.07]"
+                    }`}
+                  >
+                    {Math.round(scale * 100)}%
+                  </button>
+                }
+              />
+              <TooltipContent>{scale === DEFAULT_SCALE ? "Chat zoom" : "Reset zoom to 120%"}</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -115,9 +309,9 @@ export function ChatPane() {
                     onClick={() => zoom(STEP)}
                     disabled={scale >= MAX_SCALE}
                     aria-label="Make chat bigger"
-                    className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-35 disabled:hover:bg-transparent"
+                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                   >
-                    <ZoomIn className="size-4" />
+                    <ZoomIn className="size-3.5" />
                   </button>
                 }
               />
@@ -180,6 +374,16 @@ export function ChatPane() {
             </TooltipContent>
           </Tooltip>
 
+          {/* Per-channel visibility, only meaningful when merging more than one live channel. */}
+          {mergeAll && liveStreamers.length > 1 ? (
+            <ChannelFilter
+              liveStreamers={liveStreamers}
+              hiddenIds={hiddenIds}
+              onToggle={toggleChannel}
+              onShowAll={() => saveHidden([])}
+            />
+          ) : null}
+
           <span className="ml-auto flex flex-none items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
             {PLATFORMS.map((platform) => {
               // Find the status for any provider whose id starts with the platform name.
@@ -230,15 +434,48 @@ export function ChatPane() {
         </div>
       </TooltipProvider>
 
+      {/* Author focus banner — click a username in chat to focus, click again or clear here. */}
+      {focusAuthor ? (
+        <div className="flex flex-none items-center gap-2 border-b border-white/[0.07] bg-[#aab3c0]/[0.07] px-3 py-1.5">
+          <AtSign className="size-3.5 flex-none text-[#aab3c0]" />
+          <span className="min-w-0 truncate text-[0.74rem] text-foreground/90">
+            Focused on <b className="font-semibold">{focusAuthor}</b>
+          </span>
+          <button
+            type="button"
+            onClick={() => setFocusAuthor(null)}
+            aria-label="Clear author focus"
+            className="ml-auto flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      ) : null}
+
       <Feed
         messages={shown}
         showSource
         scale={scale}
+        density={settings.density}
+        showTimestamps={settings.showTimestamps}
+        showDeleted={settings.showDeleted}
         readHelper={readHelper && !q}
+        onAuthorClick={onAuthorClick}
+        onRowContextMenu={onRowContextMenu}
+        jumpTo={jumpTo}
+        onRowClick={
+          q
+            ? (m) => {
+                setQuery("");
+                setJumpTo({ id: m.id, nonce: Date.now() });
+              }
+            : undefined
+        }
         emptyIcon={MessagesSquare}
         emptyLabel={emptyState.label}
         emptySubtext={emptyState.subtext}
       />
+      {menuElement}
     </div>
   );
 }

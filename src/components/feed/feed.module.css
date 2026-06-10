@@ -109,3 +109,20 @@
 .readHelper .item {
   animation: feedItemIn 0.16s ease-out both;
 }
+
+/* Search-result jump target: brief highlight pulse so the eye lands on the right row. */
+.flash {
+  animation: feedFlash 1.8s ease;
+}
+@keyframes feedFlash {
+  0%,
+  55% {
+    background: color-mix(in srgb, var(--feed-link) 18%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.clickable {
+  cursor: pointer;
+}

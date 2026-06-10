@@ -8,7 +8,7 @@ import { formatChange } from "@/lib/markets/types";
 import { useTickers } from "@/lib/markets/tickers-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { type Streamer } from "@/lib/streamers/mock";
-import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
+import { DEFAULT_SCHEDULE, formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
 import { AnimatedNumber, AnimatedSwap } from "./animated-stat";
 
 function StatCell({ label, emphasis, children }: { label: string; emphasis?: boolean; children: ReactNode }) {
@@ -41,7 +41,7 @@ function NextStreamCell({ schedule }: { schedule: NonNullable<Streamer["schedule
   const countdown = formatCountdown(target.getTime() - now.getTime());
 
   return (
-    <StatCell label="Next stream">
+    <StatCell label={schedule.label}>
       <AnimatedSwap swapKey={countdown}>
         <span className="text-muted-foreground/90">{countdown}</span>
       </AnimatedSwap>
@@ -63,8 +63,9 @@ export function StatBand() {
   const liveStreamers = streamers.filter((s) => s.live);
   const anyLive = liveStreamers.length > 0;
   const viewers = liveStreamers.reduce((sum, s) => sum + (s.viewers || 0), 0);
-  // When nothing is live, fall back to a schedule for the countdown (selected channel's, else any).
-  const scheduleStreamer = channel?.schedule ? channel : streamers.find((s) => s.schedule);
+  // When nothing is live, fall back to a schedule for the countdown: the selected channel's, else
+  // any roster entry's, else the show's default slot (roster overrides carry no schedule).
+  const schedule = channel?.schedule ?? streamers.find((s) => s.schedule)?.schedule ?? DEFAULT_SCHEDULE;
 
   const showChatters = anyLive && uniqueChatters > 0;
   const showTrending = anyLive && !!topCashtag;
@@ -79,17 +80,13 @@ export function StatBand() {
     <div className="relative z-20 flex h-[3.25rem] flex-none items-center overflow-x-auto border-b border-white/[0.07] bg-[#141416] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="mx-auto flex items-stretch divide-x divide-white/[0.07]">
 
-        {/* Combined viewers across all live streamers; countdown when none are live. */}
+        {/* Combined viewers across all live streamers; the schedule countdown when none are live. */}
         {anyLive ? (
           <StatCell label="Viewers" emphasis>
             <AnimatedNumber value={viewers} />
           </StatCell>
-        ) : scheduleStreamer?.schedule ? (
-          <NextStreamCell schedule={scheduleStreamer.schedule} />
         ) : (
-          <StatCell label="Viewers">
-            <span className="text-muted-foreground/60">—</span>
-          </StatCell>
+          <NextStreamCell schedule={schedule} />
         )}
 
         <AnimatePresence initial={false}>

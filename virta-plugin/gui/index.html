@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MarketBubble</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="brand">
+        <span class="brand-name">MarketBubble</span>
+        <span class="brand-sub">Control Room</span>
+      </div>
+      <div class="conn">
+        <span id="conn-dot" class="dot dot-wait" aria-hidden="true"></span>
+        <span id="conn-label">Connecting…</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card" id="card-show">
+        <h2>Show status</h2>
+        <ul id="roster" class="roster"><li class="muted">Loading…</li></ul>
+      </section>
+
+      <section class="card" id="card-chatters">
+        <h2>Top chatters</h2>
+        <ol id="chatters" class="chatters"><li class="muted">Loading…</li></ol>
+      </section>
+
+      <section class="card" id="card-predictions">
+        <h2>Polymarket</h2>
+        <ul id="predictions" class="predictions"><li class="muted">Loading…</li></ul>
+      </section>
+
+      <section class="card card-wide" id="card-xchat">
+        <h2>X chat <span class="live-tag" id="x-live-tag">live</span></h2>
+        <ul id="xchat" class="xchat"><li class="muted">Waiting for messages…</li></ul>
+      </section>
+    </main>
+
+    <script src="__virta.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -6,6 +6,7 @@ import { clampForContrast } from "@/lib/feed/contrast";
 import { EVENT_LABEL, PLATFORM_LABEL, isEventType, type FeedMessage, type Segment } from "@/lib/feed/types";
 import { getTicker } from "@/lib/markets/lookup";
 import { useStockDrawer } from "@/lib/markets/stock-drawer-context";
+import { useSettingsOrDefault } from "@/lib/settings/settings-context";
 import { formatChange, formatPrice } from "@/lib/markets/types";
 import { HoverCard } from "./hover-card";
 import { PlatformGlyph } from "./platform-glyph";
@@ -85,6 +86,10 @@ interface FeedRowProps {
   showTimestamps?: boolean;
   showSource?: boolean;
   showDeleted?: boolean;
+  /** When set, the author name becomes clickable (author focus filter). */
+  onAuthorClick?: (author: string) => void;
+  /** When set, the row gets a right-click context menu. */
+  onRowContextMenu?: (e: React.MouseEvent, message: FeedMessage) => void;
 }
 
 const BADGE_META: Record<string, { label: string; color: string }> = {
@@ -190,8 +195,11 @@ function FeedRowImpl({
   showTimestamps = true,
   showSource = false,
   showDeleted = false,
+  onAuthorClick,
+  onRowContextMenu,
 }: FeedRowProps) {
   const { openStock } = useStockDrawer();
+  const { emphasizeStreamer } = useSettingsOrDefault();
   const renderSegment = useCallback(makeRenderSegment(openStock), [openStock]);
   const densityClass = density === "compact" ? styles.compact : density === "comfortable" ? styles.comfortable : "";
 
@@ -212,9 +220,13 @@ function FeedRowImpl({
   const badges = message.badges ?? [];
   const authorStyle: CSSProperties = { color: clampForContrast(message.authorColor) };
   const isAction = message.type === "action";
+  const isBroadcaster = emphasizeStreamer && badges.some((b) => b.set === "broadcaster");
 
   return (
-    <div className={`${styles.row} ${styles[message.platform]} ${densityClass} ${isAction ? styles.action : ""} ${message.highlighted ? styles.highlighted : ""}`}>
+    <div
+      className={`${styles.row} ${styles[message.platform]} ${densityClass} ${isAction ? styles.action : ""} ${message.highlighted ? styles.highlighted : ""} ${isBroadcaster ? styles.broadcaster : ""}`}
+      onContextMenu={onRowContextMenu ? (e) => onRowContextMenu(e, message) : undefined}
+    >
       {message.replyTo ? (
         <span className={styles.reply}>
           ↩ {message.replyTo.author}: {message.replyTo.snippet}
@@ -241,7 +253,14 @@ function FeedRowImpl({
         </span>
       ) : null}
       <HoverCard className={styles.author} content={<ViewerInfo message={message} />}>
-        <span style={authorStyle}>{message.author}</span>
+        <span
+          style={authorStyle}
+          className={onAuthorClick ? styles.authorClickable : undefined}
+          onClick={onAuthorClick ? () => onAuthorClick(message.author) : undefined}
+          title={onAuthorClick ? `Show only messages from ${message.author}` : undefined}
+        >
+          {message.author}
+        </span>
       </HoverCard>
       {isAction ? null : <span className={styles.colon}>:</span>}
       {message.combo && message.combo > 1 ? <span className={styles.combo}>×{message.combo}</span> : null}

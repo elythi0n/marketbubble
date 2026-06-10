@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { PanelLeftClose, PanelLeftOpen, Play } from "lucide-react";
+import { MessagesSquare, MonitorPlay, PanelLeftClose, PanelLeftOpen, Pin, Play } from "lucide-react";
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import { ContextMenu, type MenuEntry } from "@/components/ui/context-menu";
+import { hasDock, openChannelChat } from "@/lib/dock-api";
+import { PLATFORM_LABEL } from "@/lib/feed/types";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { hasVideo, type Streamer } from "@/lib/streamers/mock";
 import { cn } from "@/lib/utils";
@@ -72,13 +75,24 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
         <StreamerAvatar streamer={streamer} size={22} />
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
           <span className="flex items-center gap-1.5">
+            {streamer.pinned ? <Pin className="size-3 shrink-0 fill-current text-[#d8b25a]" aria-label="Pinned" /> : null}
             <span className={cn("truncate text-[0.82rem] font-medium", streamer.live ? "text-foreground" : "text-muted-foreground")}>
               {streamer.name}
             </span>
-            <span className="flex shrink-0 items-center gap-1">
-              {streamer.platforms.map((p) => (
-                <PlatformGlyph key={p} platform={p} className="size-3" />
-              ))}
+            <span className="flex shrink-0 items-center gap-1.5">
+              {streamer.platforms.map((p) => {
+                const count = streamer.live ? streamer.viewersByPlatform?.[p] : undefined;
+                return (
+                  <span key={p} className="flex items-center gap-0.5">
+                    <PlatformGlyph platform={p} className="size-3" />
+                    {count !== undefined ? (
+                      <span className="font-mono text-[0.6rem] tabular-nums text-muted-foreground">
+                        {formatViewers(count)}
+                      </span>
+                    ) : null}
+                  </span>
+                );
+              })}
             </span>
           </span>
           <span className="truncate text-[0.68rem] text-muted-foreground">
@@ -91,15 +105,28 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
 }
 
 /** Expanded channel card with a stream thumbnail. */
-function ChannelCard({ streamer, active, onSelect }: { streamer: Streamer; active: boolean; onSelect: () => void }) {
+function ChannelCard({
+  streamer,
+  active,
+  onSelect,
+  onContextMenu,
+}: {
+  streamer: Streamer;
+  active: boolean;
+  onSelect: () => void;
+  onContextMenu: (e: ReactMouseEvent) => void;
+}) {
   return (
     <button
       type="button"
       onClick={onSelect}
+      onContextMenu={onContextMenu}
       aria-current={active ? "true" : undefined}
       className={cn(
         "group block w-full overflow-hidden rounded-lg border text-left transition-colors",
-        active ? "border-white/20 bg-white/[0.05]" : "border-transparent hover:bg-white/[0.04]",
+        active ? "border-white/20 bg-white/[0.05]"
+        : streamer.pinned ? "border-[#d8b25a]/25 bg-[#d8b25a]/[0.03] hover:bg-[#d8b25a]/[0.06]"
+        : "border-transparent hover:bg-white/[0.04]",
       )}
     >
       <ChannelCardBody streamer={streamer} />
@@ -108,7 +135,17 @@ function ChannelCard({ streamer, active, onSelect }: { streamer: Streamer; activ
 }
 
 /** Collapsed avatar button that reveals a full preview card (thumbnail + title) on hover. */
-function CollapsedStreamerButton({ streamer, active, onSelect }: { streamer: Streamer; active: boolean; onSelect: () => void }) {
+function CollapsedStreamerButton({
+  streamer,
+  active,
+  onSelect,
+  onContextMenu,
+}: {
+  streamer: Streamer;
+  active: boolean;
+  onSelect: () => void;
+  onContextMenu: (e: ReactMouseEvent) => void;
+}) {
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   return (
@@ -119,6 +156,7 @@ function CollapsedStreamerButton({ streamer, active, onSelect }: { streamer: Str
           e.stopPropagation();
           onSelect();
         }}
+        onContextMenu={onContextMenu}
         onMouseEnter={(e) => setRect(e.currentTarget.getBoundingClientRect())}
         onMouseLeave={() => setRect(null)}
         aria-current={active ? "true" : undefined}
@@ -131,6 +169,14 @@ function CollapsedStreamerButton({ streamer, active, onSelect }: { streamer: Str
           <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#e4e4e4]" aria-hidden />
         ) : null}
         <StreamerAvatar streamer={streamer} size={38} rounded="lg" />
+        {streamer.pinned ? (
+          <span
+            className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full border border-[#d8b25a]/40 bg-[#26221a]"
+            aria-label="Pinned"
+          >
+            <Pin className="size-2.5 fill-current text-[#d8b25a]" />
+          </span>
+        ) : null}
       </button>
 
       {rect
@@ -154,8 +200,39 @@ function CollapsedStreamerButton({ streamer, active, onSelect }: { streamer: Str
 export function Sidebar() {
   const [expanded, setExpanded] = useState(false);
   const { selectedId, select, streamers } = useChannel();
+  const [menu, setMenu] = useState<{ x: number; y: number; streamer: Streamer } | null>(null);
 
-  const sorted = [...streamers].sort((a, b) => Number(b.live) - Number(a.live) || b.viewers - a.viewers);
+  // Pinned channels (set by the operator) lead, then live before offline, then by viewers.
+  const sorted = [...streamers].sort(
+    (a, b) => Number(b.pinned ?? false) - Number(a.pinned ?? false) || Number(b.live) - Number(a.live) || b.viewers - a.viewers,
+  );
+
+  const openMenu = (streamer: Streamer) => (e: ReactMouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenu({ x: e.clientX, y: e.clientY, streamer });
+  };
+
+  let menuEntries: MenuEntry[] = [];
+  if (menu) {
+    const s = menu.streamer;
+    menuEntries = [
+      { type: "heading", label: s.name },
+      { label: "Watch channel", icon: MonitorPlay, onSelect: () => select(s.id) },
+    ];
+    if (hasDock() && (s.handles.twitch || s.handles.kick)) {
+      menuEntries.push({ label: "Open chat panel", icon: MessagesSquare, onSelect: () => openChannelChat(s) });
+      for (const p of ["twitch", "kick"] as const) {
+        if (s.handles[p]) {
+          menuEntries.push({
+            label: `Open ${PLATFORM_LABEL[p]} chat only`,
+            icon: MessagesSquare,
+            onSelect: () => openChannelChat(s, p),
+          });
+        }
+      }
+    }
+  }
 
   return (
     <motion.aside
@@ -195,7 +272,12 @@ export function Sidebar() {
           <ul className="flex flex-col gap-2.5">
             {sorted.map((streamer) => (
               <li key={streamer.id}>
-                <ChannelCard streamer={streamer} active={streamer.id === selectedId} onSelect={() => select(streamer.id)} />
+                <ChannelCard
+                  streamer={streamer}
+                  active={streamer.id === selectedId}
+                  onSelect={() => select(streamer.id)}
+                  onContextMenu={openMenu(streamer)}
+                />
               </li>
             ))}
           </ul>
@@ -207,6 +289,7 @@ export function Sidebar() {
                   streamer={streamer}
                   active={streamer.id === selectedId}
                   onSelect={() => select(streamer.id)}
+                  onContextMenu={openMenu(streamer)}
                 />
               </li>
             ))}
@@ -240,6 +323,8 @@ export function Sidebar() {
           ))}
         </div>
       </div>
+
+      {menu ? <ContextMenu x={menu.x} y={menu.y} entries={menuEntries} onClose={() => setMenu(null)} /> : null}
     </motion.aside>
   );
 }

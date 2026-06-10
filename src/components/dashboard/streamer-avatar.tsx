@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
-import { avatarUrl, primaryPlatform, type Streamer } from "@/lib/streamers/mock";
+import { primaryPlatform, type Streamer } from "@/lib/streamers/mock";
+import { useAvatarUrl } from "@/lib/streamers/use-avatar";
 import { cn } from "@/lib/utils";
 
 function initials(name: string): string {
@@ -24,7 +25,7 @@ interface Props {
 /** Profile picture (from the platform via unavatar) with an initials fallback, platform badge, and live dot. */
 export function StreamerAvatar({ streamer, size = 30, rounded = "full", badge = true, showLive = true, dim = true }: Props) {
   const [errored, setErrored] = useState(false);
-  const url = avatarUrl(streamer);
+  const url = useAvatarUrl(streamer);
   const radius = rounded === "lg" ? "rounded-[20%]" : "rounded-full";
 
   return (

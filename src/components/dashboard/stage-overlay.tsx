@@ -7,6 +7,7 @@ import { Gift, MessagesSquare, Star, Users, X, type LucideIcon } from "lucide-re
 import { Feed } from "@/components/feed/feed";
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
 import { useFeedContext, useFeedStats } from "@/lib/chat/feed-context";
+import { useFilteredMessages } from "@/lib/settings/use-filtered-messages";
 import type { FeedMessage } from "@/lib/feed/types";
 import { useTickers } from "@/lib/markets/tickers-context";
 import { formatChange } from "@/lib/markets/types";
@@ -18,14 +19,20 @@ import { useIsMobile } from "@/lib/use-is-mobile";
 import { AnimatedNumber, AnimatedSwap } from "./animated-stat";
 import { Marquee } from "./marquee";
 import { MarketBubbleLogo } from "./market-bubble-logo";
+import { PollCard } from "./poll-card";
 import { PredictionsMarquee } from "./predictions-marquee";
 import { StreamEmbed } from "./stream-pane";
 import { StreamerAvatar } from "./streamer-avatar";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/** Hard cap for the Stage title; CSS truncation handles the rest at narrower widths. */
+const STAGE_TITLE_MAX = 100;
+
 /** Identity chip: who's on, what they're streaming (title), and live state. */
 function Identity({ channel }: { channel: Streamer }) {
+  const rawTitle = channel.live ? channel.title || "Live now" : "Offline";
+  const title = rawTitle.length > STAGE_TITLE_MAX ? `${rawTitle.slice(0, STAGE_TITLE_MAX).trimEnd()}…` : rawTitle;
   return (
     <motion.div
       initial={{ opacity: 0, y: -12 }}
@@ -35,9 +42,9 @@ function Identity({ channel }: { channel: Streamer }) {
       className="flex h-14 max-w-full items-center gap-3 rounded-xl border border-white/10 bg-black/35 px-3.5 backdrop-blur-md"
     >
       <StreamerAvatar streamer={channel} size={44} showLive={false} dim={false} />
-      <div className="min-w-0 leading-tight">
+      <div className="min-w-0 flex-1 leading-tight">
         <div className="flex items-center gap-2">
-          <span className="truncate text-[0.98rem] font-semibold text-foreground">{channel.name}</span>
+          <span className="truncate text-[clamp(0.82rem,0.45vw+0.62rem,0.98rem)] font-semibold text-foreground">{channel.name}</span>
           <span className="flex shrink-0 items-center gap-1">
             {channel.platforms.map((p) => (
               <PlatformGlyph key={p} platform={p} className="size-3.5" />
@@ -52,9 +59,7 @@ function Identity({ channel }: { channel: Streamer }) {
             <span className="shrink-0 text-[0.6rem] font-bold uppercase tracking-wide text-muted-foreground/70">Offline</span>
           )}
         </div>
-        <p className="mt-0.5 truncate text-[0.72rem] text-muted-foreground">
-          {channel.live ? channel.title || "Live now" : "Offline"}
-        </p>
+        <p className="mt-0.5 truncate text-[clamp(0.6rem,0.3vw+0.47rem,0.72rem)] text-muted-foreground">{title}</p>
       </div>
     </motion.div>
   );
@@ -218,7 +223,8 @@ function StageLastGift() {
  */
 export function StageOverlay() {
   const { isStage, setStage } = useStageMode();
-  const { messages } = useFeedContext();
+  const { messages: rawMessages } = useFeedContext();
+  const messages = useFilteredMessages(rawMessages);
   const { selectedId, streamers } = useChannel();
   const channel = streamers.find((s) => s.id === selectedId) ?? streamers[0];
   const isMobile = useIsMobile();
@@ -311,6 +317,8 @@ export function StageOverlay() {
               className="flex w-[clamp(320px,26vw,420px)] flex-none flex-col gap-3"
             >
               <StageLastGift />
+              {/* Live poll above the chat, options stacked top-to-bottom. */}
+              <PollCard variant="stage" />
               <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 bg-[#141416]/85 backdrop-blur-md">
                 <Feed
                   messages={messages}

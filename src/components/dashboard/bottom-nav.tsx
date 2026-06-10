@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LineChart, Radio, Trophy, Users } from "lucide-react";
+import { Info, LineChart, Radio, Trophy } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { walburn } from "@/lib/fonts";
@@ -13,7 +13,10 @@ const LEFT = [
   { href: "/", label: "Stream", icon: Radio },
   { href: "/markets", label: "Markets", icon: LineChart },
 ] as const;
-const RIGHT = [{ href: "/leaderboard", label: "Ranks", icon: Trophy }] as const;
+const RIGHT = [
+  { href: "/leaderboard", label: "Ranks", icon: Trophy },
+  { href: "/about", label: "About", icon: Info },
+] as const;
 
 function NavLink({ href, label, icon: Icon, active }: { href: string; label: string; icon: ComponentType<{ className?: string; strokeWidth?: number }>; active: boolean }) {
   return (
@@ -31,10 +34,16 @@ function NavLink({ href, label, icon: Icon, active }: { href: string; label: str
   );
 }
 
-/** App-style fixed bottom nav with the brand logo as a raised center item. `onOpenChannels` adds Channels. */
+/**
+ * App-style fixed bottom nav. The raised center brand mark opens the channel sheet (the app's
+ * "switcher"), like a camera/compose FAB; on pages without the sheet it routes home and opens it.
+ */
 export function BottomNav({ onOpenChannels }: { onOpenChannels?: () => void }) {
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  const fabClass =
+    "relative -top-3.5 flex size-[3.25rem] items-center justify-center rounded-full border border-white/12 bg-[#1b1b1f] shadow-[0_10px_26px_-8px_rgba(0,0,0,0.85)] transition-transform active:scale-95";
 
   return (
     <nav
@@ -47,40 +56,23 @@ export function BottomNav({ onOpenChannels }: { onOpenChannels?: () => void }) {
         ))}
       </div>
 
-      {/* Center brand mark, raised like an app FAB */}
+      {/* Center brand mark = Channels: tap to pick who you're watching. */}
       <div className="flex w-16 shrink-0 items-center justify-center">
-        <Link
-          href="/"
-          aria-label="MarketBubble home"
-          className="relative -top-3.5 flex size-[3.25rem] items-center justify-center rounded-full border border-white/12 bg-[#1b1b1f] shadow-[0_10px_26px_-8px_rgba(0,0,0,0.85)] transition-transform active:scale-95"
-        >
-          <MarketBubbleLogo className="size-7 text-foreground" />
-        </Link>
+        {onOpenChannels ? (
+          <button type="button" onClick={onOpenChannels} aria-label="Channels" title="Channels" className={fabClass}>
+            <MarketBubbleLogo className="size-7 text-foreground" />
+          </button>
+        ) : (
+          <Link href="/?channels=1" aria-label="Channels" title="Channels" className={fabClass}>
+            <MarketBubbleLogo className="size-7 text-foreground" />
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-1">
         {RIGHT.map((it) => (
           <NavLink key={it.href} {...it} active={isActive(it.href)} />
         ))}
-        {onOpenChannels ? (
-          <button
-            type="button"
-            onClick={onOpenChannels}
-            className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[0.62rem] font-medium text-muted-foreground transition-colors active:text-foreground"
-          >
-            <Users className="size-5" />
-            Channels
-          </button>
-        ) : (
-          // On non-dashboard pages, route to the stream page and auto-open the channels sheet.
-          <Link
-            href="/?channels=1"
-            className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[0.62rem] font-medium text-muted-foreground transition-colors active:text-foreground"
-          >
-            <Users className="size-5" />
-            Channels
-          </Link>
-        )}
       </div>
     </nav>
   );

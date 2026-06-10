@@ -1,9 +1,10 @@
-// Virta marketing live-chat relay.
+// MarketBubble live-chat relay.
 //
-// Maintains ONE upstream connection to a live channel's Twitch + Kick chat, merges it into a single
-// feed, and fans it out to every site visitor over Server-Sent Events. The site (the unified-feed
-// mock) consumes `${NEXT_PUBLIC_RELAY_URL}/feed`; with no relay configured it falls back to a
-// simulated demo, so the marketing page stays static-by-default.
+// Maintains shared upstream connections to the SHOW ROSTER's Twitch + Kick chats (never anyone
+// else's), merges them into a single feed, fans it out to site visitors over Server-Sent Events,
+// and tallies top chatters for the leaderboard. The roster is fixed by the CHANNELS /
+// KICK_CHATROOM_ID env — there is deliberately no auto-picking of popular channels, so the
+// leaderboard only ever counts the real streamers' viewers.
 //
 // Why a relay (not per-visitor scraping): one shared upstream connection instead of one per visitor,
 // and Kick's chatroom lookup is behind Cloudflare — a server is the only place that can do it.
@@ -14,11 +15,9 @@
 // Env:
 //   PORT                  listen port (default 8787)
 //   ALLOW_ORIGIN          CORS allow-origin (default *)
-//   CHANNELS              comma-separated Twitch logins to auto-pick from when no Helix creds
-//   TWITCH_CLIENT_ID      \ set both to auto-pick the current top live channel via Helix
-//   TWITCH_CLIENT_SECRET  /
-//   KICK_CHATROOM_ID      enable Kick chat for the chosen channel (id can't be looked up past
-//                         Cloudflare here; provide it, or run where the lookup succeeds)
+//   CHANNELS              comma-separated Twitch logins of the show roster (all are joined)
+//   KICK_CHATROOM_ID      comma-separated Kick chatroom ids for the roster (ids can't be looked up
+//                         past Cloudflare here; provide them, or run where the lookup succeeds)
 //   KICK_CHANNEL          display label for the Kick side (optional)
 
 import http from "node:http";
@@ -26,8 +25,8 @@ import fs from "node:fs";
 
 const PORT = Number(process.env.PORT || 8787);
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN || "*";
-const FALLBACK_CHANNELS = (process.env.CHANNELS ||
-  "jynxzi,kaicenat,caseoh_,jasontheween,zackrawrr,tarik,summit1g,xqc,ironmouse,loud_coringa")
+// The show roster — the ONLY channels the relay follows and tallies.
+const ROSTER = (process.env.CHANNELS || "fazebanks")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
@@ -55,9 +54,15 @@ const CHATTERS_FILE = process.env.CHATTERS_FILE || "";
 const CHATTERS_MAX = 500; // cap distinct users tracked (bounds memory)
 const chatters = new Map(); // `${platform}:${lowerName}` -> { name, platform, count }
 
+// Chat bots never belong on a human leaderboard.
+const BOTS = new Set([
+  "nightbot", "streamelements", "fossabot", "moobot", "wizebot", "sery_bot", "botrix", "kickbot",
+  "streamlabs", "soundalerts", "pokemoncommunitygame",
+]);
+
 function tallyChatter(msg) {
   const name = (msg.name || "").trim();
-  if (!name || name.toLowerCase() === "anon") return;
+  if (!name || name.toLowerCase() === "anon" || BOTS.has(name.toLowerCase())) return;
   const key = `${msg.platform}:${name.toLowerCase()}`;
   const cur = chatters.get(key);
   if (cur) {
@@ -112,6 +117,49 @@ if (CHATTERS_FILE) {
   setInterval(saveChatters, 30_000);
 }
 
+// ---- chat poll voting ---------------------------------------------------------
+// The dashboard registers the active poll here; the relay — holding the one server-side
+// connection to roster chat — parses votes from messages and serves merged counts. Voters can
+// change their vote until the dashboard ends the poll (it deletes the spec).
+let pollSpec = null; // { id, options: [{ id, keywords: [string] }] }
+let pollVoters = new Map(); // `${platform}:${lowerName}` -> optionId
+let pollCounts = {}; // optionId -> count
+
+function setPoll(spec) {
+  pollSpec = spec;
+  pollVoters = new Map();
+  pollCounts = {};
+  if (spec) for (const o of spec.options) pollCounts[o.id] = 0;
+}
+
+function matchPollOption(body) {
+  if (!pollSpec) return null;
+  let text = String(body || "").trim().toLowerCase();
+  if (text.startsWith("!vote ")) text = text.slice(6).trim();
+  if (!text || text.length > 60) return null;
+  for (const o of pollSpec.options) {
+    for (const kw of o.keywords || []) {
+      if (text === String(kw).toLowerCase()) return o.id;
+    }
+  }
+  return null;
+}
+
+function tallyPollVote(msg) {
+  if (!pollSpec) return;
+  const optionId = matchPollOption(msg.body);
+  if (!optionId) return;
+  const name = (msg.name || "").trim().toLowerCase();
+  if (!name || name === "anon" || BOTS.has(name)) return;
+  if (pollVoters.size >= 50_000 && !pollVoters.has(`${msg.platform}:${name}`)) return;
+  const key = `${msg.platform}:${name}`;
+  const previous = pollVoters.get(key);
+  if (previous === optionId) return;
+  if (previous && pollCounts[previous] > 0) pollCounts[previous] -= 1;
+  pollCounts[optionId] = (pollCounts[optionId] || 0) + 1;
+  pollVoters.set(key, optionId);
+}
+
 function broadcast(event, data) {
   const frame = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of clients) {
@@ -126,6 +174,7 @@ function broadcast(event, data) {
 function emitMessage(msg) {
   windowCount++;
   tallyChatter(msg);
+  tallyPollVote(msg);
   pushRecent({ event: "message", data: msg });
   broadcast("message", msg);
 }
@@ -180,14 +229,16 @@ function parseIrc(line) {
 
 let twitchSocket = null;
 
-function connectTwitch(login) {
+/** Joins every roster channel on one anonymous IRC socket; messages keep their source channel. */
+function connectTwitch(logins) {
+  if (logins.length === 0) return;
   const ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
   twitchSocket = ws;
   ws.onopen = () => {
     ws.send("PASS SCHMOOPIIE");
     ws.send("NICK justinfan" + Math.floor(Math.random() * 80000 + 1000));
     ws.send("CAP REQ :twitch.tv/tags twitch.tv/commands");
-    ws.send("JOIN #" + login);
+    ws.send("JOIN " + logins.map((l) => "#" + l).join(","));
   };
   ws.onmessage = (e) => {
     for (const line of String(e.data).split("\r\n")) {
@@ -202,8 +253,10 @@ function connectTwitch(login) {
       } else if (command === "PRIVMSG") {
         const body = params.slice(params.indexOf(" :") + 2);
         const name = tags["display-name"] || prefix.split("!")[0] || "anon";
+        const source = params.startsWith("#") ? params.slice(1, params.indexOf(" ")) : null;
         emitMessage({
           platform: "twitch",
+          channel: source,
           name,
           color: tags.color || null,
           badges: badgeList(tags.badges),
@@ -218,7 +271,7 @@ function connectTwitch(login) {
   };
   ws.onclose = () => {
     setChannel({ twitch: false });
-    if (twitchSocket === ws) setTimeout(() => connectTwitch(login), 4000);
+    if (twitchSocket === ws) setTimeout(() => connectTwitch(logins), 4000);
   };
   ws.onerror = () => {
     try {
@@ -252,7 +305,9 @@ function noticeText(tags) {
 // ---- Kick (Pusher over WebSocket) -------------------------------------------
 let kickSocket = null;
 
-function connectKick(chatroomId) {
+/** Subscribes to every roster chatroom on one Pusher socket. */
+function connectKick(chatroomIds) {
+  if (chatroomIds.length === 0) return;
   const url = `wss://ws-${KICK_PUSHER_CLUSTER}.pusher.com/app/${KICK_PUSHER_KEY}?protocol=7&client=js&version=8.4.0&flash=false`;
   const ws = new WebSocket(url);
   kickSocket = ws;
@@ -264,7 +319,9 @@ function connectKick(chatroomId) {
       return;
     }
     if (frame.event === "pusher:connection_established") {
-      ws.send(JSON.stringify({ event: "pusher:subscribe", data: { auth: "", channel: `chatrooms.${chatroomId}.v2` } }));
+      for (const id of chatroomIds) {
+        ws.send(JSON.stringify({ event: "pusher:subscribe", data: { auth: "", channel: `chatrooms.${id}.v2` } }));
+      }
       setChannel({ kick: true });
       return;
     }
@@ -287,7 +344,7 @@ function connectKick(chatroomId) {
   };
   ws.onclose = () => {
     setChannel({ kick: false });
-    if (kickSocket === ws) setTimeout(() => connectKick(chatroomId), 5000);
+    if (kickSocket === ws) setTimeout(() => connectKick(chatroomIds), 5000);
   };
   ws.onerror = () => {
     try {
@@ -296,76 +353,21 @@ function connectKick(chatroomId) {
   };
 }
 
-// ---- channel selection ------------------------------------------------------
-async function helixTopLive() {
-  const id = process.env.TWITCH_CLIENT_ID;
-  const secret = process.env.TWITCH_CLIENT_SECRET;
-  if (!id || !secret) return null;
-  try {
-    const tokRes = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${id}&client_secret=${secret}&grant_type=client_credentials`,
-      { method: "POST" },
-    );
-    const tok = await tokRes.json();
-    const res = await fetch("https://api.twitch.tv/helix/streams?first=1&language=en", {
-      headers: { "Client-ID": id, Authorization: `Bearer ${tok.access_token}` },
-    });
-    const json = await res.json();
-    const s = json?.data?.[0];
-    return s ? { login: s.user_login, name: s.user_name } : null;
-  } catch {
-    return null;
-  }
-}
+// ---- startup ------------------------------------------------------------------
+// The relay follows exactly the configured roster. No Helix top-channel auto-pick, no live
+// probing — those followed strangers' chats and polluted the leaderboard with their viewers.
+function start() {
+  setChannel({ name: ROSTER.join(", "), twitch: false, kick: false });
+  console.log(`[relay] following roster: ${ROSTER.join(", ")}`);
+  connectTwitch(ROSTER);
 
-// Without Helix creds: probe each fallback channel briefly and keep the first that's chatting.
-function sampleLive(login, ms = 5000) {
-  return new Promise((resolve) => {
-    const ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
-    let got = 0;
-    const done = (live) => {
-      try {
-        ws.close();
-      } catch {}
-      resolve(live);
-    };
-    ws.onopen = () => {
-      ws.send("PASS SCHMOOPIIE");
-      ws.send("NICK justinfan" + Math.floor(Math.random() * 80000 + 1000));
-      ws.send("JOIN #" + login);
-    };
-    ws.onmessage = (e) => {
-      if (String(e.data).includes("PRIVMSG")) {
-        got++;
-        if (got >= 2) done(true);
-      } else if (String(e.data).startsWith("PING")) {
-        ws.send("PONG :tmi.twitch.tv");
-      }
-    };
-    ws.onerror = () => done(false);
-    setTimeout(() => done(got >= 1), ms);
-  });
-}
-
-async function pickChannel() {
-  const helix = await helixTopLive();
-  if (helix) return helix;
-  for (const login of FALLBACK_CHANNELS) {
-    const live = await sampleLive(login);
-    if (live) return { login, name: login };
-  }
-  return { login: FALLBACK_CHANNELS[0], name: FALLBACK_CHANNELS[0] };
-}
-
-async function start() {
-  const picked = await pickChannel();
-  setChannel({ name: picked.name, twitch: false, kick: false });
-  console.log(`[relay] following ${picked.name} (#${picked.login})`);
-  connectTwitch(picked.login);
-  const kickId = process.env.KICK_CHATROOM_ID;
-  if (kickId) {
-    console.log(`[relay] kick chatroom ${kickId}`);
-    connectKick(kickId);
+  const kickIds = (process.env.KICK_CHATROOM_ID || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (kickIds.length > 0) {
+    console.log(`[relay] kick chatrooms: ${kickIds.join(", ")}`);
+    connectKick(kickIds);
   } else {
     console.log("[relay] kick disabled (set KICK_CHATROOM_ID to enable)");
   }
@@ -387,6 +389,43 @@ const server = http.createServer((req, res) => {
   if (url.pathname === "/health") {
     res.writeHead(200, { ...cors, "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, channel, mps, clients: clients.size, chatters: chatters.size }));
+    return;
+  }
+  if (url.pathname === "/poll") {
+    if (req.method === "POST") {
+      let raw = "";
+      req.on("data", (chunk) => {
+        raw += chunk;
+        if (raw.length > 16384) req.destroy();
+      });
+      req.on("end", () => {
+        try {
+          const spec = JSON.parse(raw);
+          if (!spec || typeof spec.id !== "string" || !Array.isArray(spec.options)) throw new Error("bad spec");
+          setPoll(spec);
+          res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: true, id: spec.id }));
+          console.log(`[relay] poll started: ${spec.id} (${spec.options.length} options)`);
+        } catch {
+          res.writeHead(400, cors);
+          res.end("invalid poll spec");
+        }
+      });
+      return;
+    }
+    if (req.method === "DELETE") {
+      setPoll(null);
+      res.writeHead(200, { ...cors, "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true }));
+      return;
+    }
+    res.writeHead(405, cors);
+    res.end();
+    return;
+  }
+  if (url.pathname === "/poll-votes") {
+    res.writeHead(200, { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" });
+    res.end(JSON.stringify({ id: pollSpec ? pollSpec.id : null, counts: pollCounts, voters: pollVoters.size }));
     return;
   }
   if (url.pathname === "/top-chatters") {

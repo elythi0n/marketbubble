@@ -25,6 +25,7 @@ export function FeedProvider({
   children,
   makeProviders = defaultProviders,
   providersKey,
+  seedMessages,
 }: {
   children: ReactNode;
   makeProviders?: () => ChatProvider[];
@@ -33,8 +34,10 @@ export function FeedProvider({
    * remounting the React subtree, so consumer UI state like sidebar expansion is preserved.
    */
   providersKey?: string;
+  /** Optional persisted-history loader, consumed when the aggregator (re)builds. */
+  seedMessages?: () => readonly import("@/lib/feed/types").FeedMessage[];
 }) {
-  const value = useFeed(makeProviders, providersKey);
+  const value = useFeed(makeProviders, providersKey, seedMessages);
   return <FeedContext.Provider value={value}>{children}</FeedContext.Provider>;
 }
 

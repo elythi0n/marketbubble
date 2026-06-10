@@ -239,6 +239,13 @@
     scrollbar-width: thin;
     scrollbar-color: rgb(255 255 255 / 0.16) transparent;
   }
+  /* OBS overlay: no scrollbars anywhere — it's a passive browser source. */
+  .overlay-root * {
+    scrollbar-width: none;
+  }
+  .overlay-root *::-webkit-scrollbar {
+    display: none;
+  }
   .mb-scroll::-webkit-scrollbar {
     width: 9px;
     height: 9px;
@@ -417,16 +424,43 @@
 .mb-dock .dv-tab.dv-active-tab {
   box-shadow: inset 0 -2px 0 0 var(--accent-strong);
 }
+/* Inactive tabs respond on hover (the strip had no hover state; only the overflow menu did). */
+.mb-dock .dv-tab:not(.dv-active-tab):hover {
+  background-color: rgb(255 255 255 / 0.04);
+}
 
-/* Custom DockTab content (title + optional close for added panels). */
+/* Custom DockTab content (icon + title + optional close for added panels). */
 .mb-dock .mb-dock-tab {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 7px;
   height: 100%;
   padding: 0 10px 0 12px;
   font-size: 12.5px;
+  font-weight: 500;
   letter-spacing: 0.01em;
+}
+.mb-dock-tab .mb-dock-tab-icon {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  opacity: 0.6;
+  transition: opacity 0.12s ease;
+}
+.mb-dock .dv-tab.dv-active-tab .mb-dock-tab-icon {
+  opacity: 1;
+}
+.mb-dock .mb-dock-tab .mb-dock-tab-close {
+  margin-left: 3px;
+}
+/* New-activity dot on background tabs. */
+.mb-dock-tab-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 9999px;
+  background: #46c45a;
+  box-shadow: 0 0 6px rgb(70 196 90 / 0.5);
 }
 .mb-dock .mb-dock-tab-close {
   display: inline-flex;
@@ -557,10 +591,11 @@
 .dv-shell .dv-tabs-overflow-container .mb-dock-tab {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 7px;
   width: 100%;
   padding: 6px 10px 6px 12px;
   font-size: 12.5px;
+  font-weight: 500;
   letter-spacing: 0.01em;
 }
 

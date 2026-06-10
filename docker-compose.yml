@@ -33,8 +33,6 @@ services:
       ALLOW_ORIGIN: ${RELAY_ALLOW_ORIGIN:-${NEXT_PUBLIC_SITE_URL:-*}}
       CHANNELS: ${RELAY_CHANNELS:-fazebanks}
       CHATTERS_FILE: /data/chatters.json
-      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
-      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
       KICK_CHATROOM_ID: ${RELAY_KICK_CHATROOM_ID:-}
       KICK_CHANNEL: ${RELAY_KICK_CHANNEL:-}
     volumes:
@@ -68,6 +66,16 @@ services:
       X_CHAT_API_KEY: ${X_CHAT_API_KEY:-}
       X_BROADCAST_SOURCES: ${X_BROADCAST_SOURCES:-}
       X_WEB_BEARER: ${X_WEB_BEARER:-}
+      # AI assistant: server-held provider keys (locked in the UI when set) + per-visitor limits.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ASSISTANT_RPM: ${ASSISTANT_RPM:-5}
+      ASSISTANT_RPD: ${ASSISTANT_RPD:-50}
+      # Admin board: key (falls back to X_CHAT_API_KEY) + kill switch.
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      ADMIN_DISABLED: ${ADMIN_DISABLED:-}
       X_GQL_USER_BY_SCREEN_NAME: ${X_GQL_USER_BY_SCREEN_NAME:-}
       X_GQL_USER_TWEETS: ${X_GQL_USER_TWEETS:-}
       STREAMERS_JSON: ${STREAMERS_JSON:-}

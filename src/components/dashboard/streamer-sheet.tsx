@@ -1,9 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { Clapperboard, Pin, Radio, X } from "lucide-react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import { useFlag } from "@/lib/control/client";
+import { DEMO_ENABLED, useDemoMode } from "@/lib/demo-mode-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { hasVideo } from "@/lib/streamers/mock";
 import { cn } from "@/lib/utils";
@@ -17,7 +19,12 @@ function formatViewers(n: number): string {
 /** Bottom sheet listing channels; slides up smoothly, drag-down or tap-backdrop to dismiss. */
 export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { selectedId, select, streamers } = useChannel();
-  const sorted = [...streamers].sort((a, b) => Number(b.live) - Number(a.live) || b.viewers - a.viewers);
+  const { isDemo, toggle } = useDemoMode();
+  const demoOn = useFlag("demo");
+  // Pinned channels (set by the operator) lead, then live before offline, then by viewers.
+  const sorted = [...streamers].sort(
+    (a, b) => Number(b.pinned ?? false) - Number(a.pinned ?? false) || Number(b.live) - Number(a.live) || b.viewers - a.viewers,
+  );
 
   return (
     <AnimatePresence>
@@ -48,6 +55,41 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
             </div>
             <div className="flex flex-none items-center gap-2 px-4 pb-2">
               <span className="text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Channels</span>
+
+              {/* Mobile home of the Live/Demo switch (the top nav doesn't exist here). */}
+              {DEMO_ENABLED && demoOn ? (
+                <div className="ml-1 flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.02] p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isDemo) toggle();
+                    }}
+                    aria-pressed={!isDemo}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
+                      !isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    <Radio className={cn("size-3", !isDemo && "text-[#46c45a]")} />
+                    Live
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isDemo) toggle();
+                    }}
+                    aria-pressed={isDemo}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
+                      isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    <Clapperboard className="size-3" />
+                    Demo
+                  </button>
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 onClick={onClose}
@@ -76,6 +118,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                       <StreamerAvatar streamer={s} size={40} rounded="lg" />
                       <div className="flex min-w-0 flex-1 flex-col leading-tight">
                         <span className="flex items-center gap-1.5">
+                          {s.pinned ? <Pin className="size-3 shrink-0 fill-current text-[#d8b25a]" aria-label="Pinned" /> : null}
                           <span className={cn("truncate text-[0.92rem] font-medium", s.live ? "text-foreground" : "text-muted-foreground")}>
                             {s.name}
                           </span>

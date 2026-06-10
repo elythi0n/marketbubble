@@ -1,0 +1,124 @@
+/* MarketBubble graphite theme, matching the dashboard's design language. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #141416;
+  color: #ededed;
+  font-family: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+body { display: flex; flex-direction: column; overflow: hidden; }
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255 255 255 / 0.07);
+  background: #161619;
+}
+.brand { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.brand-name { font-weight: 700; letter-spacing: 0.02em; }
+.brand-sub {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #85858d;
+}
+.conn { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #85858d; }
+
+.dot { width: 7px; height: 7px; border-radius: 999px; flex: none; }
+.dot-ok { background: #46c45a; box-shadow: 0 0 6px rgba(70 196 90 / 0.5); }
+.dot-err { background: #ef6a61; }
+.dot-wait { background: #85858d; }
+
+.grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255 255 255 / 0.16) transparent;
+}
+
+.card {
+  border: 1px solid rgba(255 255 255 / 0.08);
+  border-radius: 12px;
+  background: rgba(255 255 255 / 0.02);
+  padding: 12px;
+  min-width: 0;
+}
+.card-wide { grid-column: 1 / -1; }
+.card h2 {
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #85858d;
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.muted { color: #85858d; font-size: 0.78rem; list-style: none; }
+ul, ol { list-style: none; }
+
+/* Show status */
+.roster li { display: flex; align-items: center; gap: 9px; padding: 5px 0; min-width: 0; }
+.roster .who { min-width: 0; flex: 1; }
+.roster .name { font-weight: 600; font-size: 0.84rem; display: flex; align-items: center; gap: 7px; }
+.roster .title { color: #85858d; font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.roster .viewers { font-variant-numeric: tabular-nums; font-size: 0.78rem; color: #c6c6cc; flex: none; }
+.plat { font-size: 0.56rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.plat-twitch { color: #a970ff; }
+.plat-kick { color: #53fc18; }
+.plat-x { color: #e7e9ea; }
+
+/* Top chatters */
+.chatters li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.chatters .rank { width: 2ch; text-align: right; font-variant-numeric: tabular-nums; color: #85858d; font-size: 0.74rem; flex: none; }
+.chatters .cname { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.82rem; }
+.chatters .count { font-variant-numeric: tabular-nums; font-size: 0.74rem; color: #c6c6cc; }
+.rank-1 { color: #d8b25a !important; }
+.rank-2 { color: #c6c6cc !important; }
+.rank-3 { color: #c08457 !important; }
+
+/* Predictions */
+.predictions li { padding: 5px 0; }
+.predictions .q { font-size: 0.78rem; margin-bottom: 4px; display: flex; gap: 8px; }
+.predictions .q span:first-child { flex: 1; min-width: 0; }
+.predictions .pct { font-variant-numeric: tabular-nums; font-weight: 700; color: #46c45a; flex: none; }
+.predictions .bar { height: 4px; border-radius: 999px; background: rgba(255 255 255 / 0.07); overflow: hidden; }
+.predictions .bar > span { display: block; height: 100%; border-radius: 999px; background: rgba(70 196 90 / 0.65); }
+
+/* X chat */
+.live-tag {
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: #46c45a;
+  border: 1px solid rgba(70 196 90 / 0.3);
+  background: rgba(70 196 90 / 0.08);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.xchat { max-height: 220px; overflow-y: auto; scrollbar-width: thin; }
+.xchat li { padding: 2.5px 0; font-size: 0.8rem; overflow-wrap: anywhere; }
+.xchat .author { font-weight: 650; color: #e7e9ea; margin-right: 5px; }
+.xchat .handle { color: #85858d; font-size: 0.7rem; margin-right: 5px; }
+
+.err {
+  color: #ef6a61;
+  font-size: 0.74rem;
+  border: 1px solid rgba(239 106 97 / 0.25);
+  background: rgba(239 106 97 / 0.06);
+  border-radius: 8px;
+  padding: 6px 9px;
+  margin-top: 6px;
+}

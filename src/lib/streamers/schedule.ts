@@ -29,3 +29,6 @@ export function formatCountdown(ms: number): string {
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 }
+
+/** The show's default slot, used when no roster entry carries its own schedule. */
+export const DEFAULT_SCHEDULE: StreamSchedule = { label: "THURSDAYS 1PM PST", weekday: 4, hour: 13 };
