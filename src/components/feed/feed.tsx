@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType } from "react";
 import { ArrowDown, type LucideProps } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import type { FeedMessage } from "@/lib/feed/types";
 import { FeedRow, type FeedDensity } from "./feed-row";
 import styles from "./feed.module.css";
+
+/** Estimated row height; must match the virtualizer's estimateSize below (used as a fallback). */
+const ROW_ESTIMATE = 28;
+
+// Scroll compensation must run before paint to avoid a visible jump, but useLayoutEffect warns
+// during SSR. Fall back to useEffect on the server (where there's no scroll position anyway).
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 interface FeedProps {
   messages: readonly FeedMessage[];
@@ -61,7 +68,7 @@ export function Feed({
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 28,
+    estimateSize: () => ROW_ESTIMATE,
     overscan: 14,
     getItemKey: (index) => messages[index]?.id ?? index,
   });
@@ -76,6 +83,28 @@ export function Feed({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastId]);
+
+  // The aggregator caps its buffer and drops the oldest messages off the front on every flush. When
+  // the reader has scrolled up, those drops shrink the content above the viewport while the browser
+  // keeps scrollTop fixed — so what they're reading slides upward. Compensate by subtracting the
+  // height of the rows that fell off the front, holding the view still. (When stuck to the bottom we
+  // want to follow new messages instead, so this is a no-op there.)
+  const prevMessagesRef = useRef(messages);
+  useIsomorphicLayoutEffect(() => {
+    const prev = prevMessagesRef.current;
+    prevMessagesRef.current = messages;
+    const el = scrollRef.current;
+    if (!el || stickRef.current || prev === messages || prev.length === 0 || messages.length === 0) return;
+    const newFirstId = messages[0].id;
+    if (prev[0]?.id === newFirstId) return; // nothing fell off the front
+    const dropped = prev.findIndex((m) => m.id === newFirstId);
+    if (dropped <= 0) return; // the new head isn't in the old buffer, or nothing was dropped
+    const cache = (virtualizer as unknown as { itemSizeCache?: Map<unknown, number> }).itemSizeCache;
+    let removed = 0;
+    for (let i = 0; i < dropped; i += 1) removed += cache?.get(prev[i].id) ?? ROW_ESTIMATE;
+    if (removed > 0) el.scrollTop = Math.max(0, el.scrollTop - removed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const handleScroll = () => {
     const el = scrollRef.current;
