@@ -8,7 +8,7 @@ import { useFeedContext } from "@/lib/chat/feed-context";
 import type { FeedMessage, MessageType } from "@/lib/feed/types";
 import styles from "./gifts-pane.module.css";
 
-const GIFT_TYPES = new Set<MessageType>(["giftsub", "sub", "resub", "raid"]);
+export const GIFT_TYPES = new Set<MessageType>(["giftsub", "sub", "resub", "raid"]);
 
 interface GiftView {
   icon: LucideIcon;

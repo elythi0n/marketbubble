@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, type CSSProperties, type ReactNode } from "react";
+import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
 
 import { clampForContrast } from "@/lib/feed/contrast";
 import { EVENT_LABEL, PLATFORM_LABEL, isEventType, type FeedMessage, type Segment } from "@/lib/feed/types";
@@ -200,7 +200,7 @@ function FeedRowImpl({
 }: FeedRowProps) {
   const { openStock } = useStockDrawer();
   const { emphasizeStreamer } = useSettingsOrDefault();
-  const renderSegment = useCallback(makeRenderSegment(openStock), [openStock]);
+  const renderSegment = useMemo(() => makeRenderSegment(openStock), [openStock]);
   const densityClass = density === "compact" ? styles.compact : density === "comfortable" ? styles.comfortable : "";
 
   if (isEventType(message.type)) {

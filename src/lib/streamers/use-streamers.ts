@@ -9,6 +9,8 @@ import { getHandle, type Streamer } from "./mock";
 
 const POLL_MS = 60_000;
 const SELECTED_POLL_MS = 30_000;
+/** How many consecutive failed polls may reuse the last-known status before degrading to offline. */
+const MAX_HELD_MISSES = 2;
 
 interface MergedStatus {
   live: boolean;
@@ -35,6 +37,9 @@ export interface UseStreamersResult {
 export function useStreamers(roster: Streamer[], selectedId?: string): UseStreamersResult {
   const [statuses, setStatuses] = useState<Record<string, MergedStatus>>({});
   const [polledKey, setPolledKey] = useState<string | null>(null);
+  // Consecutive failed polls per channel; lets a network blip reuse the last-known status
+  // instead of flashing everyone offline (and wrongly summoning the "nobody's live" nudge).
+  const missesRef = useRef<Record<string, number>>({});
 
   const rosterRef = useRef(roster);
   rosterRef.current = roster;
@@ -124,52 +129,71 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
     return [s.id, { live, viewers, title, livePlatform, livePlatforms, viewersByPlatform, thumbnail }];
   }
 
-  // Poll all streamers.
-  async function pollAll() {
-    const roster = rosterRef.current;
-    const key = roster.map((s) => s.id).join(",");
-    const results = await Promise.allSettled(roster.map(pollOne));
-    const next: Record<string, MergedStatus> = {};
-    roster.forEach((s, i) => {
-      const r = results[i];
-      if (r.status === "fulfilled" && r.value) {
-        const [id, status] = r.value;
-        next[id] = status;
-      } else {
-        // Don't keep stale live/viewers when a poll fails or APIs are unreachable.
-        next[s.id] = { live: false, viewers: 0, title: s.title ?? "" };
-      }
-    });
-    setStatuses(next);
-    setPolledKey(key);
-  }
-
   // Full-roster polling loop. Re-runs when the roster set changes so a new roster polls right away.
+  // The cancelled flag discards in-flight results from a superseded roster — without it, toggling
+  // demo/live lets the old roster's slower poll land last, overwriting the fresh statuses and
+  // polledKey and leaving everyone "offline" until the next interval tick.
   useEffect(() => {
+    let cancelled = false;
+
+    const pollAll = async () => {
+      const roster = rosterRef.current;
+      const key = roster.map((s) => s.id).join(",");
+      const results = await Promise.allSettled(roster.map(pollOne));
+      if (cancelled) return;
+      setStatuses((prev) => {
+        const next: Record<string, MergedStatus> = {};
+        roster.forEach((s, i) => {
+          const r = results[i];
+          if (r.status === "fulfilled" && r.value) {
+            const [id, status] = r.value;
+            missesRef.current[id] = 0;
+            next[id] = status;
+          } else {
+            // No response from any platform. Hold the last-known status through brief blips,
+            // but degrade to offline once the misses persist (don't keep stale "live" forever).
+            const misses = (missesRef.current[s.id] ?? 0) + 1;
+            missesRef.current[s.id] = misses;
+            const last = prev[s.id];
+            next[s.id] =
+              last && misses <= MAX_HELD_MISSES ? last : { live: false, viewers: 0, title: s.title ?? "" };
+          }
+        });
+        return next;
+      });
+      setPolledKey(key);
+    };
+
     pollAll();
     const id = setInterval(pollAll, POLL_MS);
-    return () => clearInterval(id);
-  }, [rosterKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [rosterKey]);
 
   // Immediate re-poll + 30 s refresh loop for the selected streamer.
   // Matches the API cache TTL so every tick gets genuinely fresh data.
   useEffect(() => {
     if (!selectedId) return;
+    let cancelled = false;
 
     const pollSelected = () => {
       const s = rosterRef.current.find((r) => r.id === selectedId);
       if (!s) return;
       pollOne(s).then((result) => {
-        if (result) {
-          const [id, status] = result;
-          setStatuses((prev) => ({ ...prev, [id]: status }));
-        }
+        if (cancelled || !result) return;
+        const [id, status] = result;
+        setStatuses((prev) => ({ ...prev, [id]: status }));
       });
     };
 
     pollSelected();
     const id = setInterval(pollSelected, SELECTED_POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [selectedId, rosterKey]);
 
   const streamers = roster.map((s) => {

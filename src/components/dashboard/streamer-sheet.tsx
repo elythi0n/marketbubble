@@ -18,7 +18,7 @@ function formatViewers(n: number): string {
 
 /** Bottom sheet listing channels; slides up smoothly, drag-down or tap-backdrop to dismiss. */
 export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { selectedId, select, streamers } = useChannel();
+  const { selectedId, select, streamers, polled } = useChannel();
   const { isDemo, toggle } = useDemoMode();
   const demoOn = useFlag("demo");
   // Pinned channels (set by the operator) lead, then live before offline, then by viewers.
@@ -54,7 +54,9 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
               <span className="mx-auto h-1 w-10 rounded-full bg-white/20" aria-hidden />
             </div>
             <div className="flex flex-none items-center gap-2 px-4 pb-2">
-              <span className="text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Channels</span>
+              <span className="text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {polled ? "Channels" : "Checking who's live…"}
+              </span>
 
               {/* Mobile home of the Live/Demo switch (the top nav doesn't exist here). */}
               {DEMO_ENABLED && demoOn ? (
@@ -99,7 +101,8 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                 <X className="size-4" />
               </button>
             </div>
-            <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 mb-scroll">
+            {/* Until the first live-status poll lands, the list shimmers instead of flashing all-offline. */}
+            <ul className={cn("flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 mb-scroll", !polled && "animate-pulse")}>
               {sorted.map((s) => {
                 const active = s.id === selectedId;
                 return (

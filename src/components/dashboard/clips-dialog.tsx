@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink, X, Play } from "lucide-react";
+import { Check, ExternalLink, Share2, X, Play } from "lucide-react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
@@ -110,6 +110,22 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
   const [hostname, setHostname] = useState("localhost");
   useEffect(() => { setHostname(window.location.hostname); }, []);
 
+  // Web Share where available (mobile), clipboard copy elsewhere.
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setCopied(false), [clip?.id]);
+  const share = async () => {
+    if (!clip?.url) return;
+    if (typeof navigator.share === "function") {
+      await navigator.share({ title: clip.title, url: clip.url }).catch(() => {});
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(clip.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
+
   const embed = clip ? embedUrl(clip, hostname) : null;
 
   return (
@@ -118,13 +134,13 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
         {/* Darker backdrop for the dark app */}
         <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
 
-        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 flex h-[88vh] w-[92vw] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#131315] shadow-2xl outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 flex h-[88dvh] w-[92vw] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#131315] shadow-2xl outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 md:flex-row">
           <DialogTitle className="sr-only">{clip?.title ?? "Clips"}</DialogTitle>
 
           {clip && (
             <>
               {/* ── Left: player fills full height, info pinned at bottom ── */}
-              <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                 {/* Video expands to fill all available vertical space */}
                 <div className="relative min-h-0 flex-1 bg-black">
                   {embed ? (
@@ -169,24 +185,34 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                     </div>
                   </div>
                   {clip.url && (
-                    <a
-                      href={clip.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="flex flex-none items-center gap-1.5 text-[0.68rem] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-                    >
-                      <ExternalLink className="size-3" />
-                      Open original
-                    </a>
+                    <div className="flex flex-none items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={share}
+                        className="flex items-center gap-1.5 text-[0.68rem] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+                      >
+                        {copied ? <Check className="size-3 text-[#46c45a]" /> : <Share2 className="size-3" />}
+                        {copied ? "Copied" : "Share"}
+                      </button>
+                      <a
+                        href={clip.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="flex items-center gap-1.5 text-[0.68rem] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+                      >
+                        <ExternalLink className="size-3" />
+                        <span className="hidden sm:inline">Open original</span>
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Divider */}
-              <div className="w-px flex-none bg-white/[0.06]" />
+              <div className="h-px w-full flex-none bg-white/[0.06] md:h-auto md:w-px" />
 
-              {/* ── Right: scrollable clips list ── */}
-              <div className="flex w-[260px] flex-none flex-col">
+              {/* ── Right (bottom on mobile): scrollable clips list ── */}
+              <div className="flex h-[30dvh] w-full flex-none flex-col md:h-auto md:w-[260px]">
                 <div className="flex flex-none items-center justify-between border-b border-white/[0.06] px-3 py-2.5">
                   <span className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Videos
@@ -215,6 +241,16 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                   )}
                 </div>
               </div>
+
+              {/* Mobile: full-width close bar in thumb reach (desktop keeps the header X). */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-12 w-full flex-none items-center justify-center gap-2 border-t border-white/[0.08] bg-white/[0.03] text-[0.74rem] font-semibold uppercase tracking-[0.1em] text-foreground transition-colors active:bg-white/[0.07] md:hidden"
+              >
+                <X className="size-4" />
+                Close
+              </button>
             </>
           )}
         </DialogPrimitive.Popup>

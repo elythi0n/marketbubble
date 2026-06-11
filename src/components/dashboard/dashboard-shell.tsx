@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { Clapperboard, X } from "lucide-react";
 
 import type { FeedMessage } from "@/lib/feed/types";
@@ -22,7 +22,8 @@ import { SettingsProvider } from "@/lib/settings/settings-context";
 import { StageModeProvider } from "@/lib/stage-mode-context";
 import { TickersProvider } from "@/lib/markets/tickers-context";
 import { ChannelProvider, useChannel } from "@/lib/streamers/channel-context";
-import { useIsMobile } from "@/lib/use-is-mobile";
+import { useIsMobile, usePhoneLandscape } from "@/lib/use-is-mobile";
+import { HighlightsBridge } from "./highlights-bridge";
 import { StageOverlay } from "./stage-overlay";
 import { AnnouncementBanner } from "./announcement-banner";
 import { BottomNav } from "./bottom-nav";
@@ -164,7 +165,7 @@ function DemoNudge() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-x-0 bottom-6 z-[80] mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-white/12 bg-[#1b1b1f] py-2.5 pl-3.5 pr-2 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]"
+          className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[45] mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-white/12 bg-[#1b1b1f] py-2.5 pl-3.5 pr-2 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)] md:bottom-6"
         >
           <Clapperboard className="size-4 flex-none text-muted-foreground" />
           <div className="min-w-0 leading-tight">
@@ -214,6 +215,48 @@ function AssistantArchiveBridge() {
   return null;
 }
 
+/**
+ * Fires a browser notification when a roster channel flips offline → live. The first polled
+ * snapshot is a silent baseline (page load shouldn't announce channels that were already live),
+ * and demo mode never notifies. Clicking the notification focuses the tab on that channel.
+ */
+function LiveNotificationsBridge() {
+  const { settings } = useSettings();
+  const { isDemo } = useDemoMode();
+  const { streamers, polled, select } = useChannel();
+
+  const baseline = useRef<Set<string> | null>(null);
+  const rosterKey = streamers.map((s) => s.id).join(",");
+  useEffect(() => {
+    baseline.current = null;
+  }, [rosterKey]);
+
+  useEffect(() => {
+    if (!polled) return;
+    const liveIds = new Set(streamers.filter((s) => s.live).map((s) => s.id));
+    const prev = baseline.current;
+    baseline.current = liveIds;
+    if (prev === null) return; // first real snapshot — record, don't announce
+    if (isDemo || !settings.liveNotifications) return;
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    for (const s of streamers) {
+      if (!s.live || prev.has(s.id)) continue;
+      const n = new Notification(`${s.name} is live`, {
+        body: s.title || "Streaming now — watch on MarketBubble",
+        icon: "/web-app-manifest-192x192.png",
+        tag: `mb-live-${s.id}`,
+      });
+      n.onclick = () => {
+        window.focus();
+        select(s.id);
+        n.close();
+      };
+    }
+  }, [polled, streamers, isDemo, settings.liveNotifications, select]);
+
+  return null;
+}
+
 /** Collects mention-inbox matches from the merged feed, even while the panel is closed. */
 function MentionBridge() {
   const { settings } = useSettings();
@@ -227,6 +270,58 @@ function MentionBridge() {
   return null;
 }
 
+/**
+ * Applies the Animations setting app-wide: framer-motion goes instant via MotionConfig, and a
+ * root attribute lets globals.css zero out CSS transitions/keyframes. "user" respects the OS
+ * reduced-motion preference when the toggle is on.
+ */
+function MotionPrefs({ children }: { children: ReactNode }) {
+  const { settings } = useSettings();
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-no-anim", !settings.animations);
+  }, [settings.animations]);
+  return <MotionConfig reducedMotion={settings.animations ? "user" : "always"}>{children}</MotionConfig>;
+}
+
+/** BottomNav with the live-channel badge on the Channels bubble; needs ChannelContext, so it sits below the provider. */
+function MobileBottomNav({ onOpenChannels }: { onOpenChannels: () => void }) {
+  const { streamers } = useChannel();
+  return <BottomNav onOpenChannels={onOpenChannels} liveCount={streamers.filter((s) => s.live).length} />;
+}
+
+/**
+ * Mobile chrome + workspace. Rotating a live stream to landscape enters theater: fullscreen
+ * player with the chat overlay, all other chrome hidden. Rotating back restores everything.
+ */
+function MobileShell({ sheetOpen, setSheetOpen }: { sheetOpen: boolean; setSheetOpen: (open: boolean) => void }) {
+  const phoneLandscape = usePhoneLandscape();
+  const { streamers, selectedId } = useChannel();
+  const channel = streamers.find((s) => s.id === selectedId) ?? streamers[0];
+  const theater = phoneLandscape && Boolean(channel?.live);
+
+  return (
+    <div className="relative z-10 flex h-[100dvh] flex-col overflow-hidden">
+      {!theater ? (
+        <>
+          <AnnouncementBanner />
+          <PollCard />
+          <StatBand />
+          <Marquee />
+        </>
+      ) : null}
+      <MobileWorkspace theater={theater} />
+      {!theater ? (
+        <>
+          {/* reserve space for the fixed bottom nav */}
+          <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] flex-none" aria-hidden />
+          <MobileBottomNav onOpenChannels={() => setSheetOpen(true)} />
+        </>
+      ) : null}
+      <StreamerSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+    </div>
+  );
+}
+
 // dockview touches the DOM on mount, so the workspace is client-only (desktop only).
 const DockShell = dynamic(() => import("./dock-shell").then((m) => m.DockShell), {
   ssr: false,
@@ -236,6 +331,9 @@ const DockShell = dynamic(() => import("./dock-shell").then((m) => m.DockShell),
 
 export function DashboardShell() {
   const isMobile = useIsMobile();
+  // A rotated phone is wider than the mobile breakpoint; without this it would mount the desktop dockview.
+  const phoneLandscape = usePhoneLandscape();
+  const mobile = isMobile || phoneLandscape;
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Opened from the bottom nav on another page (Channels → /?channels=1).
@@ -250,24 +348,17 @@ export function DashboardShell() {
   return (
     <DemoModeProvider>
       <SettingsProvider>
+      <MotionPrefs>
       <TickersProvider>
         <ChannelProvider>
           <FeedBridge>
             <AssistantArchiveBridge />
             <MentionBridge />
+            <HighlightsBridge />
+            <LiveNotificationsBridge />
             <StageModeProvider>
-              {isMobile ? (
-                <div className="relative z-10 flex h-[100dvh] flex-col overflow-hidden">
-                  <AnnouncementBanner />
-                  <PollCard />
-                  <StatBand />
-                  <Marquee />
-                  <MobileWorkspace />
-                  {/* reserve space for the fixed bottom nav */}
-                  <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] flex-none" aria-hidden />
-                  <BottomNav onOpenChannels={() => setSheetOpen(true)} />
-                  <StreamerSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
-                </div>
+              {mobile ? (
+                <MobileShell sheetOpen={sheetOpen} setSheetOpen={setSheetOpen} />
               ) : (
                 <div className="relative z-10 flex h-[100dvh] flex-col overflow-hidden">
                   <TopNav />
@@ -293,6 +384,7 @@ export function DashboardShell() {
           </FeedBridge>
         </ChannelProvider>
       </TickersProvider>
+      </MotionPrefs>
       </SettingsProvider>
     </DemoModeProvider>
   );

@@ -17,5 +17,7 @@
   ],
   "theme_color": "#141416",
   "background_color": "#141416",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/",
+  "description": "Live streams, chat, and markets in one dashboard"
 }

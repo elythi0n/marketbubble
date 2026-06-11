@@ -62,6 +62,8 @@ export const viewport: Viewport = {
   themeColor: "#141416",
   width: "device-width",
   initialScale: 1,
+  // Draw under the notch/home bar; the app handles env(safe-area-inset-*) itself.
+  viewportFit: "cover",
 };
 
 function JsonLd() {

@@ -9,11 +9,14 @@ export function useClips(streamer: Streamer): { clips: Clip[]; loading: boolean 
   const [clips, setClips] = useState<Clip[]>(MOCK_CLIPS);
   const [loading, setLoading] = useState(true);
 
+  const twitchLogin = getHandle(streamer, "twitch");
+  const { youtube } = streamer;
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const params = new URLSearchParams({ login: getHandle(streamer, "twitch") });
-    if (streamer.youtube) params.set("youtube", streamer.youtube);
+    const params = new URLSearchParams({ login: twitchLogin });
+    if (youtube) params.set("youtube", youtube);
 
     fetch(`/api/clips?${params}`)
       .then(async (res) => {
@@ -25,7 +28,7 @@ export function useClips(streamer: Streamer): { clips: Clip[]; loading: boolean 
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [getHandle(streamer, "twitch"), streamer.youtube]);
+  }, [twitchLogin, youtube]);
 
   return { clips, loading };
 }

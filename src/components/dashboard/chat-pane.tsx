@@ -10,6 +10,8 @@ import { useReadHelper } from "@/hooks/use-read-helper";
 import { useFeedContext } from "@/lib/chat/feed-context";
 import type { ProviderStatus } from "@/lib/chat/provider";
 import { useChatRowMenu } from "./chat-row-menu";
+import { subscribeChatJump } from "@/lib/chat-jump";
+import { requestAuthorFocus, subscribeAuthorFocus } from "@/lib/chat-focus";
 import { markDockActivity } from "@/lib/dock-activity";
 import { useSettings } from "@/lib/settings/settings-context";
 import { useFilteredMessages } from "@/lib/settings/use-filtered-messages";
@@ -169,6 +171,11 @@ export function ChatPane() {
   const [readHelper, setReadHelper] = useState(false);
   const [query, setQuery] = useState("");
   const [focusAuthor, setFocusAuthor] = useState<string | null>(null);
+  // Wrapper that keeps other panels (e.g. Chat Roster) in sync whenever focus changes locally.
+  const changeFocusAuthor = useCallback((author: string | null) => {
+    setFocusAuthor(author);
+    requestAuthorFocus(author);
+  }, []);
 
   // Per-channel visibility in the merged feed, persisted across reloads.
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -226,14 +233,27 @@ export function ChatPane() {
   // Click a search result to jump the live feed to that message.
   const [jumpTo, setJumpTo] = useState<{ id: string; nonce: number } | null>(null);
 
+  // Other panels (e.g. clicking a Hype Meter spike) can jump the feed too.
+  useEffect(
+    () =>
+      subscribeChatJump((id) => {
+        setQuery("");
+        setJumpTo({ id, nonce: Date.now() });
+      }),
+    [],
+  );
+
+  // Other panels (e.g. Chat Roster) can set/clear the author focus remotely.
+  useEffect(() => subscribeAuthorFocus((author) => setFocusAuthor(author)), []);
+
   // Clicking an author focuses them; clicking the same author again clears the focus.
   const onAuthorClick = useCallback((author: string) => {
-    setFocusAuthor((cur) => (cur?.toLowerCase() === author.toLowerCase() ? null : author));
-  }, []);
+    changeFocusAuthor(focusAuthor?.toLowerCase() === author.toLowerCase() ? null : author);
+  }, [changeFocusAuthor, focusAuthor]);
 
   const { onRowContextMenu, menuElement } = useChatRowMenu({
     focusAuthor,
-    setFocusAuthor,
+    setFocusAuthor: changeFocusAuthor,
     onHideChannel: mergeAll ? (id) => (hiddenIds.includes(id) ? undefined : saveHidden([...hiddenIds, id])) : undefined,
   });
 
@@ -408,8 +428,8 @@ export function ChatPane() {
           </span>
         </header>
 
-        {/* Full-width search */}
-        <div className="flex-none border-b border-white/[0.07] px-2.5 py-2">
+        {/* Full-width search — desktop only; on mobile it just eats vertical space. */}
+        <div className="hidden flex-none border-b border-white/[0.07] px-2.5 py-2 md:block">
           <div className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 transition-colors focus-within:border-white/20 focus-within:bg-white/[0.05]">
             <Search className="size-4 flex-none text-muted-foreground/70" />
             <input
@@ -443,7 +463,7 @@ export function ChatPane() {
           </span>
           <button
             type="button"
-            onClick={() => setFocusAuthor(null)}
+            onClick={() => changeFocusAuthor(null)}
             aria-label="Clear author focus"
             className="ml-auto flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
           >

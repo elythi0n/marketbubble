@@ -8,6 +8,7 @@ export const siteDescription =
 export const NAV_SECTIONS = [
   { label: "Stream", href: "/" },
   { label: "Markets", href: "/markets" },
+  { label: "News", href: "/news" },
   { label: "Leaderboard", href: "/leaderboard" },
   { label: "About", href: "/about" },
 ] as const;

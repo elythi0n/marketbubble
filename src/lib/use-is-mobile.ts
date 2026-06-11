@@ -19,3 +19,22 @@ export function useIsMobile(breakpoint = 768): boolean {
 
   return isMobile;
 }
+
+/**
+ * True on a phone rotated to landscape: short, touch-first viewport. A rotated phone is *wider*
+ * than the `useIsMobile` breakpoint, so the shell must check both before mounting the desktop
+ * dockview — and this is the trigger for the fullscreen theater layout.
+ */
+export function usePhoneLandscape(): boolean {
+  const [match, setMatch] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: landscape) and (max-height: 480px) and (pointer: coarse)");
+    const update = () => setMatch(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  return match;
+}

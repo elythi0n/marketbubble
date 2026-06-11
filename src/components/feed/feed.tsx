@@ -103,7 +103,6 @@ export function Feed({
     let removed = 0;
     for (let i = 0; i < dropped; i += 1) removed += cache?.get(prev[i].id) ?? ROW_ESTIMATE;
     if (removed > 0) el.scrollTop = Math.max(0, el.scrollTop - removed);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   const handleScroll = () => {

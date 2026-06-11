@@ -255,6 +255,7 @@ export function AssistantPane() {
     return { provider: p, model: defaultModel(p) };
   });
   const [modelOpen, setModelOpen] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
   const [showKeyEntry, setShowKeyEntry] = useState(false);
   const [modelsByProvider, setModelsByProvider] = useState<Partial<Record<AssistantProvider, ModelOption[]>>>({});
 
@@ -683,7 +684,7 @@ export function AssistantPane() {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setModelOpen((v) => !v)}
+                onClick={() => { setModelOpen((v) => !v); setModelSearch(""); }}
                 aria-expanded={modelOpen}
                 className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[0.64rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
               >
@@ -693,52 +694,74 @@ export function AssistantPane() {
               {modelOpen ? (
                 <>
                   <div className="fixed inset-0 z-[90]" onClick={() => setModelOpen(false)} aria-hidden />
-                  <div className="absolute bottom-full left-0 z-[100] mb-1.5 w-52 rounded-lg border border-white/12 bg-[#1b1b1f] p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
-                    {usable.map((p) => (
-                      <div key={p}>
-                        <p className="flex items-center gap-1.5 px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                          {PROVIDER_LABEL[p]}
-                          {managed.includes(p) ? (
-                            <span className="inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/[0.04] px-1 py-px text-[0.52rem] normal-case tracking-normal">
-                              <Lock className="size-2.5" />
-                              Server
-                            </span>
-                          ) : (
-                            <KeyRound className="size-2.5" />
-                          )}
-                        </p>
-                        {modelsFor(p).map((m) => (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => {
-                              setSel({ provider: p, model: m.id });
-                              setModelOpen(false);
-                            }}
-                            className={cn(
-                              "flex w-full items-center rounded-md px-2 py-1.5 text-left text-[0.74rem] transition-colors hover:bg-white/[0.07]",
-                              p === sel.provider && m.id === sel.model ? "text-foreground" : "text-foreground/75",
-                            )}
-                          >
-                            <span className="min-w-0 flex-1 truncate">{m.label}</span>
-                            {p === sel.provider && m.id === sel.model ? <Check className="size-3 flex-none text-muted-foreground" /> : null}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                    {canAddKey ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setModelOpen(false);
-                          setShowKeyEntry(true);
-                        }}
-                        className="mt-0.5 flex w-full items-center gap-1.5 rounded-md border-t border-white/[0.06] px-2 py-1.5 text-left text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
-                      >
-                        <KeyRound className="size-3" />
-                        Bring your own key…
-                      </button>
-                    ) : null}
+                  <div className="absolute bottom-full left-0 z-[100] mb-1.5 w-56 rounded-lg border border-white/12 bg-[#1b1b1f] shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+                    {/* Search bar — stays fixed at the top */}
+                    <div className="flex items-center gap-1.5 border-b border-white/[0.07] px-2 py-1.5">
+                      <Search className="size-3 flex-none text-muted-foreground/60" />
+                      <input
+                        type="text"
+                        value={modelSearch}
+                        onChange={(e) => setModelSearch(e.target.value)}
+                        placeholder="Search models…"
+                        autoFocus
+                        className="min-w-0 flex-1 bg-transparent text-[0.72rem] text-foreground outline-none placeholder:text-muted-foreground/40"
+                      />
+                    </div>
+                    {/* Scrollable model list */}
+                    <div className="max-h-60 overflow-y-auto p-1 mb-scroll">
+                      {usable.map((p) => {
+                        const q = modelSearch.toLowerCase();
+                        const filtered = modelsFor(p).filter(
+                          (m) => !q || m.label.toLowerCase().includes(q) || m.id.toLowerCase().includes(q),
+                        );
+                        if (filtered.length === 0) return null;
+                        return (
+                          <div key={p}>
+                            <p className="flex items-center gap-1.5 px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                              {PROVIDER_LABEL[p]}
+                              {managed.includes(p) ? (
+                                <span className="inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/[0.04] px-1 py-px text-[0.52rem] normal-case tracking-normal">
+                                  <Lock className="size-2.5" />
+                                  Server
+                                </span>
+                              ) : (
+                                <KeyRound className="size-2.5" />
+                              )}
+                            </p>
+                            {filtered.map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => {
+                                  setSel({ provider: p, model: m.id });
+                                  setModelOpen(false);
+                                }}
+                                className={cn(
+                                  "flex w-full items-center rounded-md px-2 py-1.5 text-left text-[0.74rem] transition-colors hover:bg-white/[0.07]",
+                                  p === sel.provider && m.id === sel.model ? "text-foreground" : "text-foreground/75",
+                                )}
+                              >
+                                <span className="min-w-0 flex-1 truncate">{m.label}</span>
+                                {p === sel.provider && m.id === sel.model ? <Check className="size-3 flex-none text-muted-foreground" /> : null}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
+                      {canAddKey ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModelOpen(false);
+                            setShowKeyEntry(true);
+                          }}
+                          className="mt-0.5 flex w-full items-center gap-1.5 rounded-md border-t border-white/[0.06] px-2 py-1.5 text-left text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                        >
+                          <KeyRound className="size-3" />
+                          Bring your own key…
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </>
               ) : null}

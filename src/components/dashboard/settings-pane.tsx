@@ -298,13 +298,46 @@ function AssistantTab() {
 }
 
 function WorkspaceTab() {
-  const { reset } = useSettings();
+  const { settings, update, reset } = useSettings();
+  const [notifyBlocked, setNotifyBlocked] = useState(false);
   const resetLayout = () => {
     localStorage.removeItem("mb-dock-layout-v2");
     window.location.reload();
   };
+
+  // Turning the toggle on walks the browser permission flow; a denied permission re-disables it.
+  const setLiveNotifications = async (on: boolean) => {
+    if (!on) {
+      update({ liveNotifications: false });
+      return;
+    }
+    if (typeof Notification === "undefined") return;
+    let permission = Notification.permission;
+    if (permission === "default") permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotifyBlocked(false);
+      update({ liveNotifications: true });
+    } else {
+      setNotifyBlocked(permission === "denied");
+      update({ liveNotifications: false });
+    }
+  };
+
   return (
     <div className="divide-y divide-white/[0.05]">
+      <Row label="Animations" hint="Interface motion — panel slides, shimmer, pulsing dots. Off = instant and calm">
+        <Toggle checked={settings.animations} onChange={(animations) => update({ animations })} label="Animations" />
+      </Row>
+      <Row
+        label="Go-live notifications"
+        hint={
+          notifyBlocked
+            ? "Blocked by the browser — allow notifications for this site first"
+            : "Browser notification when a channel on the roster goes live"
+        }
+      >
+        <Toggle checked={settings.liveNotifications} onChange={(v) => void setLiveNotifications(v)} label="Go-live notifications" />
+      </Row>
       <Row label="OBS overlay" hint="Bare chat feed for a browser source; add ?bg=transparent&channel=<id>&scale=1.4">
         <button
           type="button"

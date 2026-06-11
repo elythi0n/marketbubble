@@ -199,7 +199,7 @@ function CollapsedStreamerButton({
 
 export function Sidebar() {
   const [expanded, setExpanded] = useState(false);
-  const { selectedId, select, streamers } = useChannel();
+  const { selectedId, select, streamers, polled } = useChannel();
   const [menu, setMenu] = useState<{ x: number; y: number; streamer: Streamer } | null>(null);
 
   // Pinned channels (set by the operator) lead, then live before offline, then by viewers.
@@ -248,7 +248,9 @@ export function Sidebar() {
     >
       <div className={cn("flex h-11 flex-none items-center border-b border-white/[0.06]", expanded ? "px-3" : "justify-center")}>
         {expanded ? (
-          <span className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Channels</span>
+          <span className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {polled ? "Channels" : "Checking who's live…"}
+          </span>
         ) : null}
         <button
           type="button"
@@ -267,7 +269,8 @@ export function Sidebar() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 mb-scroll">
+      {/* Until the first live-status poll lands, the list shimmers instead of flashing all-offline. */}
+      <div className={cn("flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 mb-scroll", !polled && "animate-pulse")}>
         {expanded ? (
           <ul className="flex flex-col gap-2.5">
             {sorted.map((streamer) => (

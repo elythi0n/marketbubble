@@ -28,6 +28,7 @@ export function useLiveStatus(streamer: Streamer): LiveStatus {
   const [status, setStatus] = useState<LiveStatus>(fallback);
   const streamerRef = useRef(streamer);
   streamerRef.current = streamer;
+  const twitchLogin = getHandle(streamer, "twitch");
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +58,7 @@ export function useLiveStatus(streamer: Streamer): LiveStatus {
       cancelled = true;
       clearInterval(id);
     };
-  }, [getHandle(streamer, "twitch")]);
+  }, [twitchLogin]);
 
   return status;
 }

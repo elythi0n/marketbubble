@@ -14,6 +14,7 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 - **Ships à la carte.** No database required. The AI assistant is opt-in at runtime and removable at build time with one env var. Demo mode previews the whole dashboard with busy real channels when the show is offline.
 - **Calm under fire.** Virtualized rendering, combo-collapse for spam, read helper to slow the feed, keyword highlight/mute filters, and per-channel toggles keep a three-platform firehose readable.
 - **Built to run all day.** This is a second-screen app people leave open for hours, and it's engineered like one: every buffer is capped, every cache is pruned, every socket reconnects with backoff, and hidden tabs drop to one update a second. It's as fast at hour six as at minute one.
+- **Built to be run.** The admin control plane gives hosts live tools during the show: push announcements to all viewers, run audience polls with real-time tallies, override the active roster, and monitor platform health — all without touching the codebase or reloading anything.
 
 ## Feature tour
 
@@ -24,6 +25,7 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 - Highlight/mute keyword filters, search with click-to-jump (click a result and the live feed scrolls to that message and flashes it)
 - Mention Inbox panel: every message across all channels that names you, collected even while the panel is closed
 - Activity dots on background tabs when new messages arrive
+- **Chat Roster** with live message counts, per-platform filter pills, username search, and a sort toggle (message count or most recent)
 
 **Workspace**
 - Dockable panels (drag, split, tab, resize, pop out to a separate window), layout persisted
@@ -47,9 +49,25 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 - Embeds the right player automatically (Twitch/Kick, picks the platform with more viewers, with a manual toggle when simulcasting)
 - Per-platform viewer counts in the sidebar, combined stats in the stat band
 - Offline view with next-show countdown, recent clips and trending markets
-- Leaderboard of top chatters (relay-backed, roster channels only) and on-chain traders
+- **Hype Meter**: 30-minute sparkline of chat activity with triangle markers at spike positions, click any bucket to jump to that moment in the chat archive
+- **Highlights panel**: notable chat moments with relative timestamps (just now · 3m ago · 2h 5m ago), linked to the Hype Meter markers
+- **Leaderboard** of top chatters (relay-backed, roster channels only) with platform-colored subscriber badges, and on-chain traders
 
-**Pages**: `/` dashboard · `/markets` · `/leaderboard` · `/about` (the show and the hosts) · `/overlay` (OBS)
+**News** (`/news`)
+- Wall Street broadsheet layout: Walburn masthead, double rule, full-width hero + editorial sidebar — the same hierarchy a print front page uses, not a list of links
+- Live RSS from CoinDesk, CoinTelegraph, Decrypt and Yahoo Finance, refreshed every 5 minutes; color-coded category chips (Crypto · Markets)
+- Full-width "Latest" grid below the fold, with the leading article spanning two columns for editorial weight
+- Recent Clips & Broadcasts row pulls from the streamer's Twitch clip history and YouTube channel, opening inline with the same player dialog as the main dashboard
+
+**Admin & live production** (`/admin`)
+- Password-protected route (falls back to a real 404 when no key is configured, so it's invisible to visitors)
+- **Engage tab**: broadcast a full-screen announcement to all connected viewers; run live audience polls with option voting and inline chat-vote detection, real-time bar chart tallies, lock and clear controls
+- **`/overlay-poll`**: OBS browser source that renders only the active poll — big type, live tallies, invisible when idle; `?bg=transparent&scale=1.4` for live production
+- **Roster tab**: override which channels appear in the merged feed per-session, without touching config
+- **Controls tab**: push global keyword filters (highlight/mute) and feed flags to every visitor in real time
+- **Health tab**: live platform connection status and viewer counts across all roster channels
+
+**Pages**: `/` dashboard · `/markets` · `/news` · `/leaderboard` · `/about` (the show and the hosts) · `/overlay` (OBS chat) · `/overlay-poll` (OBS poll) · `/admin` (producer tools)
 
 ## Performance & durability
 
@@ -118,6 +136,8 @@ Create `streamers.json` at the project root, or set `STREAMERS_JSON` to a JSON a
 | `X_MENTION_QUERIES` | Optional | Search terms for the X Mentions pane |
 | `STREAMERS_JSON` | Optional | Channel roster as an env var instead of `streamers.json` |
 | `RELAY_URL` | Optional | Relay for the persistent top-chatters leaderboard |
+| `ADMIN_API_KEY` | Optional | Password for `/admin` (falls back to `X_CHAT_API_KEY`; route is a 404 until one is set) |
+| `ADMIN_DISABLED=1` | Optional | Force the admin route to 404 regardless of key configuration |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `XAI_API_KEY` / `OPENROUTER_API_KEY` | Optional | Server-held assistant keys: locked in the UI, proxied so they never reach the browser |
 | `ASSISTANT_RPM` / `ASSISTANT_RPD` | Optional | Per-visitor limits for server-held keys (default 5/min, 50/day; BYOK is unlimited) |
 | `NEXT_PUBLIC_AI_DISABLED=1` | Optional | Ship the dashboard without the AI assistant entirely |

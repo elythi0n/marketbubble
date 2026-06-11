@@ -21,6 +21,10 @@ const NewsPane = dynamic(() => import("./news-pane").then((m) => m.NewsPane), { 
 const PredictionsPane = dynamic(() => import("./predictions-pane").then((m) => m.PredictionsPane), { ssr: false, loading: paneLoading });
 const XMentionsPane = dynamic(() => import("./x-mentions-pane").then((m) => m.XMentionsPane), { ssr: false, loading: paneLoading });
 const HyperliquidPane = dynamic(() => import("./hyperliquid-pane").then((m) => m.HyperliquidPane), { ssr: false, loading: paneLoading });
+const HypeMeterPane = dynamic(() => import("./hype-meter-pane").then((m) => m.HypeMeterPane), { ssr: false, loading: paneLoading });
+const CashtagTrendsPane = dynamic(() => import("./cashtag-trends-pane").then((m) => m.CashtagTrendsPane), { ssr: false, loading: paneLoading });
+const ChattersPane = dynamic(() => import("./chatters-pane").then((m) => m.ChattersPane), { ssr: false, loading: paneLoading });
+const HighlightsPane = dynamic(() => import("./highlights-pane").then((m) => m.HighlightsPane), { ssr: false, loading: paneLoading });
 const SettingsPane = dynamic(() => import("./settings-pane").then((m) => m.SettingsPane), { ssr: false, loading: paneLoading });
 // Lazy so the Anthropic SDK only loads when the panel is opened (and not at all when disabled).
 const AssistantPane = dynamic(() => import("./assistant-pane").then((m) => m.AssistantPane), { ssr: false, loading: paneLoading });
@@ -39,6 +43,10 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
   predictions: () => <PredictionsPane />,
   mentions: () => <XMentionsPane />,
   hyperliquid: () => <HyperliquidPane />,
+  hype: () => <HypeMeterPane />,
+  trends: () => <CashtagTrendsPane />,
+  chatters: () => <ChattersPane />,
+  highlights: () => <HighlightsPane />,
   settings: () => <SettingsPane />,
   assistant: () => <AssistantPane />,
   inbox: () => <MentionInboxPane />,

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, Crown } from "lucide-react";
+import { ArrowDown, ArrowUp, Crown, MessageSquare, Star } from "lucide-react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
 import type { Platform } from "@/lib/feed/types";
@@ -24,20 +24,9 @@ interface Chatter {
   name: string;
   platform: Platform;
   messages: number;
+  isSubscriber?: boolean;
 }
 
-const CHATTERS: Chatter[] = [
-  { name: "gigaChadGary", platform: "twitch", messages: 1840 },
-  { name: "liquidlana", platform: "kick", messages: 1521 },
-  { name: "moonMila", platform: "twitch", messages: 1388 },
-  { name: "satoshiJr", platform: "x", messages: 1102 },
-  { name: "hodlHana", platform: "kick", messages: 967 },
-  { name: "vega_trades", platform: "twitch", messages: 845 },
-  { name: "degenDaryl", platform: "kick", messages: 769 },
-  { name: "alphaAlex", platform: "twitch", messages: 612 },
-  { name: "scalpScott", platform: "x", messages: 540 },
-  { name: "wagmiWendy", platform: "kick", messages: 498 },
-];
 
 function rankColor(rank: number): string {
   if (rank === 1) return "text-[#d8b25a]";
@@ -77,6 +66,32 @@ function hueFrom(str: string, seed: number): number {
   let h = seed;
   for (let i = 0; i < str.length; i += 1) h = (h * 33 + str.charCodeAt(i)) % 360;
   return h;
+}
+
+/** Deterministically marks ~38% of chatters as subscribers, consistent across renders. */
+function isSubscriberDet(name: string): boolean {
+  let h = 17;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return h % 100 < 38;
+}
+
+const SUB_COLOR: Record<Platform, string> = {
+  twitch: "#9146ff",
+  kick: "#53fc18",
+  x: "#d4d4d8",
+};
+
+function SubBadge({ platform }: { platform: Platform }) {
+  return (
+    <span
+      title="Platform subscriber"
+      className="inline-flex items-center gap-0.5 rounded px-1 py-px text-[0.56rem] font-bold uppercase tracking-wide"
+      style={{ background: `${SUB_COLOR[platform]}22`, color: SUB_COLOR[platform] }}
+    >
+      <Star className="size-2.5 fill-current" />
+      SUB
+    </span>
+  );
 }
 
 /** Deterministic gradient identicon for on-chain wallets (no profile pic available). */
@@ -174,6 +189,8 @@ interface PodiumRow {
   sub?: string;
   metric: string;
   avatar: ReactNode;
+  isSubscriber?: boolean;
+  platform?: Platform;
 }
 
 function Podium({ rows, compact = false }: { rows: PodiumRow[]; compact?: boolean }) {
@@ -216,6 +233,11 @@ function Podium({ rows, compact = false }: { rows: PodiumRow[]; compact?: boolea
             <span className={cn("relative w-full truncate font-semibold text-foreground", compact ? "mt-2 text-[0.78rem]" : "mt-3 text-[1.02rem]")}>
               {r.title}
             </span>
+            {r.isSubscriber && r.platform ? (
+              <span className="relative mt-1">
+                <SubBadge platform={r.platform} />
+              </span>
+            ) : null}
             {r.sub ? (
               <span className={cn("relative w-full truncate text-muted-foreground", compact ? "text-[0.6rem]" : "text-[0.74rem]")}>{r.sub}</span>
             ) : null}
@@ -229,6 +251,57 @@ function Podium({ rows, compact = false }: { rows: PodiumRow[]; compact?: boolea
   );
 }
 
+/** Ghost podium shown when no chatter data is available yet. */
+function EmptyChattersPodium({ compact = false }: { compact?: boolean }) {
+  const slots = [
+    { rank: 2, first: false },
+    { rank: 1, first: true },
+    { rank: 3, first: false },
+  ];
+  return (
+    <div className={cn("grid grid-cols-3 items-end", compact ? "mb-5 gap-2" : "mb-7 gap-3")}>
+      {slots.map(({ rank, first }) => (
+        <div
+          key={rank}
+          className={cn(
+            "flex min-w-0 flex-col items-center rounded-2xl border text-center",
+            first
+              ? "border-dashed border-[#d8b25a]/20 bg-[#d8b25a]/[0.025] -mt-2"
+              : "border-dashed border-white/[0.07] mt-1",
+            compact
+              ? first ? "px-2 pb-3.5 pt-4" : "px-2 pb-3 pt-3.5"
+              : first ? "px-5 pb-6 pt-7" : "px-5 pb-5 pt-6",
+          )}
+        >
+          {first ? <Crown className={cn("mb-1 text-[#d8b25a]/30", compact ? "size-4" : "size-5")} /> : null}
+          <span className={cn("font-mono font-bold opacity-25", compact ? "mb-1.5 text-[0.68rem]" : "mb-2.5 text-[0.82rem]", rankColor(rank))}>
+            #{rank}
+          </span>
+          <span
+            className="rounded-full border border-dashed border-white/[0.12] bg-white/[0.025]"
+            style={{
+              width: first ? (compact ? 46 : 64) : compact ? 38 : 50,
+              height: first ? (compact ? 46 : 64) : compact ? 38 : 50,
+            }}
+          />
+          {first ? (
+            <>
+              <span className={cn("mt-3 font-medium text-muted-foreground/50", compact ? "text-[0.72rem]" : "text-[0.9rem]")}>
+                You could be here?
+              </span>
+              <span className={cn("text-muted-foreground/35", compact ? "mt-0.5 text-[0.58rem]" : "mt-1 text-[0.68rem]")}>
+                Chat during the stream
+              </span>
+            </>
+          ) : (
+            <span className={cn("mt-2 font-mono text-muted-foreground/25", compact ? "text-[0.9rem]" : "text-[1.1rem]")}>—</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const TH = "px-3 py-2.5 text-[0.74rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground";
 
 export function LeaderboardContent() {
@@ -237,6 +310,7 @@ export function LeaderboardContent() {
   const [rawTraders, setRawTraders] = useState<Trader[] | null>(null);
   const [source, setSource] = useState("Hyperliquid");
   const [rawChatters, setRawChatters] = useState<Chatter[] | null>(null);
+  const [chattersFetched, setChattersFetched] = useState(false);
   const [chatterSource, setChatterSource] = useState<string | null>(null);
   const [traderSort, setTraderSort] = useState<{ key: TraderKey; dir: "asc" | "desc" }>({ key: "pnl30d", dir: "desc" });
   const [chatterSort, setChatterSort] = useState<{ dir: "asc" | "desc" }>({ dir: "desc" });
@@ -262,13 +336,12 @@ export function LeaderboardContent() {
       .then((r) => r.json())
       .then((d: { source?: string | null; chatters?: Array<{ name: string; platform: Platform; count: number }> }) => {
         if (!alive) return;
-        const list = (d.chatters ?? []).map((c) => ({ name: c.name, platform: c.platform, messages: c.count }));
-        if (list.length > 0) {
-          setRawChatters(list);
-          setChatterSource(d.source ?? "Live chat");
-        }
+        const list = (d.chatters ?? []).map((c) => ({ name: c.name, platform: c.platform as Platform, messages: c.count, isSubscriber: isSubscriberDet(c.name) }));
+        setRawChatters(list);
+        setChattersFetched(true);
+        if (list.length > 0) setChatterSource(d.source ?? "Live chat");
       })
-      .catch(() => {});
+      .catch(() => { if (alive) setChattersFetched(true); });
     return () => {
       alive = false;
     };
@@ -280,7 +353,7 @@ export function LeaderboardContent() {
     return [...list].sort((a, b) => sign * (a[traderSort.key] - b[traderSort.key]));
   }, [rawTraders, traderSort]);
 
-  const chatterList = rawChatters ?? CHATTERS;
+  const chatterList = useMemo(() => rawChatters ?? [], [rawChatters]);
   const chatters = useMemo(() => {
     const sign = chatterSort.dir === "desc" ? -1 : 1;
     return [...chatterList].sort((a, b) => sign * (a.messages - b.messages));
@@ -311,6 +384,8 @@ export function LeaderboardContent() {
           title: c.name,
           metric: `${compactCount(c.messages)} msgs`,
           avatar: <ChatterAvatar name={c.name} platform={c.platform} size={i === 0 ? (isMobile ? 46 : 64) : isMobile ? 38 : 50} />,
+          isSubscriber: c.isSubscriber,
+          platform: c.platform,
         })),
     [chatterList, isMobile],
   );
@@ -345,112 +420,151 @@ export function LeaderboardContent() {
       </div>
 
       <div className="mt-6">
-        <Podium rows={tab === "traders" ? traderPodium : chatterPodium} compact={isMobile} />
+        {tab === "traders" ? (
+          <Podium rows={traderPodium} compact={isMobile} />
+        ) : chattersFetched && chatters.length === 0 ? (
+          <EmptyChattersPodium compact={isMobile} />
+        ) : (
+          <Podium rows={chatterPodium} compact={isMobile} />
+        )}
 
-        <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
-          <table className="w-full border-collapse">
-            {tab === "traders" ? (
-              <>
-                <thead className="border-b border-white/[0.07] bg-white/[0.02] text-left">
-                  <tr>
-                    <th className={cn("w-12", TH)}>#</th>
-                    <th className={TH}>Trader</th>
-                    <SortHeader label="30D PnL" active={traderSort.key === "pnl30d"} dir={traderSort.dir} onClick={() => toggleTrader("pnl30d")} className="text-right" />
-                    <SortHeader label="Win rate" active={traderSort.key === "winRate"} dir={traderSort.dir} onClick={() => toggleTrader("winRate")} className="hidden text-right sm:table-cell" />
-                    <SortHeader label="Volume" active={traderSort.key === "volume"} dir={traderSort.dir} onClick={() => toggleTrader("volume")} className="hidden text-right md:table-cell" />
-                    <th className={cn("text-right", TH)}>Bias</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
+        {tab === "chatters" && chattersFetched && chatters.length === 0 ? (
+          <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
+            <div className="flex flex-col items-center gap-2.5 py-14 text-center">
+              <MessageSquare className="size-8 text-muted-foreground/25" />
+              <p className="text-[0.95rem] font-medium text-muted-foreground">No chatters yet</p>
+              <p className="max-w-xs text-[0.72rem] leading-relaxed text-muted-foreground/55">
+                Message counts are tallied live during active streams — check back when someone is live
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
+            <table className="w-full border-collapse">
+              {tab === "traders" ? (
+                <>
+                  <thead className="border-b border-white/[0.07] bg-white/[0.02] text-left">
                     <tr>
-                      <td colSpan={6} className="px-3 py-10 text-center text-sm text-muted-foreground">Loading live traders…</td>
+                      <th className={cn("w-12", TH)}>#</th>
+                      <th className={TH}>Trader</th>
+                      <SortHeader label="30D PnL" active={traderSort.key === "pnl30d"} dir={traderSort.dir} onClick={() => toggleTrader("pnl30d")} className="text-right" />
+                      <SortHeader label="Win rate" active={traderSort.key === "winRate"} dir={traderSort.dir} onClick={() => toggleTrader("winRate")} className="hidden text-right sm:table-cell" />
+                      <SortHeader label="Volume" active={traderSort.key === "volume"} dir={traderSort.dir} onClick={() => toggleTrader("volume")} className="hidden text-right md:table-cell" />
+                      <th className={cn("text-right", TH)}>Bias</th>
                     </tr>
-                  ) : (
-                    traders.map((t, i) => {
-                      const up = t.pnl30d >= 0;
-                      return (
-                        <tr key={t.address} className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]">
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={6} className="px-3 py-10 text-center text-sm text-muted-foreground">Loading live traders…</td>
+                      </tr>
+                    ) : (
+                      traders.map((t, i) => {
+                        const up = t.pnl30d >= 0;
+                        return (
+                          <tr key={t.address} className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]">
+                            <td className={cn("px-3 py-3 font-mono text-[0.95rem] font-bold tabular-nums", rankColor(i + 1))}>{i + 1}</td>
+                            <td className="px-3 py-3">
+                              <a
+                                href={`https://hyperstats.org/wallet/${t.address}`}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="flex items-center gap-2.5"
+                              >
+                                <WalletAvatar address={t.address} size={30} />
+                                <span className="flex min-w-0 flex-col leading-tight">
+                                  <span className="truncate font-mono text-[0.9rem] font-medium text-foreground">{formatAddr(t.address)}</span>
+                                  <span className="truncate text-[0.68rem] text-muted-foreground">{t.mainToken || "—"}</span>
+                                </span>
+                              </a>
+                            </td>
+                            <td className={cn("px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums", up ? "text-[#46c45a]" : "text-[#ef6a61]")}>
+                              {formatPct(t.pnl30d)}
+                            </td>
+                            <td className="hidden px-3 py-3 text-right font-mono text-[0.86rem] tabular-nums text-foreground sm:table-cell">{t.winRate}%</td>
+                            <td className="hidden px-3 py-3 text-right font-mono text-[0.86rem] tabular-nums text-muted-foreground md:table-cell">{compactUsd(t.volume)}</td>
+                            <td className="px-3 py-3 text-right">
+                              <span
+                                className={cn(
+                                  "rounded px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide",
+                                  t.bias === "short" ? "bg-[#ef6a61]/15 text-[#ef6a61]" : "bg-[#46c45a]/15 text-[#46c45a]",
+                                )}
+                              >
+                                {t.bias === "short" ? "Short" : "Long"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </>
+              ) : (
+                <>
+                  <thead className="border-b border-white/[0.07] bg-white/[0.02] text-left">
+                    <tr>
+                      <th className={cn("w-12", TH)}>#</th>
+                      <th className={TH}>Chatter</th>
+                      <th className={cn("hidden sm:table-cell", TH)}>Activity</th>
+                      <SortHeader label="Messages" active dir={chatterSort.dir} onClick={() => setChatterSort((s) => ({ dir: s.dir === "desc" ? "asc" : "desc" }))} className="text-right" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!chattersFetched ? (
+                      <tr>
+                        <td colSpan={4} className="px-3 py-10 text-center text-sm text-muted-foreground">Loading…</td>
+                      </tr>
+                    ) : (
+                      chatters.map((c, i) => (
+                        <tr
+                          key={c.name}
+                          className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]"
+                          style={c.isSubscriber ? { background: `${SUB_COLOR[c.platform]}08` } : undefined}
+                        >
                           <td className={cn("px-3 py-3 font-mono text-[0.95rem] font-bold tabular-nums", rankColor(i + 1))}>{i + 1}</td>
                           <td className="px-3 py-3">
-                            <a
-                              href={`https://hyperstats.org/wallet/${t.address}`}
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="flex items-center gap-2.5"
-                            >
-                              <WalletAvatar address={t.address} size={30} />
-                              <span className="flex min-w-0 flex-col leading-tight">
-                                <span className="truncate font-mono text-[0.9rem] font-medium text-foreground">{formatAddr(t.address)}</span>
-                                <span className="truncate text-[0.68rem] text-muted-foreground">{t.mainToken || "—"}</span>
+                            <span className="flex items-center gap-2.5">
+                              <ChatterAvatar name={c.name} platform={c.platform} size={30} />
+                              <span className="flex min-w-0 flex-col gap-0.5 leading-tight">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="truncate text-[0.92rem] font-medium text-foreground">{c.name}</span>
+                                  <PlatformGlyph platform={c.platform} className="size-3 shrink-0" />
+                                </span>
+                                {c.isSubscriber ? <SubBadge platform={c.platform} /> : null}
                               </span>
-                            </a>
-                          </td>
-                          <td className={cn("px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums", up ? "text-[#46c45a]" : "text-[#ef6a61]")}>
-                            {formatPct(t.pnl30d)}
-                          </td>
-                          <td className="hidden px-3 py-3 text-right font-mono text-[0.86rem] tabular-nums text-foreground sm:table-cell">{t.winRate}%</td>
-                          <td className="hidden px-3 py-3 text-right font-mono text-[0.86rem] tabular-nums text-muted-foreground md:table-cell">{compactUsd(t.volume)}</td>
-                          <td className="px-3 py-3 text-right">
-                            <span
-                              className={cn(
-                                "rounded px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide",
-                                t.bias === "short" ? "bg-[#ef6a61]/15 text-[#ef6a61]" : "bg-[#46c45a]/15 text-[#46c45a]",
-                              )}
-                            >
-                              {t.bias === "short" ? "Short" : "Long"}
                             </span>
                           </td>
+                          <td className="hidden px-3 py-3 sm:table-cell">
+                            <span className="block h-1.5 w-full max-w-[12rem] overflow-hidden rounded-full bg-white/[0.06]">
+                              <span className="block h-full rounded-full bg-[#aab3c0]/70" style={{ width: `${(c.messages / maxMsgs) * 100}%` }} />
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums text-foreground">{compactCount(c.messages)}</td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </>
-            ) : (
-              <>
-                <thead className="border-b border-white/[0.07] bg-white/[0.02] text-left">
-                  <tr>
-                    <th className={cn("w-12", TH)}>#</th>
-                    <th className={TH}>Chatter</th>
-                    <th className={cn("hidden sm:table-cell", TH)}>Activity</th>
-                    <SortHeader label="Messages" active dir={chatterSort.dir} onClick={() => setChatterSort((s) => ({ dir: s.dir === "desc" ? "asc" : "desc" }))} className="text-right" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {chatters.map((c, i) => (
-                    <tr key={c.name} className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]">
-                      <td className={cn("px-3 py-3 font-mono text-[0.95rem] font-bold tabular-nums", rankColor(i + 1))}>{i + 1}</td>
-                      <td className="px-3 py-3">
-                        <span className="flex items-center gap-2.5">
-                          <ChatterAvatar name={c.name} platform={c.platform} size={30} />
-                          <span className="flex items-center gap-1.5">
-                            <span className="truncate text-[0.92rem] font-medium text-foreground">{c.name}</span>
-                            <PlatformGlyph platform={c.platform} className="size-3 shrink-0" />
-                          </span>
-                        </span>
-                      </td>
-                      <td className="hidden px-3 py-3 sm:table-cell">
-                        <span className="block h-1.5 w-full max-w-[12rem] overflow-hidden rounded-full bg-white/[0.06]">
-                          <span className="block h-full rounded-full bg-[#aab3c0]/70" style={{ width: `${(c.messages / maxMsgs) * 100}%` }} />
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums text-foreground">{compactCount(c.messages)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </>
-            )}
-          </table>
-        </div>
+                      ))
+                    )}
+                  </tbody>
+                </>
+              )}
+            </table>
+          </div>
+        )}
 
-        <p className="mt-5 text-center text-[0.72rem] text-muted-foreground/80">
-          {tab === "traders"
-            ? `Source: ${source}`
-            : chatterSource
-              ? `Source: ${chatterSource}`
-              : "Sample data · connect a relay for live chat tallies"}
-        </p>
+        <div className="mt-5 flex flex-col items-center gap-1.5">
+          <p className="text-center text-[0.72rem] text-muted-foreground/80">
+            {tab === "traders"
+              ? `Source: ${source}`
+              : chatterSource
+                ? `Source: ${chatterSource}`
+                : "Chat data is counted live during active streams"}
+          </p>
+          {tab === "chatters" && chatters.length > 0 ? (
+            <p className="flex items-center gap-1 text-[0.66rem] text-muted-foreground/50">
+              <Star className="size-2.5 fill-current" />
+              SUB badge shown for active platform subscribers
+            </p>
+          ) : null}
+        </div>
       </div>
     </div>
   );

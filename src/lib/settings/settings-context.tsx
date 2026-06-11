@@ -21,6 +21,10 @@ export interface Settings {
   showTimestamps: boolean;
   /** Show the original text of deleted messages (struck through) instead of a tombstone. */
   showDeleted: boolean;
+  /** Interface motion (panel transitions, shimmer, slide-ins). Off = instant, calmer UI. */
+  animations: boolean;
+  /** Browser notification when a roster channel flips offline → live (needs Notification permission). */
+  liveNotifications: boolean;
   density: ChatDensity;
   /** Tint rows from the channel's broadcaster so the streamer's own messages stand out. */
   emphasizeStreamer: boolean;
@@ -36,6 +40,8 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   showTimestamps: true,
   showDeleted: false,
+  animations: true,
+  liveNotifications: false,
   density: "cozy",
   emphasizeStreamer: true,
   assistantOptIn: false,

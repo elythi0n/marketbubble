@@ -637,3 +637,14 @@
 .mb-dock .dv-tabs-overflow-dropdown-default:hover {
   background-color: rgb(255 255 255 / 0.08) !important;
 }
+
+/* Animations toggle (Settings → Workspace). The shell sets data-no-anim on <html> when motion is
+   off; zero out CSS transitions and keyframe animations everywhere. framer-motion is handled
+   separately via MotionConfig. */
+[data-no-anim] *,
+[data-no-anim] *::before,
+[data-no-anim] *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+}
