@@ -101,7 +101,7 @@ Create `streamers.json` at the project root, or set `STREAMERS_JSON` to a JSON a
     "handles": { "twitch": "yourhandle", "kick": "yourhandle", "x": "YourHandle" },
     "platforms": ["twitch", "kick", "x"],
     "xBroadcasts": ["YourHandle", "MarketBubble"],
-    "schedule": { "label": "FRIDAYS 3PM ET", "weekday": 5, "hour": 15 }
+    "schedule": { "label": "THURSDAYS 1PM PT", "weekday": 4, "hour": 13 }
   }
 ]
 ```

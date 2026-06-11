@@ -6,7 +6,7 @@
     "platforms": ["twitch", "kick", "x"],
     "youtube": "MarketBubble",
     "xBroadcasts": ["banks", "MarketBubble"],
-    "schedule": { "label": "THURSDAYS 1PM PST", "weekday": 4, "hour": 13 }
+    "schedule": { "label": "THURSDAYS 1PM PT", "weekday": 4, "hour": 13 }
   },
   {
     "id": "blknoiz06",
@@ -15,6 +15,6 @@
     "platforms": ["x"],
     "youtube": "MarketBubble",
     "xBroadcasts": ["Blknoiz06", "MarketBubble"],
-    "schedule": { "label": "THURSDAYS 1PM PST", "weekday": 4, "hour": 13 }
+    "schedule": { "label": "THURSDAYS 1PM PT", "weekday": 4, "hour": 13 }
   }
 ]

@@ -49,7 +49,7 @@ export function hasVideo(s: Streamer): boolean {
 }
 
 // Both creators host the MarketBubble show; the per-stream title is filled from the platform later,
-// so `title` is the brand placeholder for now. The slot is always THURSDAYS 1PM PST.
+// so `title` is the brand placeholder for now. The slot is always THURSDAYS 1PM PT.
 const SHOW_TITLE = "MarketBubble";
 const SHOW_SCHEDULE = DEFAULT_SCHEDULE;
 
