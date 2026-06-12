@@ -16,8 +16,12 @@ import { XBroadcastReader, type BroadcastChatMessage } from "./reader";
 export interface BridgeOptions {
   /** Each entry is an @handle, a broadcast link, or a bare broadcast id. */
   sources: string[];
-  /** How often to look for a (new) live broadcast while a source is idle. */
-  pollMs?: number;
+  /**
+   * How often to look for a (new) live broadcast while a source is idle. A function is consulted
+   * before each wait, letting the caller poll eagerly around the scheduled slot and slowly
+   * off-hours (X's guest endpoints rate-limit by IP, so idle polling should stay light).
+   */
+  pollMs?: number | (() => number);
   log?: (line: string) => void;
 }
 
@@ -32,14 +36,19 @@ function toBufferMessage(msg: BroadcastChatMessage, channel: string | undefined)
   };
 }
 
-function runSource(source: string, pollMs: number, log: (l: string) => void, isStopped: () => boolean): () => void {
+function runSource(
+  source: string,
+  pollMs: number | (() => number),
+  log: (l: string) => void,
+  isStopped: () => boolean,
+): () => void {
   let reader: XBroadcastReader | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let cancelled = false;
 
   const schedule = () => {
     if (cancelled || isStopped()) return;
-    timer = setTimeout(tick, pollMs);
+    timer = setTimeout(tick, typeof pollMs === "function" ? pollMs() : pollMs);
   };
 
   const tick = async () => {

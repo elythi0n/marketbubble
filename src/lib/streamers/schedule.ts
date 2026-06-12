@@ -78,6 +78,29 @@ export function nextOccurrence(schedule: StreamSchedule, from: Date): Date {
   return nextWeek;
 }
 
+/**
+ * How long past the slot the show counts as "starting": the slot has hit but the stream isn't
+ * detected live yet (hosts going live a little late). UIs show "Show is starting" instead of
+ * jumping straight to next week's countdown; after the window the countdown takes over again.
+ */
+export const STARTING_WINDOW_MS = 30 * 60_000;
+
+/** True within [slot, slot + STARTING_WINDOW_MS) of the schedule's most recent occurrence. */
+export function isStarting(schedule: StreamSchedule, now: Date): boolean {
+  // nextOccurrence only looks forward; asking from `window` ago surfaces a just-passed slot.
+  const slot = nextOccurrence(schedule, new Date(now.getTime() - STARTING_WINDOW_MS));
+  return slot.getTime() <= now.getTime();
+}
+
+/**
+ * True when live-broadcast discovery should poll eagerly: shortly before the slot through the
+ * starting window. Outside this, discovery can idle at a much slower cadence.
+ */
+export function isNearSlot(schedule: StreamSchedule, now: Date, beforeMs = 10 * 60_000): boolean {
+  if (isStarting(schedule, now)) return true;
+  return nextOccurrence(schedule, now).getTime() - now.getTime() <= beforeMs;
+}
+
 /** Compact "until" string: "2d 4h", "4h 12m", "12m", or a soon/now fallback. */
 export function formatCountdown(ms: number): string {
   if (ms <= 0) return "starting soon";

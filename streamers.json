@@ -11,8 +11,8 @@
   {
     "id": "blknoiz06",
     "name": "Blknoiz06",
-    "handles": { "x": "Blknoiz06" },
-    "platforms": ["x"],
+    "handles": { "kick": "ansem", "x": "Blknoiz06" },
+    "platforms": ["kick", "x"],
     "youtube": "MarketBubble",
     "xBroadcasts": ["Blknoiz06", "MarketBubble"],
     "schedule": { "label": "THURSDAYS 1PM PT", "weekday": 4, "hour": 13 }

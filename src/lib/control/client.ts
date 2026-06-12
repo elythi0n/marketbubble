@@ -10,7 +10,7 @@ import type { ControlState } from "@/lib/server/control";
  * a connection. EventSource reconnects on its own and the server replays current state on
  * connect, so consumers can treat `useControl()` as always-current.
  */
-const EMPTY: ControlState = { announcement: null, flags: {}, poll: null, roster: null, filters: [] };
+const EMPTY: ControlState = { announcement: null, flags: {}, poll: null, roster: null, filters: [], giveaway: null };
 
 let state: ControlState = EMPTY;
 let started = false;
@@ -26,7 +26,9 @@ function ensureStream() {
   const source = new EventSource("/api/control/stream");
   source.onmessage = (ev) => {
     try {
-      state = JSON.parse(ev.data) as ControlState;
+      // Spread over EMPTY so fields this client knows about but an older server doesn't
+      // (e.g. a not-yet-restarted dev process) come through as their defaults, not undefined.
+      state = { ...EMPTY, ...(JSON.parse(ev.data) as ControlState) };
       emit();
     } catch {
       /* malformed frame — ignore */
@@ -37,7 +39,7 @@ function ensureStream() {
     fetch("/api/control", { cache: "no-store" })
       .then((r) => r.json())
       .then((s: ControlState) => {
-        state = s;
+        state = { ...EMPTY, ...s };
         emit();
       })
       .catch(() => {});

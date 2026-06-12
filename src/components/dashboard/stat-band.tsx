@@ -8,7 +8,7 @@ import { formatChange } from "@/lib/markets/types";
 import { useTickers } from "@/lib/markets/tickers-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { type Streamer } from "@/lib/streamers/mock";
-import { DEFAULT_SCHEDULE, formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
+import { DEFAULT_SCHEDULE, formatCountdown, isStarting, nextOccurrence } from "@/lib/streamers/schedule";
 import { AnimatedNumber, AnimatedSwap } from "./animated-stat";
 
 function StatCell({ label, emphasis, children }: { label: string; emphasis?: boolean; children: ReactNode }) {
@@ -37,13 +37,14 @@ function NextStreamCell({ schedule }: { schedule: NonNullable<Streamer["schedule
     return () => clearInterval(id);
   }, []);
 
+  const starting = isStarting(schedule, now);
   const target = nextOccurrence(schedule, now);
-  const countdown = formatCountdown(target.getTime() - now.getTime());
+  const countdown = starting ? "starting…" : formatCountdown(target.getTime() - now.getTime());
 
   return (
-    <StatCell label={schedule.label}>
+    <StatCell label={starting ? "Show is starting" : schedule.label}>
       <AnimatedSwap swapKey={countdown}>
-        <span className="text-muted-foreground/90">{countdown}</span>
+        <span className={starting ? "text-[#46c45a]" : "text-muted-foreground/90"}>{countdown}</span>
       </AnimatedSwap>
     </StatCell>
   );

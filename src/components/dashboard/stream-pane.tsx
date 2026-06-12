@@ -14,7 +14,7 @@ import { useChannel } from "@/lib/streamers/channel-context";
 import { useStageMode } from "@/lib/stage-mode-context";
 import type { Clip } from "@/lib/streamers/clips";
 import { getHandle, hasVideo, primaryPlatform, type Streamer } from "@/lib/streamers/mock";
-import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
+import { formatCountdown, isStarting, nextOccurrence } from "@/lib/streamers/schedule";
 import { useClips } from "@/lib/streamers/use-clips";
 import { StreamerAvatar } from "./streamer-avatar";
 
@@ -80,7 +80,13 @@ function OfflinePanel({ channel, target }: { channel: Streamer; target: Date | n
         <h2 className="font-brand-wordmark mt-2.5 text-[2.15rem] uppercase leading-[1.05] tracking-[0.015em] text-foreground sm:text-[2.6rem]">
           {channel.schedule?.label ?? "Schedule TBA"}
         </h2>
-        {target ? (
+        {channel.schedule && isStarting(channel.schedule, now) ? (
+          <p className="mt-3 flex items-center justify-center gap-2 text-sm">
+            <span className="size-1.5 animate-pulse rounded-full bg-[#46c45a]" />
+            <span className="font-semibold text-[#46c45a]">Show is starting</span>
+            <span className="text-muted-foreground">· the stream will appear here shortly</span>
+          </p>
+        ) : target ? (
           <p className="mt-3 text-sm text-muted-foreground">
             Goes live {target.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
             {" · in "}
@@ -89,7 +95,11 @@ function OfflinePanel({ channel, target }: { channel: Streamer; target: Date | n
             </span>
           </p>
         ) : null}
-        <p className="mt-1.5 text-xs text-muted-foreground/80">{channel.name} is offline · catch up below while you wait</p>
+        <p className="mt-1.5 text-xs text-muted-foreground/80">
+          {channel.schedule && isStarting(channel.schedule, now)
+            ? "hang tight · catch up below while you wait"
+            : `${channel.name} is offline · catch up below while you wait`}
+        </p>
       </div>
 
       {/* Recent clips / videos */}

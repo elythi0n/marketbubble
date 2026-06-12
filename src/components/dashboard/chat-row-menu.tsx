@@ -5,24 +5,10 @@ import { AtSign, Copy, EyeOff, Highlighter, MessagesSquare, VolumeX } from "luci
 
 import { ContextMenu, type MenuEntry } from "@/components/ui/context-menu";
 import { hasDock, openChannelChat } from "@/lib/dock-api";
+import { messageText } from "@/lib/feed/text";
 import { PLATFORM_LABEL, type FeedMessage } from "@/lib/feed/types";
 import { useSettings } from "@/lib/settings/settings-context";
 import { useChannel } from "@/lib/streamers/channel-context";
-
-/** Message body as plain text (for copy). */
-function messageText(m: FeedMessage): string {
-  return m.segments
-    .map((seg) =>
-      seg.type === "text" ? seg.text
-      : seg.type === "emote" ? seg.code
-      : seg.type === "mention" ? `@${seg.user}`
-      : seg.type === "cashtag" ? `$${seg.symbol}`
-      : seg.type === "link" ? seg.text
-      : "",
-    )
-    .join("")
-    .trim();
-}
 
 interface RowMenuOptions {
   focusAuthor: string | null;

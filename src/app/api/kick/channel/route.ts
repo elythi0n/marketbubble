@@ -1,33 +1,30 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { kickApiJson } from "@/lib/server/kick-fetch";
+
 const UA =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-// Last-resort chatroom-id cache if both the API and the scrape fail (no user id here).
-const KNOWN: Record<string, number> = {
-  fazebanks: 668677,
-  xqc: 668,
-  eslcs: 101198156,
-  odablock: 2393554,
-  solomission: 2218947,
+// Last-resort cache if both the API and the scrape fail. Ids verified against
+// kick.com/api/v2/channels/{slug} — keep userId alongside so 7TV emotes still resolve.
+const KNOWN: Record<string, { chatroomId: number; userId: number }> = {
+  fazebanks: { chatroomId: 80748, userId: 81630 },
+  ansem: { chatroomId: 108796898, userId: 110326750 },
+  xqc: { chatroomId: 668, userId: 676 },
+  eslcs: { chatroomId: 101198156, userId: 102711830 },
+  odablock: { chatroomId: 2393554, userId: 2455830 },
+  solomission: { chatroomId: 2218947, userId: 2280619 },
 };
 
 /** Primary: the v2 JSON API answers server-side and gives both the chatroom id and the user id. */
 async function fetchViaApi(slug: string): Promise<{ chatroomId: number; userId?: number } | null> {
-  try {
-    const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(slug)}`, {
-      headers: { "User-Agent": UA, Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { chatroom?: { id?: number }; user_id?: number };
-    const chatroomId = data.chatroom?.id;
-    if (!chatroomId) return null;
-    return { chatroomId, userId: data.user_id };
-  } catch {
-    return null;
-  }
+  const data = await kickApiJson<{ chatroom?: { id?: number }; user_id?: number }>(
+    `v2/channels/${encodeURIComponent(slug)}`,
+    3600,
+  );
+  const chatroomId = data?.chatroom?.id;
+  if (!chatroomId) return null;
+  return { chatroomId, userId: data.user_id };
 }
 
 export async function GET(req: NextRequest) {
@@ -44,7 +41,7 @@ export async function GET(req: NextRequest) {
 
   if (KNOWN[slug]) {
     return NextResponse.json(
-      { chatroomId: KNOWN[slug], slug, source: "cache" },
+      { ...KNOWN[slug], slug, source: "cache" },
       { headers: { "Cache-Control": "public, max-age=3600" } },
     );
   }

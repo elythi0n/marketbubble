@@ -20,9 +20,15 @@ RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+# curl: the X syndication-timeline fetch shells out to it (its TLS fingerprint passes
+# where Node's fetch gets 429'd).
+RUN apk add --no-cache curl
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+# /data: mount point for the optional SQLite volume (DATABASE_PATH=/data/marketbubble.db).
+# Owned by the runtime user so a fresh named volume inherits writable permissions.
+RUN mkdir -p /data && chown nextjs:nodejs /data
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/streamers.json ./streamers.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

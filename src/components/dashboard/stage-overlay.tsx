@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Gift, MessagesSquare, Star, Users, X, type LucideIcon } from "lucide-react";
+import { Gift, Maximize, MessagesSquare, Minimize, Star, Users, X, type LucideIcon } from "lucide-react";
 
 import { Feed } from "@/components/feed/feed";
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
@@ -13,7 +13,7 @@ import { useTickers } from "@/lib/markets/tickers-context";
 import { formatChange } from "@/lib/markets/types";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { hasVideo, type Streamer } from "@/lib/streamers/mock";
-import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
+import { formatCountdown, isStarting, nextOccurrence } from "@/lib/streamers/schedule";
 import { useStageMode } from "@/lib/stage-mode-context";
 import { useIsMobile } from "@/lib/use-is-mobile";
 import { AnimatedNumber, AnimatedSwap } from "./animated-stat";
@@ -127,7 +127,13 @@ function NextStreamStage({ channel }: { channel: Streamer }) {
       <h2 className="font-brand-wordmark text-[2rem] uppercase leading-none tracking-[0.015em] text-foreground sm:text-[2.6rem]">
         {channel.schedule?.label ?? "Schedule TBA"}
       </h2>
-      {target ? (
+      {channel.schedule && isStarting(channel.schedule, now) ? (
+        <p className="flex items-center gap-2 text-sm">
+          <span className="size-1.5 animate-pulse rounded-full bg-[#46c45a]" />
+          <span className="font-semibold text-[#46c45a]">Show is starting</span>
+          <span className="text-muted-foreground">· the stream will appear here shortly</span>
+        </p>
+      ) : target ? (
         <p className="text-sm text-muted-foreground">
           Goes live {target.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
           {" · in "}
@@ -136,7 +142,9 @@ function NextStreamStage({ channel }: { channel: Streamer }) {
           </span>
         </p>
       ) : null}
-      <p className="text-xs text-muted-foreground/80">{channel.name} is offline</p>
+      {channel.schedule && isStarting(channel.schedule, now) ? null : (
+        <p className="text-xs text-muted-foreground/80">{channel.name} is offline</p>
+      )}
     </div>
   );
 }
@@ -234,6 +242,48 @@ export function StageOverlay() {
     if (isStage && isMobile) setStage(false);
   }, [isStage, isMobile, setStage]);
 
+  // ── Full screen ─────────────────────────────────────────────────────────────
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void document.documentElement.requestFullscreen().catch(() => {});
+  };
+
+  // Leaving Stage also leaves full screen — it belongs to the presentation, not the dashboard.
+  useEffect(() => {
+    if (!isStage && typeof document !== "undefined" && document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {});
+    }
+  }, [isStage]);
+
+  // While full screen, hide the idle mouse cursor (back on any movement).
+  const [cursorHidden, setCursorHidden] = useState(false);
+  useEffect(() => {
+    if (!isFullscreen || !isStage) {
+      setCursorHidden(false);
+      return;
+    }
+    const IDLE_MS = 2500;
+    let timer = setTimeout(() => setCursorHidden(true), IDLE_MS);
+    const onMove = () => {
+      setCursorHidden(false);
+      clearTimeout(timer);
+      timer = setTimeout(() => setCursorHidden(true), IDLE_MS);
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("mousemove", onMove);
+      setCursorHidden(false);
+    };
+  }, [isFullscreen, isStage]);
+
   const showVideo = channel?.live && hasVideo(channel);
 
   return (
@@ -241,7 +291,7 @@ export function StageOverlay() {
       {isStage && channel && !isMobile ? (
         <motion.div
           key="stage"
-          className="marketing-ambient-base fixed inset-0 z-[100] flex flex-col gap-3 overflow-hidden p-4"
+          className={`marketing-ambient-base fixed inset-0 z-[100] flex flex-col gap-3 overflow-hidden p-4 ${cursorHidden ? "mb-cursor-hidden" : ""}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -276,6 +326,15 @@ export function StageOverlay() {
 
             <div className="flex items-center gap-4 justify-self-end">
               <StageStats />
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
+                title={isFullscreen ? "Exit full screen" : "Full screen"}
+                className="flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {isFullscreen ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
+              </button>
               <button
                 type="button"
                 onClick={() => setStage(false)}

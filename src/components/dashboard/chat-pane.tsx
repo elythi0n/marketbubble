@@ -5,6 +5,7 @@ import { AtSign, Check, Eye, Layers, ListFilter, MessagesSquare, Search, X, Zoom
 
 import { Feed } from "@/components/feed/feed";
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import { useUserCard } from "@/components/feed/user-card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useReadHelper } from "@/hooks/use-read-helper";
 import { useFeedContext } from "@/lib/chat/feed-context";
@@ -246,10 +247,12 @@ export function ChatPane() {
   // Other panels (e.g. Chat Roster) can set/clear the author focus remotely.
   useEffect(() => subscribeAuthorFocus((author) => setFocusAuthor(author)), []);
 
-  // Clicking an author focuses them; clicking the same author again clears the focus.
-  const onAuthorClick = useCallback((author: string) => {
-    changeFocusAuthor(focusAuthor?.toLowerCase() === author.toLowerCase() ? null : author);
-  }, [changeFocusAuthor, focusAuthor]);
+  // Clicking an author opens their user card (stats + history; focus lives inside the card).
+  const { openUserCard, userCardElement } = useUserCard({
+    messages: filtered,
+    focusAuthor,
+    setFocusAuthor: changeFocusAuthor,
+  });
 
   const { onRowContextMenu, menuElement } = useChatRowMenu({
     focusAuthor,
@@ -480,7 +483,7 @@ export function ChatPane() {
         showTimestamps={settings.showTimestamps}
         showDeleted={settings.showDeleted}
         readHelper={readHelper && !q}
-        onAuthorClick={onAuthorClick}
+        onAuthorClick={openUserCard}
         onRowContextMenu={onRowContextMenu}
         jumpTo={jumpTo}
         onRowClick={
@@ -496,6 +499,7 @@ export function ChatPane() {
         emptySubtext={emptyState.subtext}
       />
       {menuElement}
+      {userCardElement}
     </div>
   );
 }

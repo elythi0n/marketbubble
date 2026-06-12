@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { kickApiJson } from "@/lib/server/kick-fetch";
+
 export interface KickStreamPayload {
   /** null = could not determine (Cloudflare blocked or parse failed). */
   live: boolean | null;
@@ -26,25 +28,19 @@ interface KickLivestream {
  * thumbnail along with viewers and title. `data` is null when the channel is offline.
  */
 async function fetchViaApi(slug: string): Promise<KickStreamPayload | null> {
-  try {
-    const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(slug)}/livestream`, {
-      headers: { "User-Agent": UA, Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
-      next: { revalidate: 30 },
-    });
-    if (!res.ok) return null;
-    const json = (await res.json()) as { data: KickLivestream | null };
-    const ls = json.data;
-    if (!ls) return { live: false, viewerCount: 0, title: "" };
-    return {
-      live: true,
-      viewerCount: ls.viewers ?? 0,
-      title: ls.session_title ?? "",
-      thumbnail: ls.thumbnail?.src || undefined,
-    };
-  } catch {
-    return null;
-  }
+  const json = await kickApiJson<{ data: KickLivestream | null }>(
+    `v2/channels/${encodeURIComponent(slug)}/livestream`,
+    30,
+  );
+  if (!json) return null;
+  const ls = json.data;
+  if (!ls) return { live: false, viewerCount: 0, title: "" };
+  return {
+    live: true,
+    viewerCount: ls.viewers ?? 0,
+    title: ls.session_title ?? "",
+    thumbnail: ls.thumbnail?.src || undefined,
+  };
 }
 
 export async function GET(req: NextRequest) {

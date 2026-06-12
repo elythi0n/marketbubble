@@ -13,7 +13,23 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   const { loadRoster, rosterXBroadcastSources, normalizeXSource } = await import("@/lib/streamers/load");
+  const { isNearSlot } = await import("@/lib/streamers/schedule");
 
+  const roster = loadRoster();
+
+  // Analytics sampler — only when persistence is enabled (viewer history + durable leaderboard).
+  const { hasDatabase } = await import("@/lib/server/db");
+  if (hasDatabase()) {
+    const g2 = globalThis as typeof globalThis & { __mbStatsSampler?: () => void };
+    if (!g2.__mbStatsSampler) {
+      const { startStatsSampler } = await import("@/lib/server/stats");
+      g2.__mbStatsSampler = startStatsSampler(roster);
+    }
+  }
+
+  // Clip radar — armed at boot but inert until the operator enables it (admin → Controls).
+  const { startClipRadar } = await import("@/lib/server/clip-radar");
+  startClipRadar();
   const envSources = (process.env.X_BROADCAST_SOURCES || "")
     .split(",")
     .map((s) => s.trim())
@@ -22,7 +38,7 @@ export async function register() {
   // Merge roster + env, de-duplicated by normalized handle / broadcast id.
   const seen = new Set<string>();
   const sources: string[] = [];
-  for (const src of [...rosterXBroadcastSources(loadRoster()), ...envSources]) {
+  for (const src of [...rosterXBroadcastSources(roster), ...envSources]) {
     const key = normalizeXSource(src);
     if (!key || seen.has(key)) continue;
     seen.add(key);
@@ -34,7 +50,14 @@ export async function register() {
   const g = globalThis as typeof globalThis & { __xBroadcastBridge?: () => void };
   if (g.__xBroadcastBridge) return;
 
+  // Discovery cadence: every minute around any roster slot (shortly before it through the
+  // starting window), every 5 minutes otherwise — X's guest endpoints rate-limit by IP.
+  const schedules = roster.map((s) => s.schedule).filter((sch) => sch != null);
+  const pollMs = schedules.length
+    ? () => (schedules.some((sch) => isNearSlot(sch, new Date())) ? 60_000 : 5 * 60_000)
+    : undefined;
+
   const { startXBroadcastBridge } = await import("@/lib/x/broadcast/manager");
-  g.__xBroadcastBridge = startXBroadcastBridge({ sources });
+  g.__xBroadcastBridge = startXBroadcastBridge({ sources, pollMs });
   console.log(`[x-bridge] watching ${sources.length} X source(s): ${sources.join(", ")}`);
 }

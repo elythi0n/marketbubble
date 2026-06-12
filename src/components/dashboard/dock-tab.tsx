@@ -28,8 +28,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { IDockviewPanelHeaderProps } from "dockview";
+import { Clapperboard, Copy } from "lucide-react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import { ContextMenu } from "@/components/ui/context-menu";
 import { clearDockActivity, dockActivityVersion, hasDockActivity, subscribeDockActivity } from "@/lib/dock-activity";
 
 // The core panels are permanent; everything the user adds from the launcher can be closed.
@@ -71,8 +73,17 @@ function TabIcon({ id }: { id: string }) {
   return Icon ? <Icon className="mb-dock-tab-icon" /> : null;
 }
 
+/** OBS overlay route for a chat tab: the unified feed, or one channel's chat panel. */
+function overlayPath(id: string): string | null {
+  if (id === "chat") return "/overlay";
+  const m = /^chat-(.+?)(?:-(?:twitch|kick))?$/.exec(id);
+  return m ? `/overlay?channel=${m[1]}` : null;
+}
+
 export function DockTab(props: IDockviewPanelHeaderProps) {
   const closable = !FIXED.has(props.api.id);
+  const overlay = overlayPath(props.api.id);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   // Activity dot: shown while this panel has unseen content and is a background tab.
   const [isActive, setIsActive] = useState(props.api.isActive);
@@ -95,6 +106,15 @@ export function DockTab(props: IDockviewPanelHeaderProps) {
           props.api.close();
         }
       }}
+      onContextMenu={
+        overlay
+          ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenu({ x: e.clientX, y: e.clientY });
+            }
+          : undefined
+      }
     >
       <TabIcon id={props.api.id} />
       <span>{props.api.title}</span>
@@ -111,6 +131,29 @@ export function DockTab(props: IDockviewPanelHeaderProps) {
         >
           <X className="size-3" />
         </button>
+      ) : null}
+      {menu && overlay ? (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          onClose={() => setMenu(null)}
+          entries={[
+            { type: "heading", label: props.api.title ?? "Chat" },
+            {
+              label: "Open OBS overlay",
+              icon: Clapperboard,
+              onSelect: () => window.open(overlay, "_blank", "noopener"),
+            },
+            {
+              label: "Copy OBS overlay URL",
+              icon: Copy,
+              onSelect: () => {
+                const sep = overlay.includes("?") ? "&" : "?";
+                navigator.clipboard?.writeText(`${window.location.origin}${overlay}${sep}bg=transparent`).catch(() => {});
+              },
+            },
+          ]}
+        />
       ) : null}
     </div>
   );

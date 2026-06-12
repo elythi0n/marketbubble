@@ -68,11 +68,11 @@ function hueFrom(str: string, seed: number): number {
   return h;
 }
 
-/** Deterministically marks ~38% of chatters as subscribers, consistent across renders. */
-function isSubscriberDet(name: string): boolean {
-  let h = 17;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return h % 100 < 38;
+/** Public profile for a chatter on their platform. */
+function profileUrl(name: string, platform: Platform): string {
+  if (platform === "twitch") return `https://twitch.tv/${name.toLowerCase()}`;
+  if (platform === "kick") return `https://kick.com/${name.toLowerCase()}`;
+  return `https://x.com/${name}`;
 }
 
 const SUB_COLOR: Record<Platform, string> = {
@@ -334,9 +334,9 @@ export function LeaderboardContent() {
     let alive = true;
     fetch("/api/leaderboard/chatters")
       .then((r) => r.json())
-      .then((d: { source?: string | null; chatters?: Array<{ name: string; platform: Platform; count: number }> }) => {
+      .then((d: { source?: string | null; chatters?: Array<{ name: string; platform: Platform; count: number; sub?: boolean }> }) => {
         if (!alive) return;
-        const list = (d.chatters ?? []).map((c) => ({ name: c.name, platform: c.platform as Platform, messages: c.count, isSubscriber: isSubscriberDet(c.name) }));
+        const list = (d.chatters ?? []).map((c) => ({ name: c.name, platform: c.platform as Platform, messages: c.count, isSubscriber: c.sub === true }));
         setRawChatters(list);
         setChattersFetched(true);
         if (list.length > 0) setChatterSource(d.source ?? "Live chat");
@@ -517,22 +517,27 @@ export function LeaderboardContent() {
                     ) : (
                       chatters.map((c, i) => (
                         <tr
-                          key={c.name}
+                          key={`${c.platform}:${c.name}`}
                           className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]"
                           style={c.isSubscriber ? { background: `${SUB_COLOR[c.platform]}08` } : undefined}
                         >
                           <td className={cn("px-3 py-3 font-mono text-[0.95rem] font-bold tabular-nums", rankColor(i + 1))}>{i + 1}</td>
                           <td className="px-3 py-3">
-                            <span className="flex items-center gap-2.5">
+                            <a
+                              href={profileUrl(c.name, c.platform)}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="flex items-center gap-2.5"
+                            >
                               <ChatterAvatar name={c.name} platform={c.platform} size={30} />
-                              <span className="flex min-w-0 flex-col gap-0.5 leading-tight">
-                                <span className="flex items-center gap-1.5">
+                              <span className="flex min-w-0 flex-col items-start gap-0.5 leading-tight">
+                                <span className="flex max-w-full items-center gap-1.5">
                                   <span className="truncate text-[0.92rem] font-medium text-foreground">{c.name}</span>
                                   <PlatformGlyph platform={c.platform} className="size-3 shrink-0" />
                                 </span>
                                 {c.isSubscriber ? <SubBadge platform={c.platform} /> : null}
                               </span>
-                            </span>
+                            </a>
                           </td>
                           <td className="hidden px-3 py-3 sm:table-cell">
                             <span className="block h-1.5 w-full max-w-[12rem] overflow-hidden rounded-full bg-white/[0.06]">
@@ -558,10 +563,10 @@ export function LeaderboardContent() {
                 ? `Source: ${chatterSource}`
                 : "Chat data is counted live during active streams"}
           </p>
-          {tab === "chatters" && chatters.length > 0 ? (
+          {tab === "chatters" && chatters.some((c) => c.isSubscriber) ? (
             <p className="flex items-center gap-1 text-[0.66rem] text-muted-foreground/50">
               <Star className="size-2.5 fill-current" />
-              SUB badge shown for active platform subscribers
+              SUB badge shown for platform subscribers spotted in chat
             </p>
           ) : null}
         </div>

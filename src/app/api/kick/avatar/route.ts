@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-const UA =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+import { kickApiJson } from "@/lib/server/kick-fetch";
 
 export interface KickAvatarPayload {
   /** null = unavailable (channel missing, no picture, or Kick blocked the server). */
@@ -17,23 +16,15 @@ export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug");
   if (!slug) return NextResponse.json({ url: null } satisfies KickAvatarPayload, { status: 400 });
 
-  try {
-    const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(slug)}`, {
-      headers: { "User-Agent": UA, Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
-      next: { revalidate: 3600 },
+  const data = await kickApiJson<{ user?: { profile_pic?: string } }>(
+    `v2/channels/${encodeURIComponent(slug)}`,
+    3600,
+  );
+  const pic = data?.user?.profile_pic;
+  if (pic) {
+    return NextResponse.json({ url: pic } satisfies KickAvatarPayload, {
+      headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
     });
-    if (res.ok) {
-      const data = (await res.json()) as { user?: { profile_pic?: string } };
-      const pic = data.user?.profile_pic;
-      if (pic) {
-        return NextResponse.json({ url: pic } satisfies KickAvatarPayload, {
-          headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
-        });
-      }
-    }
-  } catch {
-    /* fall through */
   }
 
   // Short cache: Kick blocking the server (Cloudflare on datacenter IPs) is often transient.

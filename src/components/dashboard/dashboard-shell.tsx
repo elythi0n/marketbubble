@@ -40,7 +40,7 @@ import { TopNav } from "./top-nav";
  * Rebuilds providers whenever the source set or demo mode changes.
  * Re-keying FeedProvider tears down old WebSocket connections and opens fresh ones.
  *
- * In merge mode the feed unifies every live channel into one stream (each row keeps its source);
+ * In merge mode the feed unifies every roster channel into one stream (each row keeps its source);
  * otherwise it follows the single selected channel. The roster itself is the demo or live one,
  * supplied by ChannelContext. X chat (fed by the browser extension) is only added for the show.
  */
@@ -96,8 +96,10 @@ function FeedBridge({ children }: { children: ReactNode }) {
   const { streamers, selectedId, mergeAll } = useChannel();
 
   const selected = streamers.find((s) => s.id === selectedId) ?? streamers[0];
-  const liveStreamers = streamers.filter((s) => s.live);
-  const sources = mergeAll ? liveStreamers : selected ? [selected] : [];
+  // Twitch and Kick both deliver chat while the channel is offline, so merge mode joins every
+  // roster channel — offline ones are just quiet until they go live. This also keeps the
+  // connection set stable across live/offline transitions (no reconnect churn).
+  const sources = mergeAll ? streamers : selected ? [selected] : [];
 
   const makeProviders = () => [
     ...sources.flatMap((s) => [
@@ -110,7 +112,7 @@ function FeedBridge({ children }: { children: ReactNode }) {
   // This key encodes the active source set so connections rebuild only when that set changes,
   // without remounting the subtree (which would reset UI state like sidebar expansion).
   const sourceKey = mergeAll
-    ? `all:${liveStreamers.map((s) => s.id).sort().join(",")}`
+    ? `all:${sources.map((s) => s.id).sort().join(",")}`
     : selectedId;
   const feedKey = `${isDemo ? "demo" : "live"}:${sourceKey}`;
 

@@ -28,8 +28,8 @@ interface FeedProps {
   scale?: number;
   /** When true, incoming rows animate in — pairs with the useReadHelper throttle. */
   readHelper?: boolean;
-  /** When set, author names become clickable (used for the author focus filter). */
-  onAuthorClick?: (author: string) => void;
+  /** When set, author names become clickable (opens the user card / focus, per pane). */
+  onAuthorClick?: (author: string, message: FeedMessage, e: React.MouseEvent) => void;
   /** When set, chat rows get a right-click context menu. */
   onRowContextMenu?: (e: React.MouseEvent, message: FeedMessage) => void;
   /** When set, rows are clickable (used to jump from search results back to the live feed). */

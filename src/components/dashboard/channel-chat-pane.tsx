@@ -5,6 +5,7 @@ import { AtSign, MessagesSquare, X } from "lucide-react";
 
 import { Feed } from "@/components/feed/feed";
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import { useUserCard } from "@/components/feed/user-card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { createKickProvider } from "@/lib/chat/providers/kick-pusher";
 import { createTwitchIRCProvider } from "@/lib/chat/providers/twitch-irc";
@@ -51,6 +52,8 @@ export function ChannelChatPane({ streamerId, platform }: ChannelChatParams) {
     ...(kick ? [createKickProvider({ slug: kick })] : []),
   ];
   const { messages, statuses } = useFeed(makeProviders, `${streamerId}:${platform ?? "all"}:${twitch ?? ""}:${kick ?? ""}`);
+
+  const { openUserCard, userCardElement } = useUserCard({ messages, focusAuthor, setFocusAuthor });
 
   const filtered = useFilteredMessages(messages);
   const shown = focusAuthor
@@ -140,15 +143,14 @@ export function ChannelChatPane({ streamerId, platform }: ChannelChatParams) {
         density={settings.density}
         showTimestamps={settings.showTimestamps}
         showDeleted={settings.showDeleted}
-        onAuthorClick={(author) =>
-          setFocusAuthor((cur) => (cur?.toLowerCase() === author.toLowerCase() ? null : author))
-        }
+        onAuthorClick={openUserCard}
         onRowContextMenu={onRowContextMenu}
         emptyIcon={MessagesSquare}
         emptyLabel={streamer.live ? "Chat is quiet" : `${streamer.name} is offline`}
         emptySubtext="Messages appear here as people chat"
       />
       {menuElement}
+      {userCardElement}
     </div>
   );
 }

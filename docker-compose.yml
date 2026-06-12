@@ -80,6 +80,10 @@ services:
       X_GQL_USER_TWEETS: ${X_GQL_USER_TWEETS:-}
       STREAMERS_JSON: ${STREAMERS_JSON:-}
       X_MENTION_QUERIES: ${X_MENTION_QUERIES:-}
+      # Optional persistence (SQLite on the app-data volume). Leave unset to run in-memory.
+      DATABASE_PATH: ${DATABASE_PATH:-}
+    volumes:
+      - app-data:/data
     depends_on:
       relay:
         condition: service_healthy
@@ -94,6 +98,7 @@ services:
 
 volumes:
   relay-data:
+  app-data:
 
 networks:
   internal:

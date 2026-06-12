@@ -1,7 +1,12 @@
 /**
- * In-memory control plane for the live dashboard: the announcement banner, runtime feature
- * flags, and the active poll. One Node process, no database — admin actions mutate this store
- * and every connected viewer gets the change pushed over the control SSE stream.
+ * Control plane for the live dashboard: the announcement banner, runtime feature flags, and
+ * the active poll. One Node process — admin actions mutate this in-memory store and every
+ * connected viewer gets the change pushed over the control SSE stream.
+ *
+ * Persistence is optional (DATABASE_PATH → SQLite): when present the store hydrates from it at
+ * boot and writes through on every change, so announcements/flags/roster/filters/polls survive
+ * restarts; when absent everything is memory-only and resets with the process. Same features
+ * either way — the database only adds durability.
  *
  * Scale notes (the site can hold thousands of viewers):
  *  - Broadcasts are full snapshots, throttled: state-shaped changes (publish, lock, clear) flush
@@ -10,6 +15,9 @@
  *  - Chat votes are tallied by the relay (the single server-side chat connection) and merged
  *    here on a short interval — one internal request, not one per viewer.
  */
+
+import type { StreamSchedule } from "@/lib/streamers/schedule";
+import { getDb } from "./db";
 
 export interface Announcement {
   message: string;
@@ -46,6 +54,8 @@ export interface RosterStreamer {
   title: string;
   /** Operator-pinned: sorted to the top of the sidebar and visually highlighted. */
   pinned?: boolean;
+  /** Weekly slot (Pacific Time) — drives countdowns and discovery polling, editable in admin. */
+  schedule?: StreamSchedule;
 }
 
 /**
@@ -60,6 +70,24 @@ export interface GlobalFilter {
   field: "text" | "author";
 }
 
+/**
+ * A running (or finished) giveaway roll. The winner is decided server-side at start; clients
+ * (admin page and OBS overlay) replay the same deterministic deceleration over `names`, landing
+ * on `winner` at startedAt + durationMs — so every screen shows the identical roll.
+ */
+export interface Giveaway {
+  id: string;
+  /** Reel entries (a sample of eligible chatters, winner included). */
+  names: string[];
+  winner: string;
+  /** Platform of the winning chatter ("twitch" | "kick" | "x"). */
+  winnerPlatform: string;
+  /** How many chatters were eligible under the filters used. */
+  eligible: number;
+  startedAt: number;
+  durationMs: number;
+}
+
 export interface ControlState {
   announcement: Announcement | null;
   /** Runtime feature overrides; a missing key means "enabled". */
@@ -69,6 +97,8 @@ export interface ControlState {
   roster: RosterStreamer[] | null;
   /** Operator chat filters, applied on every viewer's feed ahead of their own rules. */
   filters: GlobalFilter[];
+  /** Active giveaway roll (or its result, until cleared); null = none. */
+  giveaway: Giveaway | null;
 }
 
 const MAX_VOTERS = 100_000;
@@ -86,27 +116,151 @@ interface ControlStore {
   poll: Poll | null;
   roster: RosterStreamer[] | null;
   globalFilters: GlobalFilter[];
+  giveaway: Giveaway | null;
   voters: Map<string, string>; // voterKey → optionId (current poll only)
   lockTimer: ReturnType<typeof setTimeout> | null;
   relayPull: ReturnType<typeof setInterval> | null;
   listeners: Set<(s: ControlState) => void>;
   pendingBroadcast: ReturnType<typeof setTimeout> | null;
   lastBroadcast: number;
+  /** Whether a database-restored open poll has had its timers/relay re-armed. */
+  pollResumed: boolean;
 }
 
-const store: ControlStore = ((globalThis as Record<string, unknown> & { __mbControlStore?: ControlStore }).__mbControlStore ??= {
+const store: ControlStore = ((globalThis as Record<string, unknown> & { __mbControlStore?: ControlStore }).__mbControlStore ??= hydrate({
   announcement: null,
   flags: {},
   poll: null,
   roster: null,
   globalFilters: [],
+  giveaway: null,
   voters: new Map(),
   lockTimer: null,
   relayPull: null,
   listeners: new Set(),
   pendingBroadcast: null,
   lastBroadcast: 0,
-});
+  pollResumed: false,
+}));
+
+resumePersistedPoll();
+
+// ── Persistence (optional SQLite) ──────────────────────────────────────────────
+// With DATABASE_PATH set, control state survives restarts: scalar state lives as JSON in
+// control_kv, polls as rows (rows outlive clearPoll — that's the poll history for future
+// analytics), and per-voter choices in poll_voters so a restart can't double-count re-votes.
+// Without a database every helper is a no-op and the store behaves exactly as before.
+// Write path: votes persist individually (dedup must be exact); everything else piggybacks
+// on broadcast()'s send — already throttled to one frame per second during tallies.
+
+function hydrate(s: ControlStore): ControlStore {
+  const db = getDb();
+  if (!db) return s;
+  try {
+    const rows = db.prepare("SELECT key, value FROM control_kv").all() as { key: string; value: string }[];
+    const kv = new Map(rows.map((r) => [r.key, r.value]));
+    const read = <T,>(key: string, fallback: T): T => {
+      const raw = kv.get(key);
+      if (raw === undefined) return fallback;
+      try {
+        return (JSON.parse(raw) as T) ?? fallback;
+      } catch {
+        return fallback;
+      }
+    };
+
+    s.announcement = read<Announcement | null>("announcement", null);
+    s.flags = read<Record<string, boolean>>("flags", {});
+    s.roster = read<RosterStreamer[] | null>("roster", null);
+    s.globalFilters = read<GlobalFilter[]>("filters", []);
+    s.giveaway = read<Giveaway | null>("giveaway", null);
+
+    const pollId = read<string | null>("current_poll_id", null);
+    if (pollId) {
+      const row = db.prepare("SELECT * FROM polls WHERE id = ?").get(pollId) as
+        | { id: string; question: string; source: string; options: string; created_at: number; ends_at: number | null; status: string; winner: string | null }
+        | undefined;
+      if (row) {
+        s.poll = {
+          id: row.id,
+          question: row.question,
+          source: row.source === "polymarket" ? "polymarket" : "custom",
+          options: JSON.parse(row.options) as PollOption[],
+          createdAt: row.created_at,
+          endsAt: row.ends_at,
+          status: row.status === "locked" ? "locked" : "open",
+          winner: row.winner,
+        };
+        const voters = db.prepare("SELECT voter_key, option_id FROM poll_voters WHERE poll_id = ?").all(pollId) as { voter_key: string; option_id: string }[];
+        s.voters = new Map(voters.map((v) => [v.voter_key, v.option_id]));
+      }
+    }
+  } catch (err) {
+    console.error("[control] failed to hydrate from database; starting empty", err);
+  }
+  return s;
+}
+
+/**
+ * Re-arms what hydrate() couldn't (it runs before `store` exists): the lock timer and relay
+ * registration for a restored open poll. Runs once per process; locks immediately when the
+ * poll expired while the server was down.
+ */
+function resumePersistedPoll() {
+  if (store.pollResumed) return;
+  store.pollResumed = true;
+  const poll = store.poll;
+  if (!poll || poll.status !== "open") return;
+  if (poll.endsAt && poll.endsAt <= Date.now()) {
+    lockPoll();
+    return;
+  }
+  if (poll.endsAt && !store.lockTimer) {
+    store.lockTimer = setTimeout(() => lockPoll(), poll.endsAt - Date.now());
+  }
+  if (!store.relayPull) startRelayVotes(poll);
+}
+
+function persistState() {
+  const db = getDb();
+  if (!db) return;
+  try {
+    const up = db.prepare(
+      "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    );
+    up.run("announcement", JSON.stringify(store.announcement));
+    up.run("flags", JSON.stringify(store.flags));
+    up.run("roster", JSON.stringify(store.roster));
+    up.run("filters", JSON.stringify(store.globalFilters));
+    up.run("giveaway", JSON.stringify(store.giveaway));
+    up.run("current_poll_id", JSON.stringify(store.poll?.id ?? null));
+
+    const p = store.poll;
+    if (p) {
+      db.prepare(
+        `INSERT INTO polls (id, question, source, options, created_at, ends_at, status, winner)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           options = excluded.options, ends_at = excluded.ends_at,
+           status = excluded.status, winner = excluded.winner`,
+      ).run(p.id, p.question, p.source, JSON.stringify(p.options), p.createdAt, p.endsAt, p.status, p.winner);
+    }
+  } catch (err) {
+    console.error("[control] persist failed", err);
+  }
+}
+
+function persistVote(pollId: string, voterKey: string, optionId: string) {
+  const db = getDb();
+  if (!db) return;
+  try {
+    db.prepare(
+      "INSERT INTO poll_voters (poll_id, voter_key, option_id) VALUES (?, ?, ?) ON CONFLICT(poll_id, voter_key) DO UPDATE SET option_id = excluded.option_id",
+    ).run(pollId, voterKey, optionId);
+  } catch (err) {
+    console.error("[control] vote persist failed", err);
+  }
+}
 
 export function getControlState(): ControlState {
   return {
@@ -115,6 +269,7 @@ export function getControlState(): ControlState {
     poll: store.poll ? { ...store.poll, options: store.poll.options.map((o) => ({ ...o })) } : null,
     roster: store.roster,
     filters: store.globalFilters,
+    giveaway: store.giveaway,
   };
 }
 
@@ -126,6 +281,7 @@ export function subscribeControl(cb: (s: ControlState) => void): () => void {
 function broadcast(immediate = false) {
   const send = () => {
     store.lastBroadcast = Date.now();
+    persistState(); // every state change flows through here, already throttled for tallies
     const snapshot = getControlState();
     for (const l of store.listeners) l(snapshot);
   };
@@ -181,7 +337,14 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 3
  * normalized here; the client merges in live status the same way it does for the file roster.
  */
 export function setRoster(
-  entries: { name?: string; handles?: { twitch?: string; kick?: string; x?: string }; pinned?: boolean }[] | null,
+  entries:
+    | {
+        name?: string;
+        handles?: { twitch?: string; kick?: string; x?: string };
+        pinned?: boolean;
+        schedule?: { label?: string; weekday?: number; hour?: number } | null;
+      }[]
+    | null,
 ) {
   if (entries === null) {
     store.roster = null;
@@ -205,7 +368,19 @@ export function setRoster(
     if (handles.twitch) platforms.push("twitch");
     if (handles.kick) platforms.push("kick");
     if (handles.x) platforms.push("x");
-    cleaned.push({ id, name, handles, platforms, live: false, viewers: 0, title: "", pinned: e.pinned === true });
+    let schedule: StreamSchedule | undefined;
+    const sch = e.schedule;
+    if (
+      sch &&
+      Number.isInteger(sch.weekday) && sch.weekday! >= 0 && sch.weekday! <= 6 &&
+      Number.isInteger(sch.hour) && sch.hour! >= 0 && sch.hour! <= 23
+    ) {
+      const days = ["SUNDAYS", "MONDAYS", "TUESDAYS", "WEDNESDAYS", "THURSDAYS", "FRIDAYS", "SATURDAYS"];
+      const h = sch.hour!;
+      const fallback = `${days[sch.weekday!]} ${h % 12 === 0 ? 12 : h % 12}${h < 12 ? "AM" : "PM"} PT`;
+      schedule = { label: String(sch.label ?? "").trim().slice(0, 40) || fallback, weekday: sch.weekday!, hour: h };
+    }
+    cleaned.push({ id, name, handles, platforms, live: false, viewers: 0, title: "", pinned: e.pinned === true, schedule });
   }
   if (cleaned.length === 0) throw new Error("roster needs at least one streamer with a handle");
   store.roster = cleaned;
@@ -281,6 +456,7 @@ export function votePoll(pollId: string, optionId: string, voterKey: string): Po
   }
   option.votes += 1;
   store.voters.set(voterKey, optionId);
+  persistVote(poll.id, voterKey, optionId);
   broadcast(); // throttled — tallies coalesce
   return poll;
 }
@@ -315,6 +491,20 @@ function stopPollMachinery() {
     store.relayPull = null;
   }
   void relayDelete();
+}
+
+// ── Giveaway ───────────────────────────────────────────────────────────────────
+
+/** Publishes a giveaway roll to every client (the route picks the winner; this just broadcasts). */
+export function startGiveaway(g: Omit<Giveaway, "id" | "startedAt">): Giveaway {
+  store.giveaway = { ...g, id: `ga_${Date.now().toString(36)}`, startedAt: Date.now() };
+  broadcast(true);
+  return store.giveaway;
+}
+
+export function clearGiveaway() {
+  store.giveaway = null;
+  broadcast(true);
 }
 
 // ── Chat votes via the relay ───────────────────────────────────────────────────

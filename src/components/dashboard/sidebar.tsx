@@ -3,7 +3,7 @@
 import { useState, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { MessagesSquare, MonitorPlay, PanelLeftClose, PanelLeftOpen, Pin, Play } from "lucide-react";
+import { Clapperboard, Copy, MessagesSquare, MonitorPlay, PanelLeftClose, PanelLeftOpen, Pin, Play } from "lucide-react";
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -13,6 +13,7 @@ import { hasDock, openChannelChat } from "@/lib/dock-api";
 import { PLATFORM_LABEL } from "@/lib/feed/types";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { hasVideo, type Streamer } from "@/lib/streamers/mock";
+import { isStarting } from "@/lib/streamers/schedule";
 import { cn } from "@/lib/utils";
 import { MarketBubbleLogo } from "./market-bubble-logo";
 import { StreamerAvatar } from "./streamer-avatar";
@@ -24,6 +25,7 @@ function formatViewers(n: number): string {
 
 function statusText(s: Streamer): string {
   if (s.live) return hasVideo(s) ? `${formatViewers(s.viewers)} watching` : "Live thread";
+  if (s.schedule && isStarting(s.schedule, new Date())) return "Show is starting…";
   return s.schedule?.label ?? "Offline";
 }
 
@@ -53,6 +55,11 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
           <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-[#46c45a]/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-[#46c45a]">
             <span className="size-1 rounded-full bg-[#46c45a]" />
             Live
+          </span>
+        ) : streamer.schedule && isStarting(streamer.schedule, new Date()) ? (
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-[#46c45a]/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-[#46c45a]">
+            <span className="size-1 animate-pulse rounded-full bg-[#46c45a]" />
+            Starting
           </span>
         ) : (
           <span className="absolute left-2 top-2 rounded bg-black/45 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-muted-foreground">
@@ -124,9 +131,15 @@ function ChannelCard({
       aria-current={active ? "true" : undefined}
       className={cn(
         "group block w-full overflow-hidden rounded-lg border text-left transition-colors",
-        active ? "border-white/20 bg-white/[0.05]"
-        : streamer.pinned ? "border-[#d8b25a]/25 bg-[#d8b25a]/[0.03] hover:bg-[#d8b25a]/[0.06]"
-        : "border-transparent hover:bg-white/[0.04]",
+        // Pinned keeps its golden frame even while selected — being the active channel
+        // shouldn't hide that the operator pinned it.
+        streamer.pinned && active
+          ? "border-[#d8b25a]/60 bg-[#d8b25a]/[0.07] shadow-[0_0_18px_-8px_rgba(216,178,90,0.55)]"
+          : streamer.pinned
+            ? "border-[#d8b25a]/40 bg-[#d8b25a]/[0.04] shadow-[0_0_16px_-8px_rgba(216,178,90,0.45)] hover:bg-[#d8b25a]/[0.08]"
+            : active
+              ? "border-white/20 bg-white/[0.05]"
+              : "border-transparent hover:bg-white/[0.04]",
       )}
     >
       <ChannelCardBody streamer={streamer} />
@@ -163,6 +176,7 @@ function CollapsedStreamerButton({
         className={cn(
           "group relative flex w-full items-center justify-center rounded-lg p-0.5 transition-colors",
           active ? "bg-white/[0.08]" : "hover:bg-white/[0.05]",
+          streamer.pinned && "ring-1 ring-inset ring-[#d8b25a]/45",
         )}
       >
         {active ? (
@@ -232,6 +246,23 @@ export function Sidebar() {
         }
       }
     }
+    menuEntries.push(
+      { type: "separator" },
+      {
+        label: "Open OBS overlay",
+        icon: Clapperboard,
+        onSelect: () => window.open(`/overlay?channel=${s.id}`, "_blank", "noopener"),
+      },
+      {
+        label: "Copy OBS overlay URL",
+        icon: Copy,
+        onSelect: () => {
+          navigator.clipboard
+            ?.writeText(`${window.location.origin}/overlay?channel=${s.id}&bg=transparent`)
+            .catch(() => {});
+        },
+      },
+    );
   }
 
   return (

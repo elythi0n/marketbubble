@@ -1,17 +1,19 @@
 /**
  * Turn whatever you configured for an X source into a concrete broadcast id.
  *
- * Two layers, automatic first and a hard fallback underneath:
+ * Three layers, most durable first:
  *   1. A broadcast link or bare id  -> used directly (robust, never breaks).
- *   2. A bare @handle               -> resolved live via guest GraphQL:
- *        UserByScreenName  -> numeric user id
- *        UserTweets        -> scan the timeline for the currently-pinned/posted broadcast id
- *
- * The handle path depends on GraphQL query-ids that X rotates; they're overridable by env and
- * every failure degrades quietly to "nothing live", so a stale id never throws, it just yields null.
+ *   2. A bare @handle               -> syndication timeline (no auth, no rotating query-ids)
+ *                                      scanned for every broadcast id it mentions.
+ *   3. GraphQL fallback             -> UserByScreenName + UserTweets via guest token, only
+ *                                      when syndication fails (query-ids rotate; env-overridable).
+ * Candidates from 2/3 are then checked against broadcasts/show (one id per request — comma
+ * batches 400 nowadays) and the currently-RUNNING one wins. Every failure degrades quietly to
+ * "nothing live"; nothing here throws at the caller.
  */
 
 import { guestHeaders, guestToken } from "./guest";
+import { fetchSyndicationTimeline } from "./syndication";
 
 const GQL = "https://api.x.com/graphql";
 const Q_USER_BY_NAME = process.env.X_GQL_USER_BY_SCREEN_NAME || "sLVLhk0bGj3MVFEKTdax1w";
@@ -56,28 +58,56 @@ async function userRestId(handle: string, token: string): Promise<string | null>
 }
 
 /**
- * Scan a user's timeline for a broadcast id. Returns the most recent candidate (timelines are
- * reverse-chronological); the caller verifies it's actually RUNNING before connecting, so an
- * ended broadcast surfacing here costs nothing.
+ * Every broadcast id a timeline blob mentions. Pinned tweets render first, so the first match
+ * is often an OLD broadcast — returning just that one would shadow the live one forever. The
+ * caller checks all candidates against broadcasts/show and picks the RUNNING one.
  */
-async function broadcastFromTimeline(restId: string, token: string): Promise<string | null> {
-  const url = `${GQL}/${Q_USER_TWEETS}/UserTweets?${encodeParams({
-    variables: { userId: restId, count: 20, includePromotedContent: false, withVoice: false },
-    features: TIMELINE_FEATURES,
-  })}`;
-  const res = await fetch(url, { headers: guestHeaders(token), signal: AbortSignal.timeout(10_000) });
-  if (!res.ok) return null;
-  const text = await res.text();
-
+function extractBroadcastIds(text: string): string[] {
+  const ids = new Set<string>();
   for (const re of [
-    /broadcasts\/([A-Za-z0-9]+)/g,
+    /broadcasts\\?\/([A-Za-z0-9]+)/g, // plain and JSON-escaped link forms
     /"broadcast_id"[^}]*?"string_value":"([A-Za-z0-9]+)"/g,
     /"broadcast_id":"([A-Za-z0-9]+)"/g,
   ]) {
-    const m = re.exec(text);
-    if (m) return m[1];
+    for (const m of text.matchAll(re)) ids.add(m[1]);
   }
-  return null;
+  // Truncated t.co display_urls ("…/broadcasts/1vJpP…") leave partial ids behind; real ids are 13 chars.
+  return [...ids].filter((id) => id.length >= 10);
+}
+
+/** GraphQL fallback timeline scan (guest token; query-ids rotate, hence fallback-only). */
+async function broadcastsFromTimeline(restId: string, token: string): Promise<string[]> {
+  const url = `${GQL}/${Q_USER_TWEETS}/UserTweets?${encodeParams({
+    variables: { userId: restId, count: 40, includePromotedContent: false, withVoice: false },
+    features: TIMELINE_FEATURES,
+  })}`;
+  const res = await fetch(url, { headers: guestHeaders(token), signal: AbortSignal.timeout(10_000) });
+  if (!res.ok) return [];
+  return extractBroadcastIds(await res.text());
+}
+
+/** Of the candidate ids, the first that broadcasts/show reports as currently RUNNING (if any). */
+async function firstRunning(ids: string[], token: string): Promise<string | null> {
+  // show.json rejects comma-batched ids with a 400 nowadays — query individually, capped fan-out.
+  const headers = guestHeaders(token);
+  const running = await Promise.all(
+    ids.slice(0, 8).map(async (id) => {
+      try {
+        const res = await fetch(`https://api.x.com/1.1/broadcasts/show.json?ids=${id}`, {
+          headers,
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!res.ok) return null;
+        const json = (await res.json()) as {
+          broadcasts?: Record<string, { state?: string } | undefined>;
+        };
+        return json.broadcasts?.[id]?.state === "RUNNING" ? id : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return running.find(Boolean) ?? null;
 }
 
 /**
@@ -95,10 +125,19 @@ export async function resolveBroadcast(input: string): Promise<ResolvedBroadcast
   if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) return null;
 
   try {
-    const token = await guestToken();
-    const restId = await userRestId(handle, token);
-    if (!restId) return null;
-    const id = await broadcastFromTimeline(restId, token);
+    // Syndication first: free, unauthenticated, and immune to GraphQL query-id rotation.
+    let candidates = await fetchSyndicationTimeline(handle).then((t) =>
+      t === null ? null : extractBroadcastIds(t),
+    );
+    if (candidates === null) {
+      const token = await guestToken();
+      const restId = await userRestId(handle, token);
+      if (!restId) return null;
+      candidates = await broadcastsFromTimeline(restId, token);
+    }
+    if (candidates.length === 0) return null;
+
+    const id = await firstRunning(candidates, await guestToken());
     return id ? { id, via: "handle", handle } : null;
   } catch {
     return null;

@@ -64,12 +64,16 @@ function tallyChatter(msg) {
   const name = (msg.name || "").trim();
   if (!name || name.toLowerCase() === "anon" || BOTS.has(name.toLowerCase())) return;
   const key = `${msg.platform}:${name.toLowerCase()}`;
+  // Real subscriber status, sticky once observed: Twitch badges normalize to "SUB",
+  // Kick's come through as the raw badge type ("SUBSCRIBER").
+  const isSub = Array.isArray(msg.badges) && msg.badges.some((b) => b === "SUB" || b === "SUBSCRIBER");
   const cur = chatters.get(key);
   if (cur) {
     cur.count += 1;
+    if (isSub) cur.sub = true;
     return;
   }
-  chatters.set(key, { name, platform: msg.platform, count: 1 });
+  chatters.set(key, { name, platform: msg.platform, count: 1, sub: isSub });
   if (chatters.size > CHATTERS_MAX) {
     let minKey = null;
     let min = Infinity;
@@ -93,6 +97,7 @@ function loadChatters() {
             name: c.name,
             platform: c.platform,
             count: Number(c.count) || 0,
+            sub: c.sub === true,
           });
         }
       }

@@ -69,8 +69,8 @@ export const MOCK_STREAMERS: Streamer[] = [
   {
     id: "blknoiz06",
     name: "Blknoiz06",
-    handles: { x: "Blknoiz06" },
-    platforms: ["x"],
+    handles: { kick: "ansem", x: "Blknoiz06" },
+    platforms: ["kick", "x"],
     live: false,
     viewers: 0,
     title: SHOW_TITLE,

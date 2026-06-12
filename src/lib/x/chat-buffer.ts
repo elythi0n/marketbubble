@@ -3,6 +3,8 @@
  * (single-server / Docker deployments). Do not import from client components.
  */
 
+import { getDb } from "@/lib/server/db";
+
 export interface XChatMessage {
   id: string;
   authorHandle: string;
@@ -19,17 +21,42 @@ const MAX_BUFFER = 200;
 const buffer: XChatMessage[] = [];
 const seen = new Set<string>();
 
+function recordXChatters(msgs: XChatMessage[]) {
+  if (msgs.length === 0) return;
+  const db = getDb();
+  if (!db) return;
+  try {
+    const up = db.prepare(
+      `INSERT INTO chatters (platform, name, count, source_count, updated_at) VALUES ('x', ?, 1, 0, ?)
+       ON CONFLICT(platform, name) DO UPDATE SET count = count + 1, updated_at = excluded.updated_at`,
+    );
+    const now = Date.now();
+    for (const m of msgs) {
+      const name = m.authorHandle || m.authorName;
+      if (name) up.run(name, now);
+    }
+  } catch (err) {
+    console.error("[x-buffer] chatter persist failed", err);
+  }
+}
+
 export function pushMessages(msgs: XChatMessage[]): { accepted: number; duplicates: number } {
   let accepted = 0;
   let duplicates = 0;
+  const fresh: XChatMessage[] = [];
 
   for (const msg of msgs) {
     if (!msg.id || !msg.text) continue;
     if (seen.has(msg.id)) { duplicates++; continue; }
     seen.add(msg.id);
     buffer.push(msg);
+    fresh.push(msg);
     accepted++;
   }
+
+  // Durable leaderboard counts (no-op without a database). X messages never reach the relay's
+  // tally, so this is their only accumulation point — exact, per accepted message.
+  recordXChatters(fresh);
 
   // Evict oldest entries when over cap, removing their IDs from the seen set too.
   while (buffer.length > MAX_BUFFER) {

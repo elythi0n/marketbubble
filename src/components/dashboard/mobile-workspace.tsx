@@ -9,7 +9,7 @@ import { useSettings } from "@/lib/settings/settings-context";
 import { useFilteredMessages } from "@/lib/settings/use-filtered-messages";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { type Streamer } from "@/lib/streamers/mock";
-import { formatCountdown, nextOccurrence } from "@/lib/streamers/schedule";
+import { formatCountdown, isStarting, nextOccurrence } from "@/lib/streamers/schedule";
 import { useWakeLock } from "@/lib/use-wake-lock";
 import { cn } from "@/lib/utils";
 import { ChatPane } from "./chat-pane";
@@ -33,8 +33,12 @@ function MobileOfflineView({ channel }: { channel: Streamer }) {
       {/* Schedule — centered; the channel identity lives in the sheet/bottom nav, not here. */}
       {channel.schedule ? (
         <div className="relative flex flex-1 flex-col items-center justify-center gap-1 text-center">
-          <p className="text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Next stream</p>
-          {target ? (
+          <p className="text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            {isStarting(channel.schedule, now) ? "Show is starting" : "Next stream"}
+          </p>
+          {isStarting(channel.schedule, now) ? (
+            <p className="font-mono text-[2.2rem] font-bold leading-none text-[#46c45a]">soon…</p>
+          ) : target ? (
             <p className="font-mono text-[2.2rem] font-bold tabular-nums leading-none text-foreground">
               {formatCountdown(target.getTime() - now.getTime())}
             </p>

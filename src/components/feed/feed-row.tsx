@@ -86,8 +86,8 @@ interface FeedRowProps {
   showTimestamps?: boolean;
   showSource?: boolean;
   showDeleted?: boolean;
-  /** When set, the author name becomes clickable (author focus filter). */
-  onAuthorClick?: (author: string) => void;
+  /** When set, the author name becomes clickable (opens the user card / focus, per pane). */
+  onAuthorClick?: (author: string, message: FeedMessage, e: React.MouseEvent) => void;
   /** When set, the row gets a right-click context menu. */
   onRowContextMenu?: (e: React.MouseEvent, message: FeedMessage) => void;
 }
@@ -256,8 +256,8 @@ function FeedRowImpl({
         <span
           style={authorStyle}
           className={onAuthorClick ? styles.authorClickable : undefined}
-          onClick={onAuthorClick ? () => onAuthorClick(message.author) : undefined}
-          title={onAuthorClick ? `Show only messages from ${message.author}` : undefined}
+          onClick={onAuthorClick ? (e) => onAuthorClick(message.author, message, e) : undefined}
+          title={onAuthorClick ? `About ${message.author}` : undefined}
         >
           {message.author}
         </span>

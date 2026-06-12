@@ -10,7 +10,14 @@ export async function POST(req: NextRequest) {
   if (!adminEnabled()) return new NextResponse(null, { status: 404 });
   if (!adminAuthorized(req)) return NextResponse.json({ error: "invalid key" }, { status: 401 });
 
-  let body: { streamers?: { name?: string; handles?: { twitch?: string; kick?: string; x?: string }; pinned?: boolean }[] };
+  let body: {
+    streamers?: {
+      name?: string;
+      handles?: { twitch?: string; kick?: string; x?: string };
+      pinned?: boolean;
+      schedule?: { label?: string; weekday?: number; hour?: number } | null;
+    }[];
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {

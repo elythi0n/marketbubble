@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { kickApiJson } from "@/lib/server/kick-fetch";
+
 interface SubBadgeTier {
   months: number;
   imageUrl: string;
@@ -10,26 +12,17 @@ const UA =
 
 /** Primary path: the JSON API exposes subscriber_badges (channel_subscriber_badges/<id>/original). */
 async function fetchViaApi(slug: string): Promise<SubBadgeTier[] | null> {
-  try {
-    const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(slug)}`, {
-      headers: { "User-Agent": UA, Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      subscriber_badges?: Array<{ months?: number; badge_image?: { src?: string } }>;
-    };
-    const out: SubBadgeTier[] = [];
-    for (const b of data.subscriber_badges ?? []) {
-      if (typeof b.months === "number" && b.badge_image?.src) {
-        out.push({ months: b.months, imageUrl: b.badge_image.src });
-      }
+  const data = await kickApiJson<{
+    subscriber_badges?: Array<{ months?: number; badge_image?: { src?: string } }>;
+  }>(`v2/channels/${encodeURIComponent(slug)}`, 3600);
+  if (!data) return null;
+  const out: SubBadgeTier[] = [];
+  for (const b of data.subscriber_badges ?? []) {
+    if (typeof b.months === "number" && b.badge_image?.src) {
+      out.push({ months: b.months, imageUrl: b.badge_image.src });
     }
-    return out;
-  } catch {
-    return null;
   }
+  return out;
 }
 
 export async function GET(req: NextRequest) {

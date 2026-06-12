@@ -8,6 +8,7 @@ import { useFlag } from "@/lib/control/client";
 import { DEMO_ENABLED, useDemoMode } from "@/lib/demo-mode-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { hasVideo } from "@/lib/streamers/mock";
+import { isStarting } from "@/lib/streamers/schedule";
 import { cn } from "@/lib/utils";
 import { StreamerAvatar } from "./streamer-avatar";
 
@@ -115,7 +116,13 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                       }}
                       className={cn(
                         "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
-                        active ? "border-white/20 bg-white/[0.06]" : "border-transparent hover:bg-white/[0.04]",
+                        s.pinned && active
+                          ? "border-[#d8b25a]/60 bg-[#d8b25a]/[0.07]"
+                          : s.pinned
+                            ? "border-[#d8b25a]/40 bg-[#d8b25a]/[0.04] hover:bg-[#d8b25a]/[0.08]"
+                            : active
+                              ? "border-white/20 bg-white/[0.06]"
+                              : "border-transparent hover:bg-white/[0.04]",
                       )}
                     >
                       <StreamerAvatar streamer={s} size={40} rounded="lg" />
@@ -136,7 +143,9 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                             ? hasVideo(s)
                               ? `${formatViewers(s.viewers)} watching`
                               : "Live thread"
-                            : (s.schedule?.label ?? "Offline")}
+                            : s.schedule && isStarting(s.schedule, new Date())
+                              ? "Show is starting…"
+                              : (s.schedule?.label ?? "Offline")}
                         </span>
                       </div>
                     </button>
