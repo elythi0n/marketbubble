@@ -1,3 +1,6 @@
+<center><a href="https://marketbubble.virta.lol"><img src="./assets/banner.png" alt="Virta" /></a></center>
+
+
 # MarketBubble
 
 **Live at [marketbubble.virta.lol](https://marketbubble.virta.lol)** — nothing to install. If the show is offline, hit **Try Demo** and watch the dashboard run on busy live channels.
