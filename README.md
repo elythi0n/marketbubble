@@ -1,9 +1,8 @@
 <center><a href="https://marketbubble.virta.lol"><img src="./assets/banner.png" alt="Virta" /></a></center>
 
-
 # MarketBubble
 
-**Live at [marketbubble.virta.lol](https://marketbubble.virta.lol)** — nothing to install. If the show is offline, hit **Try Demo** and watch the dashboard run on busy live channels.
+**Live at [marketbubble.virta.lol](https://marketbubble.virta.lol)**, nothing to install. If the show is offline, hit **Try Demo** and watch the dashboard run on busy live channels.
 
 **One dashboard for a show that lives on three platforms.** Twitch, Kick and X chat merged into a single live feed, beside the stream, live market data and Polymarket predictions, in a workspace you can rearrange like an IDE.
 
@@ -11,14 +10,14 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 
 ## Why it's different
 
-- **Calm by design.** The default view is three panels: stream, chat, gifts. Everything else (markets, news, predictions, the assistant, settings) stays out of sight until you add it from the launcher, and closes back down when you're done. No permanent toolbars, no always-on ticker walls, no search bar until `Ctrl+K` summons one. One quiet graphite theme, tuned for hours of watching, instead of four loud ones.
-- **Right-click anything.** Right-click a chat message or a sidebar channel and open that streamer's chat as its own panel, or just their Kick chat, or just their Twitch chat. Drag it, split it, tab it, pop it out into its own window. Competing "columns views" are fixed layouts; these are first-class panels.
-- **Your keys never touch our server.** The AI assistant runs bring-your-own-key entirely in the browser: keys live in memory, die on reload, and requests go straight to the provider. Operators can instead set keys server-side, where they're locked, invisible to clients, and rate-limited per visitor.
-- **Always listening.** Twitch and Kick chat stays connected around the clock — even while every channel is offline (both platforms keep their chatrooms open between streams). The all-time leaderboard, giveaway entry pools, user-card stats and analytics keep accumulating between shows instead of starting cold at airtime.
-- **Ships à la carte.** No database required — everything runs in-memory out of the box, with the honest caveat that live-production state (polls mid-vote, roster and schedule overrides, chatter tallies, clip-radar moments, hosted share links) resets when the process restarts. Point `DATABASE_PATH` at a SQLite file and all of it becomes durable; the schema migrates itself. The AI assistant is opt-in at runtime and removable at build time with one env var. Demo mode previews the whole dashboard with busy real channels when the show is offline.
-- **Calm under fire.** Virtualized rendering, combo-collapse for spam, read helper to slow the feed, keyword highlight/mute filters, and per-channel toggles keep a three-platform firehose readable.
-- **Built to run all day.** This is a second-screen app people leave open for hours, and it's engineered like one: every buffer is capped, every cache is pruned, every socket reconnects with backoff, and hidden tabs drop to one update a second. It's as fast at hour six as at minute one.
-- **Built to be run.** The admin control room gives hosts live tools during the show: push announcements to all viewers, run audience polls with real-time tallies, draw giveaways from the chatter rolls, manage the cast and weekly schedule on a calendar, watch analytics, arm an auto-clipper, and share branded highlight cards to X — all without touching the codebase or reloading anything. Shared highlights are hosted at stable `/share/<id>` links whose previews unfurl into full picture cards on X, so the image travels with the post instead of dying in a screenshot folder.
+- **Calm by design.** Three panels by default: stream, chat, gifts. Everything else stays hidden until you add it, then closes back down. One quiet graphite theme, no always-on ticker walls.
+- **Right-click anything.** Open any streamer's chat, or just their Kick, or just their Twitch, as its own panel. Drag, split, tab, or pop it out to a new window. Real panels, not a fixed columns layout.
+- **Keys never touch our server.** The AI assistant is bring-your-own-key, running entirely in the browser: keys live in memory and die on reload. Operators can set keys server-side instead, locked and rate-limited per visitor.
+- **Always listening.** Twitch and Kick chat stay connected around the clock, even while channels are offline. The leaderboard, giveaway pools, user-card stats and analytics keep filling between shows.
+- **Ships à la carte.** No database required; everything runs in-memory out of the box. Point `DATABASE_PATH` at a SQLite file and it all becomes durable, schema included. The assistant is opt-in at runtime, removable at build time.
+- **Calm under fire.** Virtualized rendering, spam combo-collapse, a read helper, keyword filters and per-channel toggles keep a three-platform firehose readable.
+- **Built to run all day.** Every buffer capped, every cache pruned, every socket reconnects with backoff, hidden tabs drop to one update a second. As fast at hour six as at minute one.
+- **A control room for hosts.** Push announcements, run live polls, draw giveaways, manage the cast and schedule, watch analytics, arm an auto-clipper, share branded highlight cards to X. All without touching code.
 
 ## Feature tour
 
@@ -26,7 +25,7 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 - Twitch IRC + Kick Pusher + X live chat in one time-ordered feed, with emotes (native + 7TV), badges, name colors, replies, and event rows for subs, raids and gifts
 - Per-streamer and per-platform chat panels, opened from a right-click context menu
 - Channel filter dropdown (choose which live channels appear in the merged feed), broadcaster emphasis (the streamer's messages get a tint)
-- **User cards**: click any username for their card — session message count and share of chat, all-time tally with overall rank (from the durable leaderboard), recent message history, and one-click author focus
+- **User cards**: click any username to see session message count and share of chat, all-time tally with overall rank (from the durable leaderboard), recent message history, and one-click author focus
 - **Chat never sleeps**: Twitch and Kick chats stay connected even while channels are offline, so the leaderboard, giveaway pools and analytics keep filling between shows
 - Highlight/mute keyword filters, search with click-to-jump (click a result and the live feed scrolls to that message and flashes it)
 - Mention Inbox panel: every message across all channels that names you, collected even while the panel is closed
@@ -60,7 +59,7 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 - **Leaderboard** of top chatters (relay-backed, roster channels only) with platform-colored subscriber badges, and on-chain traders
 
 **News** (`/news`)
-- Wall Street broadsheet layout: Walburn masthead, double rule, full-width hero + editorial sidebar — the same hierarchy a print front page uses, not a list of links
+- Wall Street broadsheet layout: Walburn masthead, double rule, full-width hero + editorial sidebar, the same hierarchy a print front page uses, not a list of links
 - Live RSS from CoinDesk, CoinTelegraph, Decrypt and Yahoo Finance, refreshed every 5 minutes; color-coded category chips (Crypto · Markets)
 - Full-width "Latest" grid below the fold, with the leading article spanning two columns for editorial weight
 - Recent Clips & Broadcasts row pulls from the streamer's Twitch clip history and YouTube channel, opening inline with the same player dialog as the main dashboard
@@ -68,14 +67,14 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 **Admin control room** (`/admin/*`)
 - Routed, password-protected pages behind one login (the key is held in memory, never stored); falls back to a real 404 when no key is configured, so it's invisible to visitors
 - **Engage**: broadcast a full-screen announcement to all connected viewers; run live audience polls with option voting and inline chat-vote detection, real-time bar chart tallies, lock and clear controls
-- **Roster & schedule**: the show's cast lives here — introduce new characters or shows under the MarketBubble umbrella, retire them, edit handles, and **pin** a channel so it leads every viewer's sidebar with a golden card and pin badge. A weekly **calendar** (Pacific Time, the show's clock) lays the whole cast out as avatar chips: click a cell to schedule someone, click a chip to move or clear them — slots drive the dashboard's next-show countdowns and live-discovery polling, and everything publishes live to every open dashboard
-- **Giveaway**: draw a random viewer from every chatter the show has ever recorded, filtered by platform, minimum messages, or recent activity — a deterministic slot-machine roll plays identically on the admin screen and the OBS overlay, decelerates onto the winner (the name it lands on *is* the winner), and the result stays up until cleared
-- **Controls**: push global keyword filters (highlight/mute) and feature flags to every visitor in real time; arm the **clip radar** — off by default, it watches combined chat velocity server-side, fires while a spike is still building, snapshots the surrounding chat, and (with a Twitch token) cuts a real Twitch clip whose footage starts *before* the trigger, since Twitch clips retroactively
+- **Roster & schedule**: the show's cast lives here. Introduce new characters or shows under the MarketBubble umbrella, retire them, edit handles, and **pin** a channel so it leads every viewer's sidebar with a golden card and pin badge. A weekly **calendar** (Pacific Time, the show's clock) lays the whole cast out as avatar chips: click a cell to schedule someone, click a chip to move or clear them. Slots drive the dashboard's next-show countdowns and live-discovery polling, and everything publishes live to every open dashboard
+- **Giveaway**: draw a random viewer from every chatter the show has ever recorded, filtered by platform, minimum messages, or recent activity. A deterministic slot-machine roll plays identically on the admin screen and the OBS overlay, decelerates onto the winner (the name it lands on *is* the winner), and the result stays up until cleared
+- **Controls**: push global keyword filters (highlight/mute) and feature flags to every visitor in real time; arm the **clip radar** (off by default): it watches combined chat velocity server-side, fires while a spike is still building, snapshots the surrounding chat, and (with a Twitch token) cuts a real Twitch clip whose footage starts *before* the trigger, since Twitch clips retroactively
 - **Analytics**: viewer history with a hover crosshair, a GitHub-style activity heatmap (click a day to inspect it in the chart), a stream session log that can merge overlapping channels into one "unified show", per-channel totals, top chatters, and the clip-radar review strip (keep · re-trim on Twitch · dismiss)
-- **Share to X**: any highlight — a day's peak viewers, a stream session with its viewer curve, a giveaway winner — renders as a letterpress-styled portrait card (the lettermark stamped on light stock, Walburn type). Copy it, download it, or post it: posting hosts the PNG and opens X with a link that unfurls into a large picture card
+- **Share to X**: any highlight (a day's peak viewers, a stream session with its viewer curve, a giveaway winner) renders as a letterpress-styled portrait card (the lettermark stamped on light stock, Walburn type). Copy it, download it, or post it: posting hosts the PNG and opens X with a link that unfurls into a large picture card
 - **Health**: live platform connection status, relay/bridge/database state, and viewer counts across the roster
 - **Rehearsal mode**: `/admin/giveaway?demo=1` and `/admin/analytics?demo=1` run on generated data, so you can demo or practice without a database or live chat
-- **OBS sources** with one-click URL copy: `/overlay-poll` (the active poll, invisible when idle) and `/overlay-giveaway` (the roll + winner) — both take `?bg=transparent&scale=1.4`
+- **OBS sources** with one-click URL copy: `/overlay-poll` (the active poll, invisible when idle) and `/overlay-giveaway` (the roll + winner). Both take `?bg=transparent&scale=1.4`
 
 **Pages**: `/` dashboard · `/markets` · `/news` · `/leaderboard` · `/about` (the show and the hosts) · `/overlay` (OBS chat) · `/overlay-poll` (OBS poll) · `/overlay-giveaway` (OBS giveaway) · `/share/<id>` (hosted highlight cards) · `/admin/*` (producer tools)
 
@@ -157,10 +156,10 @@ Create `streamers.json` at the project root, or set `STREAMERS_JSON` to a JSON a
 
 ### Database (optional)
 
-The dashboard runs with or without a database — same features either way, the database only adds durability and history.
+The dashboard runs with or without a database, same features either way; the database only adds durability and history.
 
 - **Without** (default): everything is in-memory. Announcements, flags, polls, roster and schedule overrides, chat filters, chatter tallies, clip-radar moments, giveaway state and hosted share links reset when the process restarts. Zero setup, nothing to back up.
-- **With** (`DATABASE_PATH=/data/marketbubble.db`): the admin control plane hydrates from SQLite at boot and writes through on every change — an open poll survives a deploy mid-vote (per-voter dedup included), and finished polls accumulate as history. The leaderboard becomes all-time (chatter counts accumulate across app and relay restarts), which is also what the giveaway draws from and what user cards rank against. A sampler records viewer counts and chat load every minute while live, powering the admin Analytics page (navigable 1h–30d charts, the activity heatmap, the session log; 90-day retention). Clip-radar moments and shared highlight images persist too, so review queues and `/share/<id>` links survive restarts. Uses Node's built-in SQLite driver: no extra container, no native module, no migration step (the schema migrates itself at boot).
+- **With** (`DATABASE_PATH=/data/marketbubble.db`): the admin control plane hydrates from SQLite at boot and writes through on every change. An open poll survives a deploy mid-vote (per-voter dedup included), and finished polls accumulate as history. The leaderboard becomes all-time (chatter counts accumulate across app and relay restarts), which is also what the giveaway draws from and what user cards rank against. A sampler records viewer counts and chat load every minute while live, powering the admin Analytics page (navigable 1h to 30d charts, the activity heatmap, the session log; 90-day retention). Clip-radar moments and shared highlight images persist too, so review queues and `/share/<id>` links survive restarts. Uses Node's built-in SQLite driver: no extra container, no native module, no migration step (the schema migrates itself at boot).
 
 The compose file already mounts a persistent volume at `/data`, so enabling persistence is just uncommenting `DATABASE_PATH` in `.env`. Backups are a file copy of `marketbubble.db` (plus its `-wal` sidecar), or snapshot the volume. If the file can't be opened the app logs the error and falls back to in-memory rather than failing the show.
 
@@ -181,7 +180,7 @@ Options: API URL (your deployment), API key (`X_CHAT_API_KEY`), flush interval. 
 
 ## Virta plugin
 
-Optional, for mods who run [Virta](https://github.com/elythi0n/virta) against the show's channels: a GUI plugin that docks a MarketBubble control room (show status, top chatters, predictions, X chat) next to Virta's moderation tools. The plugin brings all of its own UI; Virta only provides the sandbox and API bridge. See [virta-plugin/README.md](virta-plugin/README.md) — install from URL: `https://marketbubble.virta.lol/marketbubble-virta-plugin.zip`.
+Optional, for mods who run [Virta](https://github.com/elythi0n/virta) against the show's channels: a GUI plugin that docks a MarketBubble control room (show status, top chatters, predictions, X chat) next to Virta's moderation tools. The plugin brings all of its own UI; Virta only provides the sandbox and API bridge. See [virta-plugin/README.md](virta-plugin/README.md), install from URL: `https://marketbubble.virta.lol/marketbubble-virta-plugin.zip`.
 
 ## Relay
 
