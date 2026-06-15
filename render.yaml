@@ -16,7 +16,7 @@ services:
     plan: starter
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /
+    healthCheckPath: /api/health
     autoDeploy: true
     disk:
       name: app-data

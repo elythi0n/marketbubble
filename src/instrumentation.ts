@@ -30,6 +30,19 @@ export async function register() {
   // Clip radar — armed at boot but inert until the operator enables it (admin → Controls).
   const { startClipRadar } = await import("@/lib/server/clip-radar");
   startClipRadar();
+
+  // In-process Twitch + Kick chatter tally. Mutually exclusive with the relay (RELAY_URL):
+  // the relay's /top-chatters already does this, and running both would double-count. When
+  // there's no relay, this fills the same role so single-process deploys (Vercel + Turso,
+  // bare `npm start`) still get a full Twitch/Kick/X leaderboard instead of X-only.
+  if (!process.env.RELAY_URL?.trim()) {
+    const g3 = globalThis as typeof globalThis & { __mbChatListenerStarted?: boolean };
+    if (!g3.__mbChatListenerStarted) {
+      g3.__mbChatListenerStarted = true;
+      const { startChatListener } = await import("@/lib/server/chat-listener");
+      void startChatListener(roster);
+    }
+  }
   const envSources = (process.env.X_BROADCAST_SOURCES || "")
     .split(",")
     .map((s) => s.trim())

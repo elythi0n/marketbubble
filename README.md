@@ -170,7 +170,7 @@ Set `NEXT_PUBLIC_SITE_URL` to the app's Railway domain before the first build (i
 
 The Next app deploys cleanly on Vercel, but two pieces have to live elsewhere:
 
-- **Relay**: Vercel doesn't run persistent WebSocket workers. Host the relay on Railway, Render or Fly, then set `RELAY_URL` on the Vercel project to that URL. Without a relay the leaderboard still works from the in-session chat buffer; just not all-time.
+- **Relay (optional, even on Vercel)**: with `RELAY_URL` unset, the app runs an in-process Twitch + Kick chat listener that tallies the leaderboard itself. On Vercel this works on a single warm instance — counts scatter across instances if it scales out (a hosted relay on Railway/Render fixes that), and chat-vote tallying for live polls still needs the relay. For most deploys: skip it.
 - **Database**: Vercel's filesystem is ephemeral, so `DATABASE_PATH` (SQLite) won't persist. Leave it unset to run in-memory (the app degrades gracefully — see the database note below), or swap the driver in `src/lib/server/db.ts` for a hosted store (Turso, Neon, etc.).
 - **SSE**: add `export const maxDuration = 300` to `src/app/api/control/stream/route.ts` and enable Fluid Compute on the project; otherwise Hobby caps streaming responses at ~10s.
 - **X timeline**: the Docker image shells out to `curl` (Node's fetch gets 429'd by X). On Vercel this falls back to fetch — expect intermittent rate-limits on the X feed.
@@ -206,7 +206,7 @@ Create `streamers.json` at the project root, or set `STREAMERS_JSON` to a JSON a
 | `X_BROADCAST_SOURCES` | Optional | Extra `@handles` or broadcast links for the X bridge |
 | `X_MENTION_QUERIES` | Optional | Search terms for the X Mentions pane |
 | `STREAMERS_JSON` | Optional | Channel roster as an env var instead of `streamers.json` |
-| `RELAY_URL` | Optional | Relay for the persistent top-chatters leaderboard |
+| `RELAY_URL` | Optional | Relay for the persistent top-chatters leaderboard + live chat-vote tallying. Unset → app runs an in-process Twitch+Kick listener for the leaderboard |
 | `DATABASE_PATH` | Optional | SQLite file for persistence (e.g. `/data/marketbubble.db`); unset = in-memory |
 | `ADMIN_API_KEY` | Optional | Password for `/admin` (falls back to `X_CHAT_API_KEY`; route is a 404 until one is set) |
 | `ADMIN_DISABLED=1` | Optional | Force the admin route to 404 regardless of key configuration |
@@ -245,11 +245,13 @@ Optional, for mods who run [Virta](https://github.com/elythi0n/virta) against th
 
 ## Relay
 
-Optional. Chat connects directly from each visitor's browser; the relay's job is the persistent top-chatters leaderboard (and a shared SSE chat feed). It follows **only the configured roster channels** (`CHANNELS`, default `fazebanks`), joins them all at once, ignores chat bots, and persists tallies to `CHATTERS_FILE`.
+Optional. Chat connects directly from each visitor's browser; the relay's job is the persistent top-chatters leaderboard (and a shared SSE chat feed) — plus it powers live chat-vote tallying for the admin polls. It follows **only the configured roster channels** (`CHANNELS`, default `fazebanks`), joins them all at once, ignores chat bots, and persists tallies to `CHATTERS_FILE`.
 
 ```bash
 node relay/server.mjs   # :8787; set RELAY_URL=http://localhost:8787 on the app
 ```
+
+**Don't want to run a separate service?** Leave `RELAY_URL` unset and the app starts an **in-process Twitch + Kick chat listener** that does the leaderboard tally itself (Twitch IRC + Kick Pusher, one socket per platform, every roster channel joined on it). Flushed to the database every 30 seconds as deltas (so the all-time count accumulates across restarts), or kept in memory when no database is configured. The relay path and the in-process path are mutually exclusive — `RELAY_URL` set → relay wins; unset → in-process. The relay is still recommended if you need live chat-vote tallying for admin polls, since that codepath calls the relay directly.
 
 ## Stack
 

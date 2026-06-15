@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server";
 import { getControlState, subscribeControl, type ControlState } from "@/lib/server/control";
 
 export const dynamic = "force-dynamic";
+// Vercel Fluid Compute caps streaming responses — without this the SSE feed drops to ~10s
+// on Hobby and ~60s on Pro. No-op on every other runtime, so safe to leave on for all hosts.
+export const maxDuration = 300;
 
 const KEEPALIVE_MS = 25_000;
 

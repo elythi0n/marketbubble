@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel any in-flight run for the same ref when a new commit arrives — saves CI minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Migration drift check
+        run: node scripts/check-migrations.mjs
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # `--if-present` lets these no-op cleanly when the scripts don't exist (the test/smoke
+      # suite lives on a separate branch); once merged in, the same workflow runs them.
+      - name: Tests
+        run: npm test --if-present
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke
+        run: npm run smoke --if-present

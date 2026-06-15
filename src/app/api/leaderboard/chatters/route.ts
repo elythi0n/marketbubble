@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getInProcessTopChatters } from "@/lib/server/chat-listener";
 import { getDb } from "@/lib/server/db";
 import { getTopChatters } from "@/lib/x/chat-buffer";
 
@@ -54,13 +55,22 @@ export async function GET() {
     }
   }
 
-  // ── Priority 2: X chat buffer (current process / warm instance) ───────────
-  const chatters = getTopChatters(15);
-  if (chatters.length > 0) {
+  // ── Priority 2: in-process Twitch + Kick tally (this session only) merged with the X
+  // buffer. Active when there's no relay; gives a full three-platform leaderboard even
+  // without a database. Counts reset when the process restarts. ─────────────────────────
+  const live = [
+    ...getInProcessTopChatters(15),
+    ...getTopChatters(15),
+  ]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 15)
+    .map((c) => ({ name: c.name, platform: c.platform, count: c.count, sub: "sub" in c ? c.sub : false }));
+
+  if (live.length > 0) {
     const source = ON_VERCEL
-      ? "X chat · resets on cold start (set RELAY_URL for persistence)"
-      : "X chat · current session";
-    return NextResponse.json({ source, chatters });
+      ? "Live chat · resets on cold start"
+      : "Live chat · current session";
+    return NextResponse.json({ source, chatters: live });
   }
 
   // ── No data yet ───────────────────────────────────────────────────────────
