@@ -16,10 +16,11 @@ export interface ClipRadarPayload {
   status: ClipRadarStatus;
 }
 
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!adminEnabled()) return new NextResponse(null, { status: 404 });
   if (!adminAuthorized(req)) return NextResponse.json({ error: "invalid key" }, { status: 401 });
-  return NextResponse.json({ config: getClipRadarConfig(), status: getClipRadarStatus() } satisfies ClipRadarPayload);
+  const [config, status] = await Promise.all([getClipRadarConfig(), getClipRadarStatus()]);
+  return NextResponse.json({ config, status } satisfies ClipRadarPayload);
 }
 
 /** Partial config update — only the provided keys change. */
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "expected JSON" }, { status: 400 });
   }
-  const config = setClipRadarConfig(patch);
-  return NextResponse.json({ config, status: getClipRadarStatus() } satisfies ClipRadarPayload);
+  const config = await setClipRadarConfig(patch);
+  const status = await getClipRadarStatus();
+  return NextResponse.json({ config, status } satisfies ClipRadarPayload);
 }

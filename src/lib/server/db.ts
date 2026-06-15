@@ -1,8 +1,12 @@
 /**
- * Optional SQLite persistence, opt-in via DATABASE_PATH (e.g. /data/marketbubble.db on a
- * compose volume). Uses Node's built-in driver — no native module, no extra service, nothing
- * for a deployment to install. When DATABASE_PATH is unset (or the file can't be opened) the
- * app runs exactly as before: fully in-memory, state resets on restart.
+ * Optional persistence with two backends — pick by env, fall back to in-memory.
+ *
+ *   DATABASE_PATH=/data/foo.db                    → local SQLite via node:sqlite (Docker default)
+ *   TURSO_DATABASE_URL=libsql://… (+ AUTH_TOKEN)  → hosted libSQL/Turso (Vercel + serverless)
+ *   neither                                       → null, every feature stays in-memory
+ *
+ * Both backends speak the same SQL and run the same MIGRATIONS list. Callers see one async
+ * `Db` interface; the existing node:sqlite path keeps working unchanged.
  *
  * Design contract for callers: never assume the database exists. `getDb()` returns null in
  * memory-mode and every persisted feature must degrade to its in-memory behaviour — features
@@ -13,6 +17,8 @@
  */
 
 import { DatabaseSync } from "node:sqlite";
+
+import { type Client, createClient } from "@libsql/client";
 
 /**
  * Append-only migration list; `PRAGMA user_version` tracks how many have run. Never edit a
@@ -84,8 +90,172 @@ const MIGRATIONS: string[] = [
   `ALTER TABLE chatters ADD COLUMN sub INTEGER NOT NULL DEFAULT 0;`,
 ];
 
+export type SqlValue = string | number | bigint | null | Uint8Array;
+export type Row = Record<string, unknown>;
+export interface Statement {
+  sql: string;
+  params?: SqlValue[];
+}
+
+/**
+ * Unified async interface both backends implement. Methods auto-await the migration promise
+ * so callers never have to think about boot ordering.
+ */
+export interface Db {
+  all<T = Row>(sql: string, params?: SqlValue[]): Promise<T[]>;
+  get<T = Row>(sql: string, params?: SqlValue[]): Promise<T | undefined>;
+  run(sql: string, params?: SqlValue[]): Promise<{ changes: number }>;
+  /** Run one or more semicolon-separated statements (no parameters). Use for DDL. */
+  exec(sql: string): Promise<void>;
+  /** Run multiple statements as a single transaction. Preferred over manual BEGIN/COMMIT. */
+  batch(stmts: Statement[]): Promise<void>;
+}
+
+/** Split a multi-statement SQL string on top-level `;` (the migration SQL has no string literals). */
+function splitStatements(sql: string): string[] {
+  return sql
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/** Convert node:sqlite row values: BigInt → number when safe, Buffer stays as Uint8Array. */
+function normalizeNodeRow(row: Record<string, unknown>): Row {
+  const out: Row = {};
+  for (const k of Object.keys(row)) {
+    const v = row[k];
+    out[k] = typeof v === "bigint" && v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER ? Number(v) : v;
+  }
+  return out;
+}
+
+export class NodeSqliteDb implements Db {
+  readonly ready: Promise<void>;
+  constructor(private readonly db: DatabaseSync) {
+    this.ready = this.migrate();
+  }
+
+  private async migrate(): Promise<void> {
+    this.db.exec("PRAGMA journal_mode = WAL;");
+    const verRow = this.db.prepare("PRAGMA user_version").get() as { user_version: number };
+    const version = verRow.user_version;
+    for (let i = version; i < MIGRATIONS.length; i++) {
+      this.db.exec("BEGIN");
+      try {
+        this.db.exec(MIGRATIONS[i]);
+        this.db.exec(`PRAGMA user_version = ${i + 1}`);
+        this.db.exec("COMMIT");
+      } catch (err) {
+        try {
+          this.db.exec("ROLLBACK");
+        } catch {
+          /* not in a transaction */
+        }
+        throw err;
+      }
+    }
+  }
+
+  async all<T = Row>(sql: string, params: SqlValue[] = []): Promise<T[]> {
+    await this.ready;
+    const rows = this.db.prepare(sql).all(...params) as Array<Record<string, unknown>>;
+    return rows.map(normalizeNodeRow) as T[];
+  }
+
+  async get<T = Row>(sql: string, params: SqlValue[] = []): Promise<T | undefined> {
+    await this.ready;
+    const row = this.db.prepare(sql).get(...params) as Record<string, unknown> | undefined;
+    return row ? (normalizeNodeRow(row) as T) : undefined;
+  }
+
+  async run(sql: string, params: SqlValue[] = []): Promise<{ changes: number }> {
+    await this.ready;
+    const res = this.db.prepare(sql).run(...params);
+    return { changes: Number(res.changes) };
+  }
+
+  async exec(sql: string): Promise<void> {
+    await this.ready;
+    this.db.exec(sql);
+  }
+
+  async batch(stmts: Statement[]): Promise<void> {
+    await this.ready;
+    if (stmts.length === 0) return;
+    this.db.exec("BEGIN");
+    try {
+      for (const s of stmts) {
+        this.db.prepare(s.sql).run(...(s.params ?? []));
+      }
+      this.db.exec("COMMIT");
+    } catch (err) {
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {
+        /* not in a transaction */
+      }
+      throw err;
+    }
+  }
+}
+
+export class TursoDb implements Db {
+  readonly ready: Promise<void>;
+  constructor(private readonly client: Client) {
+    this.ready = this.migrate();
+  }
+
+  private async migrate(): Promise<void> {
+    const verRow = await this.client.execute("PRAGMA user_version");
+    const version = Number(verRow.rows[0]?.user_version ?? 0);
+    for (let i = version; i < MIGRATIONS.length; i++) {
+      const stmts = splitStatements(MIGRATIONS[i]);
+      await this.client.batch([...stmts, `PRAGMA user_version = ${i + 1}`]);
+    }
+  }
+
+  private toObject(rs: { columns: string[]; rows: Array<Record<string, unknown> & ArrayLike<unknown>> }): Row[] {
+    return rs.rows.map((r) => {
+      const out: Row = {};
+      for (const col of rs.columns) {
+        const v = r[col];
+        out[col] = typeof v === "bigint" && v <= Number.MAX_SAFE_INTEGER && v >= Number.MIN_SAFE_INTEGER ? Number(v) : v;
+      }
+      return out;
+    });
+  }
+
+  async all<T = Row>(sql: string, params: SqlValue[] = []): Promise<T[]> {
+    await this.ready;
+    const rs = await this.client.execute({ sql, args: params });
+    return this.toObject(rs) as T[];
+  }
+
+  async get<T = Row>(sql: string, params: SqlValue[] = []): Promise<T | undefined> {
+    const rows = await this.all<T>(sql, params);
+    return rows[0];
+  }
+
+  async run(sql: string, params: SqlValue[] = []): Promise<{ changes: number }> {
+    await this.ready;
+    const rs = await this.client.execute({ sql, args: params });
+    return { changes: Number(rs.rowsAffected) };
+  }
+
+  async exec(sql: string): Promise<void> {
+    await this.ready;
+    await this.client.executeMultiple(sql);
+  }
+
+  async batch(stmts: Statement[]): Promise<void> {
+    await this.ready;
+    if (stmts.length === 0) return;
+    await this.client.batch(stmts.map((s) => ({ sql: s.sql, args: s.params ?? [] })));
+  }
+}
+
 interface DbHolder {
-  db: DatabaseSync | null;
+  db: Db | null;
   opened: boolean;
 }
 
@@ -94,41 +264,42 @@ const holder: DbHolder = ((globalThis as Record<string, unknown> & { __mbDb?: Db
   opened: false,
 });
 
-function open(path: string): DatabaseSync {
-  const db = new DatabaseSync(path);
-  // WAL keeps reads non-blocking during writes; both files live next to the database file.
-  db.exec("PRAGMA journal_mode = WAL;");
-
-  const { user_version: version } = db.prepare("PRAGMA user_version").get() as { user_version: number };
-  for (let i = version; i < MIGRATIONS.length; i++) {
-    db.exec("BEGIN");
+function open(): Db | null {
+  const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
+  if (tursoUrl) {
     try {
-      db.exec(MIGRATIONS[i]);
-      db.exec(`PRAGMA user_version = ${i + 1}`);
-      db.exec("COMMIT");
+      const client = createClient({
+        url: tursoUrl,
+        authToken: process.env.TURSO_AUTH_TOKEN?.trim() || undefined,
+      });
+      console.log(`[db] turso open at ${tursoUrl}`);
+      return new TursoDb(client);
     } catch (err) {
-      db.exec("ROLLBACK");
-      throw err;
+      console.error(`[db] failed to open turso ${tursoUrl}; continuing without persistence`, err);
+      return null;
     }
   }
-  return db;
-}
-
-/** The shared connection, or null when running without a database. */
-export function getDb(): DatabaseSync | null {
-  if (holder.opened) return holder.db;
-  holder.opened = true;
 
   const path = process.env.DATABASE_PATH?.trim();
-  if (!path) return null;
-
-  try {
-    holder.db = open(path);
-    console.log(`[db] sqlite open at ${path}`);
-  } catch (err) {
-    // A broken database must not take the live show down — degrade to memory-mode loudly.
-    console.error(`[db] failed to open ${path}; continuing without persistence`, err);
+  if (path) {
+    try {
+      const sqlite = new DatabaseSync(path);
+      console.log(`[db] sqlite open at ${path}`);
+      return new NodeSqliteDb(sqlite);
+    } catch (err) {
+      console.error(`[db] failed to open ${path}; continuing without persistence`, err);
+      return null;
+    }
   }
+
+  return null;
+}
+
+/** The shared connection adapter, or null when running without a database. */
+export function getDb(): Db | null {
+  if (holder.opened) return holder.db;
+  holder.opened = true;
+  holder.db = open();
   return holder.db;
 }
 

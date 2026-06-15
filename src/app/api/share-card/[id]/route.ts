@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   if (!/^[A-Za-z0-9_-]{4,24}$/.test(id)) return new NextResponse(null, { status: 400 });
 
-  const png = getShareCard(id);
+  const png = await getShareCard(id);
   if (!png) return new NextResponse(null, { status: 404 });
 
   return new NextResponse(Buffer.from(png), {

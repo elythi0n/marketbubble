@@ -16,9 +16,9 @@ export async function GET() {
   const db = getDb();
   if (db) {
     try {
-      const rows = db
-        .prepare("SELECT name, platform, count, sub FROM chatters ORDER BY count DESC LIMIT 15")
-        .all() as Array<{ name: string; platform: string; count: number; sub: number }>;
+      const rows = await db.all<{ name: string; platform: string; count: number; sub: number }>(
+        "SELECT name, platform, count, sub FROM chatters ORDER BY count DESC LIMIT 15",
+      );
       if (rows.length > 0) {
         return NextResponse.json({
           source: "All-time",

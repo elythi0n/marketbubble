@@ -48,11 +48,14 @@ export async function GET(req: NextRequest) {
   let storedPolls = 0;
   if (db) {
     try {
-      storedPolls = (db.prepare("SELECT COUNT(*) AS n FROM polls").get() as { n: number }).n;
+      const row = await db.get<{ n: number }>("SELECT COUNT(*) AS n FROM polls");
+      storedPolls = row?.n ?? 0;
     } catch {
       /* count is cosmetic */
     }
   }
+
+  const databaseConfigured = !!(process.env.DATABASE_PATH?.trim() || process.env.TURSO_DATABASE_URL?.trim());
 
   return NextResponse.json({
     flags: {
@@ -62,7 +65,7 @@ export async function GET(req: NextRequest) {
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     },
     relay,
-    database: { configured: !!process.env.DATABASE_PATH?.trim(), ok: db !== null, polls: storedPolls },
+    database: { configured: databaseConfigured, ok: db !== null, polls: storedPolls },
     xBridge: {
       buffered: getMessages().length,
       topChatters: getTopChatters(3).map((c) => ({ name: c.name, count: c.count })),

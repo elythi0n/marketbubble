@@ -36,7 +36,7 @@ Built for [MarketBubble](https://x.com/marketbubble), the live show about specul
 - **Right-click anything.** Open any streamer's chat, or just their Kick, or just their Twitch, as its own panel. Drag, split, tab, or pop it out to a new window. Real panels, not a fixed columns layout.
 - **Keys never touch our server.** The AI assistant is bring-your-own-key, running entirely in the browser: keys live in memory and die on reload. Operators can set keys server-side instead, locked and rate-limited per visitor.
 - **Always listening.** Twitch and Kick chat stay connected around the clock, even while channels are offline. The leaderboard, giveaway pools, user-card stats and analytics keep filling between shows.
-- **Ships à la carte.** No database required; everything runs in-memory out of the box. Point `DATABASE_PATH` at a SQLite file and it all becomes durable, schema included. The assistant is opt-in at runtime, removable at build time.
+- **Ships à la carte.** No database required; everything runs in-memory out of the box. Point `DATABASE_PATH` at a SQLite file (Docker / VPS) or `TURSO_DATABASE_URL` at a hosted libSQL (Vercel-friendly) and it all becomes durable, schema included. The assistant is opt-in at runtime, removable at build time.
 - **Calm under fire.** Virtualized rendering, spam combo-collapse, a read helper, keyword filters and per-channel toggles keep a three-platform firehose readable.
 - **Built to run all day.** Every buffer capped, every cache pruned, every socket reconnects with backoff, hidden tabs drop to one update a second. As fast at hour six as at minute one.
 - **A control room for hosts.** Push announcements, run live polls, draw giveaways, manage the cast and schedule, watch analytics, arm an auto-clipper, share branded highlight cards to X. All without touching code.
@@ -129,6 +129,12 @@ npm run dev          # http://localhost:3000
 
 No credentials needed to try it: chat connects anonymously from the browser, and Demo mode (top right) fills the dashboard with busy live channels.
 
+```bash
+npm test                                       # database adapter contract tests
+TURSO_DATABASE_URL=…  TURSO_AUTH_TOKEN=…  npm test    # also runs against Turso
+npm run build && npm run smoke                 # boots the prod server, hits a handful of endpoints
+```
+
 ## Deploy
 
 Four paths, same image either way. Pick by how much infra you want to own — Render and Railway run the full stack (app + relay + disk), Vercel is app-only with caveats, Docker is everything on a host you control.
@@ -168,10 +174,10 @@ Set `NEXT_PUBLIC_SITE_URL` to the app's Railway domain before the first build (i
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/elythi0n/marketbubble)
 
-The Next app deploys cleanly on Vercel, but two pieces have to live elsewhere:
+The Next app deploys cleanly on Vercel. Two pieces need attention:
 
-- **Relay**: Vercel doesn't run persistent WebSocket workers. Host the relay on Railway, Render or Fly, then set `RELAY_URL` on the Vercel project to that URL. Without a relay the leaderboard still works from the in-session chat buffer; just not all-time.
-- **Database**: Vercel's filesystem is ephemeral, so `DATABASE_PATH` (SQLite) won't persist. Leave it unset to run in-memory (the app degrades gracefully — see the database note below), or swap the driver in `src/lib/server/db.ts` for a hosted store (Turso, Neon, etc.).
+- **Relay**: Vercel doesn't run persistent WebSocket workers. Host the relay on Railway, Render or Fly, then set `RELAY_URL` on the Vercel project to that URL. Without a relay the leaderboard falls back to the in-session chat buffer (resets on cold start).
+- **Database**: Vercel's filesystem is ephemeral, so `DATABASE_PATH` (local SQLite) doesn't persist. Use Turso instead — it's hosted libSQL, same SQL dialect, same schema. Create a free database at [turso.tech](https://turso.tech) and set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` on the Vercel project. The same `Db` adapter handles both backends, so no code changes.
 - **SSE**: add `export const maxDuration = 300` to `src/app/api/control/stream/route.ts` and enable Fluid Compute on the project; otherwise Hobby caps streaming responses at ~10s.
 - **X timeline**: the Docker image shells out to `curl` (Node's fetch gets 429'd by X). On Vercel this falls back to fetch — expect intermittent rate-limits on the X feed.
 
@@ -207,7 +213,8 @@ Create `streamers.json` at the project root, or set `STREAMERS_JSON` to a JSON a
 | `X_MENTION_QUERIES` | Optional | Search terms for the X Mentions pane |
 | `STREAMERS_JSON` | Optional | Channel roster as an env var instead of `streamers.json` |
 | `RELAY_URL` | Optional | Relay for the persistent top-chatters leaderboard |
-| `DATABASE_PATH` | Optional | SQLite file for persistence (e.g. `/data/marketbubble.db`); unset = in-memory |
+| `DATABASE_PATH` | Optional | Local SQLite file (e.g. `/data/marketbubble.db`) — for Docker / VPS / bare metal |
+| `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | Optional | Hosted libSQL (Turso) — for Vercel and other serverless hosts. Takes precedence over `DATABASE_PATH` |
 | `ADMIN_API_KEY` | Optional | Password for `/admin` (falls back to `X_CHAT_API_KEY`; route is a 404 until one is set) |
 | `ADMIN_DISABLED=1` | Optional | Force the admin route to 404 regardless of key configuration |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `XAI_API_KEY` / `OPENROUTER_API_KEY` | Optional | Server-held assistant keys: locked in the UI, proxied so they never reach the browser |
@@ -217,12 +224,13 @@ Create `streamers.json` at the project root, or set `STREAMERS_JSON` to a JSON a
 
 ### Database (optional)
 
-The dashboard runs with or without a database, same features either way; the database only adds durability and history.
+The dashboard runs with or without a database, same features either way; the database only adds durability and history. Two backends share one schema — pick by where you're hosting.
 
 - **Without** (default): everything is in-memory. Announcements, flags, polls, roster and schedule overrides, chat filters, chatter tallies, clip-radar moments, giveaway state and hosted share links reset when the process restarts. Zero setup, nothing to back up.
-- **With** (`DATABASE_PATH=/data/marketbubble.db`): the admin control plane hydrates from SQLite at boot and writes through on every change. An open poll survives a deploy mid-vote (per-voter dedup included), and finished polls accumulate as history. The leaderboard becomes all-time (chatter counts accumulate across app and relay restarts), which is also what the giveaway draws from and what user cards rank against. A sampler records viewer counts and chat load every minute while live, powering the admin Analytics page (navigable 1h to 30d charts, the activity heatmap, the session log; 90-day retention). Clip-radar moments and shared highlight images persist too, so review queues and `/share/<id>` links survive restarts. Uses Node's built-in SQLite driver: no extra container, no native module, no migration step (the schema migrates itself at boot).
+- **With local SQLite** (`DATABASE_PATH=/data/marketbubble.db`): the admin control plane hydrates at boot and writes through on every change. An open poll survives a deploy mid-vote (per-voter dedup included), and finished polls accumulate as history. The leaderboard becomes all-time (chatter counts accumulate across app and relay restarts), which is also what the giveaway draws from and what user cards rank against. A sampler records viewer counts and chat load every minute while live, powering the admin Analytics page (navigable 1h to 30d charts, the activity heatmap, the session log; 90-day retention). Clip-radar moments and shared highlight images persist too, so review queues and `/share/<id>` links survive restarts. Uses Node's built-in SQLite driver: no extra container, no native module, no migration step (the schema migrates itself at boot). Ideal for Docker / VPS / bare metal where the filesystem is persistent.
+- **With Turso** (`TURSO_DATABASE_URL=…` + `TURSO_AUTH_TOKEN=…`): same durability, same schema, but the database lives at [turso.tech](https://turso.tech) as hosted libSQL. Uses `@libsql/client`; the app picks this backend automatically when the env vars are set. Ideal for Vercel and other serverless hosts where the local filesystem doesn't persist. Free tier covers the show comfortably.
 
-The compose file already mounts a persistent volume at `/data`, so enabling persistence is just uncommenting `DATABASE_PATH` in `.env`. Backups are a file copy of `marketbubble.db` (plus its `-wal` sidecar), or snapshot the volume. If the file can't be opened the app logs the error and falls back to in-memory rather than failing the show.
+The compose file mounts a persistent volume at `/data`, so enabling local SQLite is just uncommenting `DATABASE_PATH` in `.env`. Backups are a file copy of `marketbubble.db` (plus its `-wal` sidecar), or snapshot the volume — for Turso, snapshots happen on the platform. If the configured backend can't be opened the app logs the error and falls back to in-memory rather than failing the show.
 
 ### AI assistant key handling
 

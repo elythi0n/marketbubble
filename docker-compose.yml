@@ -80,8 +80,12 @@ services:
       X_GQL_USER_TWEETS: ${X_GQL_USER_TWEETS:-}
       STREAMERS_JSON: ${STREAMERS_JSON:-}
       X_MENTION_QUERIES: ${X_MENTION_QUERIES:-}
-      # Optional persistence (SQLite on the app-data volume). Leave unset to run in-memory.
+      # Optional persistence — pick one (or leave both unset for in-memory).
+      # SQLite on the app-data volume (default for Docker):
       DATABASE_PATH: ${DATABASE_PATH:-}
+      # Hosted libSQL / Turso (when set, takes precedence over DATABASE_PATH):
+      TURSO_DATABASE_URL: ${TURSO_DATABASE_URL:-}
+      TURSO_AUTH_TOKEN: ${TURSO_AUTH_TOKEN:-}
     volumes:
       - app-data:/data
     depends_on:

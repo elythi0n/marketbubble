@@ -28,7 +28,7 @@ interface ChatterRow {
   name: string;
 }
 
-function eligibleChatters(f: GiveawayFilters): ChatterRow[] | null {
+async function eligibleChatters(f: GiveawayFilters): Promise<ChatterRow[] | null> {
   const db = getDb();
   if (!db) return null;
 
@@ -42,9 +42,7 @@ function eligibleChatters(f: GiveawayFilters): ChatterRow[] | null {
     where.push("updated_at >= ?");
     params.push(Date.now() - f.activeWithinMin * 60_000);
   }
-  return db
-    .prepare(`SELECT platform, name FROM chatters WHERE ${where.join(" AND ")}`)
-    .all(...params) as unknown as ChatterRow[];
+  return db.all<ChatterRow>(`SELECT platform, name FROM chatters WHERE ${where.join(" AND ")}`, params);
 }
 
 function parseFilters(searchParams: URLSearchParams): GiveawayFilters {
@@ -57,11 +55,11 @@ function parseFilters(searchParams: URLSearchParams): GiveawayFilters {
 }
 
 /** Preview: how many chatters the current filters would enter into the draw. */
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!adminEnabled()) return new NextResponse(null, { status: 404 });
   if (!adminAuthorized(req)) return NextResponse.json({ error: "invalid key" }, { status: 401 });
 
-  const rows = eligibleChatters(parseFilters(req.nextUrl.searchParams));
+  const rows = await eligibleChatters(parseFilters(req.nextUrl.searchParams));
   if (rows === null) return NextResponse.json({ error: "no database configured" }, { status: 501 });
   return NextResponse.json({ eligible: rows.length } satisfies GiveawayPreview);
 }
@@ -82,7 +80,7 @@ export async function POST(req: NextRequest) {
     body = {};
   }
 
-  const rows = eligibleChatters(body);
+  const rows = await eligibleChatters(body);
   if (rows === null) return NextResponse.json({ error: "no database configured" }, { status: 501 });
   if (rows.length === 0) return NextResponse.json({ error: "no eligible chatters under these filters" }, { status: 422 });
 

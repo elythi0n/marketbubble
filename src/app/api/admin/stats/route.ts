@@ -21,7 +21,7 @@ const TARGET_POINTS = 240;
  * `?from=&to=` (epoch ms); bucket size derives from the window so a chart always gets a
  * renderable number of points whether it spans an hour or a month.
  */
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!adminEnabled()) return new NextResponse(null, { status: 404 });
   if (!adminAuthorized(req)) return NextResponse.json({ error: "invalid key" }, { status: 401 });
 
@@ -36,13 +36,12 @@ export function GET(req: NextRequest) {
   const bucketMs = Math.max(60_000, Math.round((to - from) / TARGET_POINTS / 60_000) * 60_000);
 
   try {
-    const rows = db
-      .prepare(
-        `SELECT metric, CAST(ts / ? AS INTEGER) * ? AS bucket, AVG(value) AS value
-         FROM stat_samples WHERE ts >= ? AND ts <= ?
-         GROUP BY metric, bucket ORDER BY bucket`,
-      )
-      .all(bucketMs, bucketMs, from, to) as Array<{ metric: string; bucket: number; value: number }>;
+    const rows = await db.all<{ metric: string; bucket: number; value: number }>(
+      `SELECT metric, CAST(ts / ? AS INTEGER) * ? AS bucket, AVG(value) AS value
+       FROM stat_samples WHERE ts >= ? AND ts <= ?
+       GROUP BY metric, bucket ORDER BY bucket`,
+      [bucketMs, bucketMs, from, to],
+    );
 
     const series: AdminStatsPayload["series"] = {};
     for (const r of rows) {

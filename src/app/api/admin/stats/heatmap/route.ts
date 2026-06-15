@@ -19,7 +19,7 @@ const MAX_DAYS = 92; // retention + slack
  * GitHub-style activity heatmap. Samples within one pass share a timestamp, so SUM per ts
  * reconstructs "total concurrent viewers", and MAX per local day gives that day's top.
  */
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!adminEnabled()) return new NextResponse(null, { status: 404 });
   if (!adminAuthorized(req)) return NextResponse.json({ error: "invalid key" }, { status: 401 });
 
@@ -31,13 +31,12 @@ export function GET(req: NextRequest) {
   const from = Date.now() - days * 86_400_000;
 
   try {
-    const rows = db
-      .prepare(
-        `SELECT CAST((ts - ?) / 86400000.0 AS INTEGER) AS day, MAX(total) AS peak FROM
-           (SELECT ts, SUM(value) AS total FROM stat_samples WHERE metric LIKE 'viewers:%' AND ts >= ? GROUP BY ts)
-         GROUP BY day ORDER BY day`,
-      )
-      .all(tz * 60_000, from) as Array<{ day: number; peak: number }>;
+    const rows = await db.all<{ day: number; peak: number }>(
+      `SELECT CAST((ts - ?) / 86400000.0 AS INTEGER) AS day, MAX(total) AS peak FROM
+         (SELECT ts, SUM(value) AS total FROM stat_samples WHERE metric LIKE 'viewers:%' AND ts >= ? GROUP BY ts)
+       GROUP BY day ORDER BY day`,
+      [tz * 60_000, from],
+    );
 
     return NextResponse.json({
       tz,

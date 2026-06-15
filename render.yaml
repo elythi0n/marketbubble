@@ -33,6 +33,12 @@ services:
         value: "1"
       - key: DATABASE_PATH
         value: /data/marketbubble.db
+      # To use hosted Turso instead of the local disk, leave DATABASE_PATH above
+      # unset (delete the line) and fill these in via the Render dashboard:
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
       - key: RELAY_URL
         value: http://marketbubble-relay:8787
       - key: TWITCH_CLIENT_ID

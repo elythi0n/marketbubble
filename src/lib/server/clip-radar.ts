@@ -4,7 +4,7 @@
  * Off by default; the operator enables it under admin → Controls. While enabled it polls the
  * relay's message rate every 5 seconds and scores the current window against a rolling baseline
  * (level ratio + short-term acceleration, so a spike fires while it's still building). A firing
- * moment is persisted (SQLite when available, memory ring otherwise) with a snapshot of recent
+ * moment is persisted (database when available, memory ring otherwise) with a snapshot of recent
  * chat lines, and — when a Twitch user token is configured — a real Twitch clip is cut via
  * Helix Create Clip. Twitch captures footage from BEFORE the request, so a moment detected
  * ~20-40s after the on-screen beat still lands inside the clip's edit window; the stored
@@ -101,14 +101,12 @@ const store: RadarStore = ((globalThis as Record<string, unknown> & { __mbClipRa
 
 // ── Config (persisted in control_kv; in-memory when no database) ────────────────
 
-export function getClipRadarConfig(): ClipRadarConfig {
+export async function getClipRadarConfig(): Promise<ClipRadarConfig> {
   if (store.config) return store.config;
   const db = getDb();
   if (db) {
     try {
-      const row = db.prepare("SELECT value FROM control_kv WHERE key = 'clip_radar_config'").get() as
-        | { value: string }
-        | undefined;
+      const row = await db.get<{ value: string }>("SELECT value FROM control_kv WHERE key = 'clip_radar_config'");
       if (row) {
         store.config = { ...DEFAULT_CONFIG, ...(JSON.parse(row.value) as Partial<ClipRadarConfig>) };
         return store.config;
@@ -121,8 +119,8 @@ export function getClipRadarConfig(): ClipRadarConfig {
   return store.config;
 }
 
-export function setClipRadarConfig(patch: Partial<ClipRadarConfig>): ClipRadarConfig {
-  const cur = getClipRadarConfig();
+export async function setClipRadarConfig(patch: Partial<ClipRadarConfig>): Promise<ClipRadarConfig> {
+  const cur = await getClipRadarConfig();
   const next: ClipRadarConfig = {
     enabled: typeof patch.enabled === "boolean" ? patch.enabled : cur.enabled,
     sensitivity: patch.sensitivity && patch.sensitivity in THRESHOLDS ? patch.sensitivity : cur.sensitivity,
@@ -137,9 +135,10 @@ export function setClipRadarConfig(patch: Partial<ClipRadarConfig>): ClipRadarCo
   const db = getDb();
   if (db) {
     try {
-      db.prepare(
+      await db.run(
         "INSERT INTO control_kv (key, value) VALUES ('clip_radar_config', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-      ).run(JSON.stringify(next));
+        [JSON.stringify(next)],
+      );
     } catch (err) {
       console.error("[clip-radar] config persist failed", err);
     }
@@ -158,8 +157,8 @@ function clipTokenConfigured(): boolean {
   return Boolean(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIP_TOKEN);
 }
 
-export function getClipRadarStatus(): ClipRadarStatus {
-  const cfg = getClipRadarConfig();
+export async function getClipRadarStatus(): Promise<ClipRadarStatus> {
+  const cfg = await getClipRadarConfig();
   const samples = store.samples.slice(-36).map(({ t, mps }) => [t, Math.round(mps * 60)] as [number, number]);
   return {
     enabled: cfg.enabled,
@@ -174,7 +173,7 @@ export function getClipRadarStatus(): ClipRadarStatus {
   };
 }
 
-// ── Moments (SQLite first, memory ring fallback) ─────────────────────────────────
+// ── Moments (database first, memory ring fallback) ──────────────────────────────
 
 function rowToMoment(r: Record<string, unknown>): ClipMoment {
   let context: ClipMomentContextLine[] = [];
@@ -200,13 +199,14 @@ function rowToMoment(r: Record<string, unknown>): ClipMoment {
   };
 }
 
-export function listClipMoments(limit = 30): ClipMoment[] {
+export async function listClipMoments(limit = 30): Promise<ClipMoment[]> {
   const db = getDb();
   if (db) {
     try {
-      const rows = db
-        .prepare("SELECT * FROM clip_moments ORDER BY ts DESC LIMIT ?")
-        .all(Math.min(200, Math.max(1, limit))) as Array<Record<string, unknown>>;
+      const rows = await db.all<Record<string, unknown>>(
+        "SELECT * FROM clip_moments ORDER BY ts DESC LIMIT ?",
+        [Math.min(200, Math.max(1, limit))],
+      );
       return rows.map(rowToMoment);
     } catch (err) {
       console.error("[clip-radar] list failed", err);
@@ -215,12 +215,12 @@ export function listClipMoments(limit = 30): ClipMoment[] {
   return store.memMoments.slice(0, limit);
 }
 
-export function setClipMomentStatus(id: string, status: "kept" | "dismissed"): boolean {
+export async function setClipMomentStatus(id: string, status: "kept" | "dismissed"): Promise<boolean> {
   const db = getDb();
   if (db) {
     try {
-      const res = db.prepare("UPDATE clip_moments SET status = ? WHERE id = ?").run(status, id);
-      return Number(res.changes) > 0;
+      const res = await db.run("UPDATE clip_moments SET status = ? WHERE id = ?", [status, id]);
+      return res.changes > 0;
     } catch (err) {
       console.error("[clip-radar] status update failed", err);
     }
@@ -230,14 +230,15 @@ export function setClipMomentStatus(id: string, status: "kept" | "dismissed"): b
   return Boolean(m);
 }
 
-function saveMoment(m: ClipMoment) {
+async function saveMoment(m: ClipMoment): Promise<void> {
   const db = getDb();
   if (db) {
     try {
-      db.prepare(
+      await db.run(
         `INSERT INTO clip_moments (id, ts, score, kind, why, mpm, ratio, channel, clip_id, clip_url, clip_edit_url, status, context)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).run(m.id, m.ts, m.score, m.kind, m.why, m.mpm, m.ratio, m.channel, m.clipId, m.clipUrl, m.clipEditUrl, m.status, JSON.stringify(m.context));
+        [m.id, m.ts, m.score, m.kind, m.why, m.mpm, m.ratio, m.channel, m.clipId, m.clipUrl, m.clipEditUrl, m.status, JSON.stringify(m.context)],
+      );
       return;
     } catch (err) {
       console.error("[clip-radar] persist failed; keeping in memory", err);
@@ -359,7 +360,7 @@ function baselineMpm(): number {
 }
 
 async function tick() {
-  const cfg = getClipRadarConfig();
+  const cfg = await getClipRadarConfig();
   if (!cfg.enabled) {
     store.timer = setTimeout(() => void tick(), IDLE_TICK_MS);
     return;
@@ -442,7 +443,7 @@ function evaluate(cfg: ClipRadarConfig) {
       status: "new",
       context,
     };
-    saveMoment(moment);
+    await saveMoment(moment);
     console.log(`[clip-radar] moment ${moment.id}: ${score} (${why})${clip ? ` clip ${clip.id}` : ""}`);
   })();
 }

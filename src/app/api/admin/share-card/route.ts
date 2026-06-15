@@ -21,6 +21,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "not a PNG" }, { status: 415 });
   }
 
-  const id = saveShareCard(buf);
+  const id = await saveShareCard(buf);
   return NextResponse.json({ id, path: `/share/${id}` });
 }

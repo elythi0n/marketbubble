@@ -35,7 +35,7 @@ const MIN_SESSION_MS = 2 * 60_000;
  * metric, a session is a run of samples with value > 0 (the sampler writes explicit zeros
  * while a channel is offline, so zeros and long gaps both end a run).
  */
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!adminEnabled()) return new NextResponse(null, { status: 404 });
   if (!adminAuthorized(req)) return NextResponse.json({ error: "invalid key" }, { status: 401 });
 
@@ -48,13 +48,12 @@ export function GET(req: NextRequest) {
   if (!(from < to)) return NextResponse.json({ error: "from must precede to" }, { status: 400 });
 
   try {
-    const rows = db
-      .prepare(
-        `SELECT metric, ts, value FROM stat_samples
-         WHERE metric LIKE 'viewers:%' AND ts >= ? AND ts <= ?
-         ORDER BY metric, ts`,
-      )
-      .all(from, to) as Array<{ metric: string; ts: number; value: number }>;
+    const rows = await db.all<{ metric: string; ts: number; value: number }>(
+      `SELECT metric, ts, value FROM stat_samples
+       WHERE metric LIKE 'viewers:%' AND ts >= ? AND ts <= ?
+       ORDER BY metric, ts`,
+      [from, to],
+    );
 
     const sessions: StreamSession[] = [];
     let cur: (StreamSession & { sum: number; n: number }) | null = null;

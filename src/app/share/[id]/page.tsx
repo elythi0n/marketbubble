@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function SharePage({ params }: Params) {
   const { id } = await params;
-  if (!/^[A-Za-z0-9_-]{4,24}$/.test(id) || !getShareCard(id)) notFound();
+  if (!/^[A-Za-z0-9_-]{4,24}$/.test(id) || !(await getShareCard(id))) notFound();
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-[#101013] px-6 py-10">

@@ -3,10 +3,11 @@
  * the active poll. One Node process — admin actions mutate this in-memory store and every
  * connected viewer gets the change pushed over the control SSE stream.
  *
- * Persistence is optional (DATABASE_PATH → SQLite): when present the store hydrates from it at
- * boot and writes through on every change, so announcements/flags/roster/filters/polls survive
- * restarts; when absent everything is memory-only and resets with the process. Same features
- * either way — the database only adds durability.
+ * Persistence is optional (DATABASE_PATH for local SQLite, TURSO_DATABASE_URL for hosted libSQL):
+ * when configured the store hydrates from it at boot and writes through on every change, so
+ * announcements/flags/roster/filters/polls survive restarts; when absent everything is
+ * memory-only and resets with the process. Same features either way — the database only adds
+ * durability.
  *
  * Scale notes (the site can hold thousands of viewers):
  *  - Broadcasts are full snapshots, throttled: state-shaped changes (publish, lock, clear) flush
@@ -17,7 +18,7 @@
  */
 
 import type { StreamSchedule } from "@/lib/streamers/schedule";
-import { getDb } from "./db";
+import { getDb, type Statement } from "./db";
 
 export interface Announcement {
   message: string;
@@ -127,7 +128,7 @@ interface ControlStore {
   pollResumed: boolean;
 }
 
-const store: ControlStore = ((globalThis as Record<string, unknown> & { __mbControlStore?: ControlStore }).__mbControlStore ??= hydrate({
+const store: ControlStore = ((globalThis as Record<string, unknown> & { __mbControlStore?: ControlStore }).__mbControlStore ??= {
   announcement: null,
   flags: {},
   poll: null,
@@ -141,23 +142,32 @@ const store: ControlStore = ((globalThis as Record<string, unknown> & { __mbCont
   pendingBroadcast: null,
   lastBroadcast: 0,
   pollResumed: false,
-}));
+});
 
-resumePersistedPoll();
+void hydrateOnce();
 
-// ── Persistence (optional SQLite) ──────────────────────────────────────────────
-// With DATABASE_PATH set, control state survives restarts: scalar state lives as JSON in
+// ── Persistence (optional database) ────────────────────────────────────────────
+// With a database configured, control state survives restarts: scalar state lives as JSON in
 // control_kv, polls as rows (rows outlive clearPoll — that's the poll history for future
 // analytics), and per-voter choices in poll_voters so a restart can't double-count re-votes.
 // Without a database every helper is a no-op and the store behaves exactly as before.
 // Write path: votes persist individually (dedup must be exact); everything else piggybacks
 // on broadcast()'s send — already throttled to one frame per second during tallies.
 
-function hydrate(s: ControlStore): ControlStore {
+/**
+ * Runs hydrate + resumePersistedPoll exactly once per process (guarded on globalThis so dev
+ * hot-reloads don't re-trigger it). DB methods auto-await migrations, so this safely runs
+ * before the first request.
+ */
+async function hydrateOnce() {
+  const g = globalThis as Record<string, unknown> & { __mbControlHydrated?: boolean };
+  if (g.__mbControlHydrated) return;
+  g.__mbControlHydrated = true;
+
   const db = getDb();
-  if (!db) return s;
+  if (!db) return;
   try {
-    const rows = db.prepare("SELECT key, value FROM control_kv").all() as { key: string; value: string }[];
+    const rows = await db.all<{ key: string; value: string }>("SELECT key, value FROM control_kv");
     const kv = new Map(rows.map((r) => [r.key, r.value]));
     const read = <T,>(key: string, fallback: T): T => {
       const raw = kv.get(key);
@@ -169,19 +179,20 @@ function hydrate(s: ControlStore): ControlStore {
       }
     };
 
-    s.announcement = read<Announcement | null>("announcement", null);
-    s.flags = read<Record<string, boolean>>("flags", {});
-    s.roster = read<RosterStreamer[] | null>("roster", null);
-    s.globalFilters = read<GlobalFilter[]>("filters", []);
-    s.giveaway = read<Giveaway | null>("giveaway", null);
+    store.announcement = read<Announcement | null>("announcement", null);
+    store.flags = read<Record<string, boolean>>("flags", {});
+    store.roster = read<RosterStreamer[] | null>("roster", null);
+    store.globalFilters = read<GlobalFilter[]>("filters", []);
+    store.giveaway = read<Giveaway | null>("giveaway", null);
 
     const pollId = read<string | null>("current_poll_id", null);
     if (pollId) {
-      const row = db.prepare("SELECT * FROM polls WHERE id = ?").get(pollId) as
-        | { id: string; question: string; source: string; options: string; created_at: number; ends_at: number | null; status: string; winner: string | null }
-        | undefined;
+      const row = await db.get<{ id: string; question: string; source: string; options: string; created_at: number; ends_at: number | null; status: string; winner: string | null }>(
+        "SELECT * FROM polls WHERE id = ?",
+        [pollId],
+      );
       if (row) {
-        s.poll = {
+        store.poll = {
           id: row.id,
           question: row.question,
           source: row.source === "polymarket" ? "polymarket" : "custom",
@@ -191,20 +202,25 @@ function hydrate(s: ControlStore): ControlStore {
           status: row.status === "locked" ? "locked" : "open",
           winner: row.winner,
         };
-        const voters = db.prepare("SELECT voter_key, option_id FROM poll_voters WHERE poll_id = ?").all(pollId) as { voter_key: string; option_id: string }[];
-        s.voters = new Map(voters.map((v) => [v.voter_key, v.option_id]));
+        const voters = await db.all<{ voter_key: string; option_id: string }>(
+          "SELECT voter_key, option_id FROM poll_voters WHERE poll_id = ?",
+          [pollId],
+        );
+        store.voters = new Map(voters.map((v) => [v.voter_key, v.option_id]));
       }
     }
   } catch (err) {
     console.error("[control] failed to hydrate from database; starting empty", err);
   }
-  return s;
+
+  resumePersistedPoll();
+  // Tell any viewer who connected during cold-boot what the restored state is.
+  if (store.listeners.size > 0) broadcast(true);
 }
 
 /**
- * Re-arms what hydrate() couldn't (it runs before `store` exists): the lock timer and relay
- * registration for a restored open poll. Runs once per process; locks immediately when the
- * poll expired while the server was down.
+ * Re-arms what hydrate couldn't: the lock timer and relay registration for a restored open
+ * poll. Runs once per process; locks immediately when the poll expired while the server was down.
  */
 function resumePersistedPoll() {
   if (store.pollResumed) return;
@@ -221,42 +237,43 @@ function resumePersistedPoll() {
   if (!store.relayPull) startRelayVotes(poll);
 }
 
-function persistState() {
+async function persistState() {
   const db = getDb();
   if (!db) return;
   try {
-    const up = db.prepare(
-      "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-    );
-    up.run("announcement", JSON.stringify(store.announcement));
-    up.run("flags", JSON.stringify(store.flags));
-    up.run("roster", JSON.stringify(store.roster));
-    up.run("filters", JSON.stringify(store.globalFilters));
-    up.run("giveaway", JSON.stringify(store.giveaway));
-    up.run("current_poll_id", JSON.stringify(store.poll?.id ?? null));
-
+    const stmts: Statement[] = [
+      { sql: "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params: ["announcement", JSON.stringify(store.announcement)] },
+      { sql: "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params: ["flags", JSON.stringify(store.flags)] },
+      { sql: "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params: ["roster", JSON.stringify(store.roster)] },
+      { sql: "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params: ["filters", JSON.stringify(store.globalFilters)] },
+      { sql: "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params: ["giveaway", JSON.stringify(store.giveaway)] },
+      { sql: "INSERT INTO control_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params: ["current_poll_id", JSON.stringify(store.poll?.id ?? null)] },
+    ];
     const p = store.poll;
     if (p) {
-      db.prepare(
-        `INSERT INTO polls (id, question, source, options, created_at, ends_at, status, winner)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           options = excluded.options, ends_at = excluded.ends_at,
-           status = excluded.status, winner = excluded.winner`,
-      ).run(p.id, p.question, p.source, JSON.stringify(p.options), p.createdAt, p.endsAt, p.status, p.winner);
+      stmts.push({
+        sql: `INSERT INTO polls (id, question, source, options, created_at, ends_at, status, winner)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                options = excluded.options, ends_at = excluded.ends_at,
+                status = excluded.status, winner = excluded.winner`,
+        params: [p.id, p.question, p.source, JSON.stringify(p.options), p.createdAt, p.endsAt, p.status, p.winner],
+      });
     }
+    await db.batch(stmts);
   } catch (err) {
     console.error("[control] persist failed", err);
   }
 }
 
-function persistVote(pollId: string, voterKey: string, optionId: string) {
+async function persistVote(pollId: string, voterKey: string, optionId: string) {
   const db = getDb();
   if (!db) return;
   try {
-    db.prepare(
+    await db.run(
       "INSERT INTO poll_voters (poll_id, voter_key, option_id) VALUES (?, ?, ?) ON CONFLICT(poll_id, voter_key) DO UPDATE SET option_id = excluded.option_id",
-    ).run(pollId, voterKey, optionId);
+      [pollId, voterKey, optionId],
+    );
   } catch (err) {
     console.error("[control] vote persist failed", err);
   }
@@ -281,7 +298,7 @@ export function subscribeControl(cb: (s: ControlState) => void): () => void {
 function broadcast(immediate = false) {
   const send = () => {
     store.lastBroadcast = Date.now();
-    persistState(); // every state change flows through here, already throttled for tallies
+    void persistState(); // every state change flows through here, already throttled for tallies
     const snapshot = getControlState();
     for (const l of store.listeners) l(snapshot);
   };
@@ -456,7 +473,7 @@ export function votePoll(pollId: string, optionId: string, voterKey: string): Po
   }
   option.votes += 1;
   store.voters.set(voterKey, optionId);
-  persistVote(poll.id, voterKey, optionId);
+  void persistVote(poll.id, voterKey, optionId);
   broadcast(); // throttled — tallies coalesce
   return poll;
 }
