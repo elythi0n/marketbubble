@@ -1,0 +1,88 @@
+# Render Blueprint: app + relay as two services with persistent disks.
+#
+# One-click deploy: push this repo to GitHub, then in Render → New → Blueprint,
+# point at the repo. Render reads this file, creates both services, mounts the
+# disks, and wires the app to the relay over Render's private network.
+#
+# Fill in the `sync: false` env vars (Twitch creds, X chat key, optional AI
+# keys, admin key) from the Render dashboard after the first deploy. The build
+# bakes NEXT_PUBLIC_SITE_URL into the bundle — set it before the first deploy
+# (Render's default *.onrender.com URL is fine to start with).
+
+services:
+  - type: web
+    name: marketbubble
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeploy: true
+    disk:
+      name: app-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      - key: NEXT_PUBLIC_DEMO_DISABLED
+        value: "1"
+      - key: DATABASE_PATH
+        value: /data/marketbubble.db
+      - key: RELAY_URL
+        value: http://marketbubble-relay:8787
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: TWITCH_CLIP_TOKEN
+        sync: false
+      - key: X_CHAT_API_KEY
+        sync: false
+      - key: X_BROADCAST_SOURCES
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: STREAMERS_JSON
+        sync: false
+
+  - type: pserv
+    name: marketbubble-relay
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./relay/Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    disk:
+      name: relay-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: "8787"
+      - key: CHATTERS_FILE
+        value: /data/chatters.json
+      - key: CHANNELS
+        value: fazebanks
+      - key: ALLOW_ORIGIN
+        sync: false
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: KICK_CHATROOM_ID
+        sync: false
+      - key: KICK_CHANNEL
+        sync: false

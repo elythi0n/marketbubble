@@ -2,11 +2,33 @@
 
 # MarketBubble
 
-**Live at [marketbubble.virta.lol](https://marketbubble.virta.lol)**, nothing to install. If the show is offline, hit **Try Demo** and watch the dashboard run on busy live channels.
+**Live at [marketbubble.virta.lol](https://marketbubble.virta.lol)**. If the show is offline, hit **Try Demo** and watch the dashboard run on busy live channels.
 
 **One dashboard for a show that lives on three platforms.** Twitch, Kick and X chat merged into a single live feed, beside the stream, live market data and Polymarket predictions, in a workspace you can rearrange like an IDE.
 
 Built for [MarketBubble](https://x.com/marketbubble), the live show about speculation, attention and culture hosted by Banks and Blknoiz06, Thursdays 1PM PT.
+
+## Contents
+
+- 💡 [Why it's different](#why-its-different)
+- 🎛️ [Feature tour](#feature-tour)
+- ⚡ [Performance & durability](#performance--durability)
+- 🌐 [Platform support](#platform-support)
+- 🚀 [Quick start](#quick-start)
+- 📦 [Deploy](#deploy)
+  - 🐳 [Docker](#docker-own-your-stack)
+  - 🎨 [Render](#render-one-click-blueprint)
+  - 🚂 [Railway](#railway-one-click)
+  - ▲ [Vercel](#vercel-app-only-with-caveats)
+- ⚙️ [Configuration](#configuration)
+  - 📺 [Channel roster](#channel-roster)
+  - 🔑 [Environment variables](#environment-variables)
+  - 💾 [Database](#database-optional)
+  - 🤖 [AI assistant key handling](#ai-assistant-key-handling)
+- 🧩 [Chrome extension](#chrome-extension)
+- 🔌 [Virta plugin](#virta-plugin)
+- 📡 [Relay](#relay)
+- 🏗️ [Stack](#stack)
 
 ## Why it's different
 
@@ -107,12 +129,51 @@ npm run dev          # http://localhost:3000
 
 No credentials needed to try it: chat connects anonymously from the browser, and Demo mode (top right) fills the dashboard with busy live channels.
 
-Production with Docker (app + relay):
+## Deploy
+
+Four paths, same image either way. Pick by how much infra you want to own — Render and Railway run the full stack (app + relay + disk), Vercel is app-only with caveats, Docker is everything on a host you control.
+
+### Docker (own your stack)
+
+The fullest control — works on any host that runs containers (VPS, Coolify, Hetzner, your laptop). Brings up both the app and the relay with a persistent volume for the SQLite database.
 
 ```bash
 cp .env.example .env   # fill in what you need
 docker compose up -d
 ```
+
+Pre-built images are published to GHCR (`ghcr.io/elythi0n/marketbubble:latest` and `…-relay:latest`); compose pulls them by default so the host doesn't need to build. Put Caddy or nginx in front for HTTPS. See the comments at the top of `docker-compose.yml` for the GHCR push flow.
+
+### Render (one-click Blueprint)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/elythi0n/marketbubble)
+
+[`render.yaml`](./render.yaml) defines both services and the persistent disks. In Render, **New → Blueprint**, point at this repo. Render creates the app (public) and relay (private), wires `RELAY_URL` over the internal network, and mounts a 1 GB disk at `/data` on each for SQLite + chatter tallies.
+
+After the first deploy, fill in the secrets marked `sync: false` (Twitch creds, `X_CHAT_API_KEY`, `ADMIN_API_KEY`, any AI provider keys) in the Render dashboard. `NEXT_PUBLIC_SITE_URL` is baked into the bundle at build time — set it to your `*.onrender.com` URL (or custom domain) before the first build.
+
+### Railway (one-click)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/elythi0n/marketbubble)
+
+[`railway.json`](./railway.json) configures the app's Docker build and health check. In Railway, **Deploy from GitHub** and point at this repo to create the app service. To add the relay (recommended, otherwise the leaderboard falls back to session-only counts):
+
+1. In the same Railway project, **+ New → GitHub Repo** → same repo, set the Dockerfile to `relay/Dockerfile` and the start command to `node /srv/relay/server.mjs`.
+2. On the app service, set `RELAY_URL` to the relay's internal URL (Railway's private networking: `http://<relay-service>.railway.internal:8787`).
+3. Attach a volume to each service at `/data`. Set `DATABASE_PATH=/data/marketbubble.db` on the app and `CHATTERS_FILE=/data/chatters.json` on the relay.
+
+Set `NEXT_PUBLIC_SITE_URL` to the app's Railway domain before the first build (it's baked in).
+
+### Vercel (app only, with caveats)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/elythi0n/marketbubble)
+
+The Next app deploys cleanly on Vercel, but two pieces have to live elsewhere:
+
+- **Relay**: Vercel doesn't run persistent WebSocket workers. Host the relay on Railway, Render or Fly, then set `RELAY_URL` on the Vercel project to that URL. Without a relay the leaderboard still works from the in-session chat buffer; just not all-time.
+- **Database**: Vercel's filesystem is ephemeral, so `DATABASE_PATH` (SQLite) won't persist. Leave it unset to run in-memory (the app degrades gracefully — see the database note below), or swap the driver in `src/lib/server/db.ts` for a hosted store (Turso, Neon, etc.).
+- **SSE**: add `export const maxDuration = 300` to `src/app/api/control/stream/route.ts` and enable Fluid Compute on the project; otherwise Hobby caps streaming responses at ~10s.
+- **X timeline**: the Docker image shells out to `curl` (Node's fetch gets 429'd by X). On Vercel this falls back to fetch — expect intermittent rate-limits on the X feed.
 
 ## Configuration
 
