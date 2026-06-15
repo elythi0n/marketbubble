@@ -4,6 +4,9 @@ export interface PredictionRow {
   yesPercent: number;
   noPercent: number;
   volume: string;
+  /** Polymarket event URL — opens in a new tab when the card is clicked. Optional so old
+   *  cached responses and the mock fallback still satisfy the type. */
+  url?: string;
 }
 
 export const MOCK_PREDICTIONS: PredictionRow[] = [

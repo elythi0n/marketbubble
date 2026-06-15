@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { setChartSymbol } from "@/lib/markets/chart-symbol";
 import { formatPrice } from "@/lib/markets/types";
 
 interface Mover {
@@ -19,13 +20,25 @@ function Column({ title, rows, up }: { title: string; rows: Mover[]; up: boolean
       </h3>
       <ul>
         {rows.map((m) => (
-          <li key={m.symbol} className="flex items-center gap-2 px-3 py-1.5">
-            <span className="min-w-0 flex-1 truncate font-mono text-[0.78rem] font-semibold text-foreground">{m.symbol}</span>
-            <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">${formatPrice(m.price)}</span>
-            <span className={`w-16 text-right font-mono text-[0.72rem] font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
-              {m.changePct > 0 ? "+" : ""}
-              {m.changePct.toFixed(1)}%
-            </span>
+          <li key={m.symbol}>
+            <button
+              type="button"
+              // Movers are the CoinGecko top-100 (all listed against USDT on Binance), so map
+              // the bare base to its Binance pair for the TradingView chart embed. When this
+              // pane lives on the markets board, the chart panel updates in place; on the
+              // dashboard it's a no-op since there's no chart panel listening — opens a tab
+              // would be inconsistent across surfaces, so we keep behavior unified here.
+              onClick={() => setChartSymbol(`BINANCE:${m.symbol}USDT`)}
+              title={`View ${m.symbol}/USDT on the chart`}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
+            >
+              <span className="min-w-0 flex-1 truncate font-mono text-[0.78rem] font-semibold text-foreground">{m.symbol}</span>
+              <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">${formatPrice(m.price)}</span>
+              <span className={`w-16 text-right font-mono text-[0.72rem] font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+                {m.changePct > 0 ? "+" : ""}
+                {m.changePct.toFixed(1)}%
+              </span>
+            </button>
           </li>
         ))}
         {rows.length === 0 ? <li className="px-3 py-2 text-[0.72rem] text-muted-foreground">Loading…</li> : null}

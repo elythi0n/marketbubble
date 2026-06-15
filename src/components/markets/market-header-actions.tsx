@@ -10,9 +10,12 @@ import {
   ExternalLink,
   Gauge,
   LayoutGrid,
+  Newspaper,
   Plus,
   SlidersHorizontal,
   TrendingUp,
+  Vote,
+  Zap,
 } from "lucide-react";
 import type { IDockviewHeaderActionsProps } from "dockview";
 
@@ -47,6 +50,14 @@ const SECTIONS: ReadonlyArray<{ label: string; items: PanelEntry[] }> = [
     items: [
       { id: "feargreed", title: "Fear & Greed", icon: Gauge },
       { id: "tagauge", title: "Signals", icon: Activity },
+    ],
+  },
+  {
+    label: "Feed",
+    items: [
+      { id: "news", title: "Market News", icon: Newspaper },
+      { id: "predictions", title: "Predictions", icon: Vote },
+      { id: "hyperliquid", title: "Hyperliquid", icon: Zap },
     ],
   },
 ];
