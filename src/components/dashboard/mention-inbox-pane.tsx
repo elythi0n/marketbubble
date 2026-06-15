@@ -30,11 +30,11 @@ export function MentionInboxPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-hairline px-3">
         <Inbox className="size-4 text-muted-foreground" />
         <span className="text-[0.78rem] font-semibold text-foreground">Mentions</span>
         {mentions.length > 0 ? (
-          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.62rem] tabular-nums text-muted-foreground">
+          <span className="rounded bg-overlay-weak px-1.5 py-0.5 font-mono text-[0.62rem] tabular-nums text-muted-foreground">
             {mentions.length}
           </span>
         ) : null}
@@ -44,7 +44,7 @@ export function MentionInboxPane() {
           disabled={mentions.length === 0}
           title="Clear mentions"
           aria-label="Clear mentions"
-          className="ml-auto inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-30"
+          className="ml-auto inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground disabled:opacity-30"
         >
           <Trash2 className="size-3.5" />
         </button>

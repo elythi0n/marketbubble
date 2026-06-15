@@ -39,7 +39,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
             onClick={onClose}
           />
           <motion.div
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[78dvh] flex-col rounded-t-2xl border-t border-white/10 bg-[#161619] pb-[env(safe-area-inset-bottom)]"
+            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[78dvh] flex-col rounded-t-2xl border-t border-hairline bg-sidebar pb-[env(safe-area-inset-bottom)]"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -52,7 +52,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
             }}
           >
             <div className="flex flex-none items-center gap-2 px-4 pb-2 pt-3">
-              <span className="mx-auto h-1 w-10 rounded-full bg-white/20" aria-hidden />
+              <span className="mx-auto h-1 w-10 rounded-full bg-overlay-strong" aria-hidden />
             </div>
             <div className="flex flex-none items-center gap-2 px-4 pb-2">
               <span className="text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -61,7 +61,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
 
               {/* Mobile home of the Live/Demo switch (the top nav doesn't exist here). */}
               {DEMO_ENABLED && demoOn ? (
-                <div className="ml-1 flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.02] p-0.5">
+                <div className="ml-1 flex items-center gap-0.5 rounded-md border border-hairline bg-overlay-weak p-0.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -70,10 +70,10 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                     aria-pressed={!isDemo}
                     className={cn(
                       "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
-                      !isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground",
+                      !isDemo ? "bg-overlay-medium text-foreground" : "text-muted-foreground",
                     )}
                   >
-                    <Radio className={cn("size-3", !isDemo && "text-[#46c45a]")} />
+                    <Radio className={cn("size-3", !isDemo && "text-feed-ok")} />
                     Live
                   </button>
                   <button
@@ -84,7 +84,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                     aria-pressed={isDemo}
                     className={cn(
                       "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
-                      isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground",
+                      isDemo ? "bg-overlay-medium text-foreground" : "text-muted-foreground",
                     )}
                   >
                     <Clapperboard className="size-3" />
@@ -97,7 +97,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="ml-auto inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+                className="ml-auto inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
               >
                 <X className="size-4" />
               </button>
@@ -117,18 +117,18 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
                       className={cn(
                         "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
                         s.pinned && active
-                          ? "border-[#d8b25a]/60 bg-[#d8b25a]/[0.07]"
+                          ? "border-feed-warn/60 bg-feed-warn/[0.07]"
                           : s.pinned
-                            ? "border-[#d8b25a]/40 bg-[#d8b25a]/[0.04] hover:bg-[#d8b25a]/[0.08]"
+                            ? "border-feed-warn/40 bg-feed-warn/[0.04] hover:bg-feed-warn/[0.08]"
                             : active
-                              ? "border-white/20 bg-white/[0.06]"
-                              : "border-transparent hover:bg-white/[0.04]",
+                              ? "border-hairline-strong bg-overlay-weak"
+                              : "border-transparent hover:bg-overlay-weak",
                       )}
                     >
                       <StreamerAvatar streamer={s} size={40} rounded="lg" />
                       <div className="flex min-w-0 flex-1 flex-col leading-tight">
                         <span className="flex items-center gap-1.5">
-                          {s.pinned ? <Pin className="size-3 shrink-0 fill-current text-[#d8b25a]" aria-label="Pinned" /> : null}
+                          {s.pinned ? <Pin className="size-3 shrink-0 fill-current text-feed-warn" aria-label="Pinned" /> : null}
                           <span className={cn("truncate text-[0.92rem] font-medium", s.live ? "text-foreground" : "text-muted-foreground")}>
                             {s.name}
                           </span>

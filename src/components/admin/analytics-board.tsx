@@ -165,7 +165,7 @@ function SummaryTiles({ sessions, heatmap, rangeLabel }: { sessions: StreamSessi
   return (
     <div className="grid grid-cols-2 gap-3 lg:col-span-2 lg:grid-cols-4">
       {tiles.map((t) => (
-        <div key={t.label} className="rounded-xl border border-white/[0.08] bg-[#161619]/85 px-4 py-3">
+        <div key={t.label} className="rounded-xl border border-hairline bg-sidebar/85 px-4 py-3">
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{t.label}</p>
           <p className="mt-1 font-mono text-[1.3rem] font-bold tabular-nums leading-none text-foreground">{t.value}</p>
           {t.sub ? <p className="mt-1 text-[0.66rem] text-muted-foreground">{t.sub}</p> : null}
@@ -234,7 +234,7 @@ function ClipMomentsCard({ call, demo }: { call: (path: string, init?: RequestIn
   };
 
   const scoreTone = (score: number) =>
-    score >= 75 ? "border-[#46c45a]/30 bg-[#46c45a]/[0.1] text-[#46c45a]" : "border-[#d8b25a]/30 bg-[#d8b25a]/[0.1] text-[#d8b25a]";
+    score >= 75 ? "border-feed-ok/30 bg-feed-ok/[0.1] text-feed-ok" : "border-feed-warn/30 bg-feed-warn/[0.1] text-feed-warn";
 
   return (
     <Card
@@ -270,21 +270,21 @@ function ClipMomentsCard({ call, demo }: { call: (path: string, init?: RequestIn
                 <span className="text-muted-foreground"> · {m.why}</span>
               </span>
               {m.clipUrl ? (
-                <a href={m.clipUrl} target="_blank" rel="noreferrer" title="Watch the Twitch clip" className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground">
+                <a href={m.clipUrl} target="_blank" rel="noreferrer" title="Watch the Twitch clip" className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground">
                   <ExternalLink className="size-3.5" />
                 </a>
               ) : null}
               {m.clipEditUrl ? (
-                <a href={m.clipEditUrl} target="_blank" rel="noreferrer" title="Re-trim on Twitch (24h window)" className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground">
+                <a href={m.clipEditUrl} target="_blank" rel="noreferrer" title="Re-trim on Twitch (24h window)" className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground">
                   <Pencil className="size-3.5" />
                 </a>
               ) : null}
               {m.status === "new" ? (
                 <span className="flex flex-none items-center">
-                  <button type="button" onClick={() => void review(m.id, "kept")} title="Keep" className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-[#46c45a]">
+                  <button type="button" onClick={() => void review(m.id, "kept")} title="Keep" className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-feed-ok">
                     <Check className="size-3.5" />
                   </button>
-                  <button type="button" onClick={() => void review(m.id, "dismissed")} title="Dismiss" className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-[#ef6a61]">
+                  <button type="button" onClick={() => void review(m.id, "dismissed")} title="Dismiss" className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-feed-danger">
                     <X className="size-3.5" />
                   </button>
                 </span>
@@ -328,7 +328,7 @@ function TopChatters({ demo }: { demo: boolean }) {
     <ul className="flex flex-col gap-1.5">
       {data.chatters.slice(0, 10).map((c, i) => (
         <li key={`${c.platform}:${c.name}`} className="relative overflow-hidden rounded-md px-2 py-1">
-          <span className="absolute inset-y-0 left-0 bg-white/[0.04]" style={{ width: `${(c.count / max) * 100}%` }} aria-hidden />
+          <span className="absolute inset-y-0 left-0 bg-overlay-weak" style={{ width: `${(c.count / max) * 100}%` }} aria-hidden />
           <span className="relative flex items-center gap-2">
             <span className="w-5 font-mono text-[0.66rem] tabular-nums text-muted-foreground">{i + 1}</span>
             <PlatformGlyph platform={c.platform as Streamer["platforms"][number]} className="size-3 flex-none" />
@@ -362,7 +362,7 @@ function SessionsTable({
             type="button"
             onClick={() => onPick(s)}
             title="Show this session in the chart"
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-overlay-weak"
           >
             <PlatformGlyph platform={s.platform as Streamer["platforms"][number]} className="size-3 flex-none" />
             <span className="w-28 truncate text-[0.8rem] font-medium text-foreground">{nameOf(s.streamerId)}</span>
@@ -370,7 +370,7 @@ function SessionsTable({
               {formatSessionTime(s.start)} → {s.ongoing ? "now" : formatSessionTime(s.end)}
             </span>
             {s.ongoing ? (
-              <span className="flex-none rounded-md border border-[#46c45a]/25 bg-[#46c45a]/[0.08] px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide text-[#46c45a]">
+              <span className="flex-none rounded-md border border-feed-ok/25 bg-feed-ok/[0.08] px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide text-feed-ok">
                 live
               </span>
             ) : null}
@@ -389,7 +389,7 @@ function SessionsTable({
             onClick={() => onShare(s)}
             title="Share this show (all channels in this time block, combined)"
             aria-label={`Share the show around ${nameOf(s.streamerId)}'s session`}
-            className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground opacity-0 transition-[color,opacity] focus-visible:opacity-100 group-hover:opacity-100 hover:bg-white/[0.06] hover:text-foreground"
+            className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground opacity-0 transition-[color,opacity] focus-visible:opacity-100 group-hover:opacity-100 hover:bg-overlay-weak hover:text-foreground"
           >
             <Share2 className="size-3.5" />
           </button>
@@ -453,7 +453,7 @@ export function AnalyticsBoard({
       <Card title="Analytics" hint="Viewer history, sessions, and activity heatmap" icon={LineChart}>
         <p className="text-[0.78rem] text-muted-foreground">
           Requires the database — set{" "}
-          <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[0.7rem]">DATABASE_PATH</code> to record viewer
+          <code className="rounded bg-overlay-weak px-1 py-0.5 text-[0.7rem]">DATABASE_PATH</code> to record viewer
           history and chat stats across restarts.
         </p>
       </Card>
@@ -594,7 +594,7 @@ export function AnalyticsBoard({
             onClick={openDayShare}
             disabled={!heatmap?.days.length}
             title={selectedDay === null ? "Share the busiest day" : "Share the selected day"}
-            className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.06] px-2.5 text-[0.7rem] font-medium text-foreground transition-colors hover:bg-white/[0.1] disabled:opacity-35"
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak px-2.5 text-[0.7rem] font-medium text-foreground transition-colors hover:bg-overlay-medium disabled:opacity-35"
           >
             <Share2 className="size-3" />
             Share
@@ -632,7 +632,7 @@ export function AnalyticsBoard({
                 onClick={() => setSessionRange(r.ms)}
                 className={cn(
                   "rounded-md px-2 py-1 text-[0.68rem] font-semibold transition-colors",
-                  sessionRange === r.ms ? "bg-white/[0.1] text-foreground" : "text-muted-foreground hover:text-foreground",
+                  sessionRange === r.ms ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {r.label}

@@ -8,8 +8,8 @@ import { MOCK_NEWS, type NewsArticle } from "@/lib/markets/news";
 const POLL_MS = 5 * 60_000;
 
 const CATEGORY_PILL: Record<string, string> = {
-  crypto: "bg-[#d8b25a]/10 text-[#d8b25a]",
-  markets: "bg-[#46c45a]/10 text-[#46c45a]",
+  crypto: "bg-feed-warn/10 text-feed-warn",
+  markets: "bg-feed-ok/10 text-feed-ok",
 };
 
 function timeAgo(iso: string): string {
@@ -27,10 +27,10 @@ function ArticleRow({ article, onClick }: { article: NewsArticle; onClick: () =>
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full flex-col gap-1.5 border-b border-white/[0.04] px-3 py-3 text-left transition-colors hover:bg-white/[0.04]"
+      className="group flex w-full flex-col gap-1.5 border-b border-hairline px-3 py-3 text-left transition-colors hover:bg-overlay-weak"
     >
       <div className="flex items-center gap-2">
-        <span className={`rounded px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] ${CATEGORY_PILL[article.category] ?? "bg-white/[0.05] text-muted-foreground"}`}>
+        <span className={`rounded px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] ${CATEGORY_PILL[article.category] ?? "bg-overlay-weak text-muted-foreground"}`}>
           {article.category}
         </span>
         <span className="text-[0.65rem] font-medium text-muted-foreground">{article.source}</span>
@@ -77,7 +77,7 @@ export function NewsPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Market News
         </span>

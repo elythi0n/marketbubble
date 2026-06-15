@@ -57,7 +57,7 @@ export function GiveawayReel({ giveaway, className }: { giveaway: Giveaway; clas
   if (done) {
     return (
       <div className={cn("flex flex-col items-center justify-center gap-[0.5em] py-[1em] text-center", className)}>
-        <p className="flex items-center gap-[0.5em] text-[0.7em] font-bold uppercase tracking-[0.22em] text-[#d8b25a]">
+        <p className="flex items-center gap-[0.5em] text-[0.7em] font-bold uppercase tracking-[0.22em] text-feed-warn">
           <PartyPopper className="size-[1.4em]" />
           Winner
           <PartyPopper className="size-[1.4em] -scale-x-100" />
@@ -76,11 +76,11 @@ export function GiveawayReel({ giveaway, className }: { giveaway: Giveaway; clas
   const blur = Math.max(0, (1 - rollProgress) * 3);
   return (
     <div className={cn("relative flex flex-col justify-center overflow-hidden py-[0.4em]", className)} aria-label="Giveaway rolling">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[1.6em] bg-gradient-to-b from-[#161619] to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[1.6em] bg-gradient-to-t from-[#161619] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[1.6em] bg-gradient-to-b from-sidebar to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[1.6em] bg-gradient-to-t from-sidebar to-transparent" />
       <div className="flex flex-col items-center gap-[0.35em] text-center" style={{ filter: `blur(${blur.toFixed(1)}px)` }}>
         <p className="truncate text-[1em] font-semibold text-muted-foreground/60">{at(-1)}</p>
-        <p className="w-full truncate rounded-xl border border-white/[0.1] bg-white/[0.04] px-[0.8em] py-[0.3em] text-[1.45em] font-extrabold text-foreground">
+        <p className="w-full truncate rounded-xl border border-hairline bg-overlay-weak px-[0.8em] py-[0.3em] text-[1.45em] font-extrabold text-foreground">
           {at(0)}
         </p>
         <p className="truncate text-[1em] font-semibold text-muted-foreground/60">{at(1)}</p>

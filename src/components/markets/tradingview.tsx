@@ -2,10 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
+import { useTheme } from "@/lib/theme/theme-context";
+
 /**
  * Generic TradingView embed loader. Each widget is a script that reads a JSON config and injects an
- * iframe; we recreate it on config change and clean it up on unmount. All themed dark/transparent so
- * they sit on the graphite surfaces.
+ * iframe; we recreate it on config change and clean it up on unmount. The config carries the app
+ * theme (see `useTvTheme`), and because the effect keys off the serialized config the widget is torn
+ * down and rebuilt whenever the theme flips, so the chart reloads in the matching palette.
  */
 function TradingViewWidget({ scriptSrc, config }: { scriptSrc: string; config: Record<string, unknown> }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -35,9 +38,20 @@ function TradingViewWidget({ scriptSrc, config }: { scriptSrc: string; config: R
   return <div ref={ref} className="tradingview-widget-container h-full w-full overflow-hidden" />;
 }
 
-const COMMON = { colorTheme: "dark", locale: "en", isTransparent: true, width: "100%", height: "100%" } as const;
+/** TradingView's own light/dark palette, derived from the app theme. */
+function useTvTheme(): "light" | "dark" {
+  const { resolvedTheme } = useTheme();
+  return resolvedTheme === "dark" ? "dark" : "light";
+}
+
+/** Shared widget config whose `colorTheme` tracks the app theme. */
+function useCommon() {
+  const theme = useTvTheme();
+  return { colorTheme: theme, locale: "en", isTransparent: true, width: "100%", height: "100%" } as const;
+}
 
 export function AdvancedChart({ symbol = "BINANCE:BTCUSDT" }: { symbol?: string }) {
+  const theme = useTvTheme();
   return (
     <TradingViewWidget
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
@@ -46,11 +60,11 @@ export function AdvancedChart({ symbol = "BINANCE:BTCUSDT" }: { symbol?: string 
         symbol,
         interval: "60",
         timezone: "Etc/UTC",
-        theme: "dark",
+        theme,
         style: "1",
         locale: "en",
-        backgroundColor: "rgba(12,12,14,1)",
-        gridColor: "rgba(255,255,255,0.06)",
+        backgroundColor: theme === "dark" ? "rgba(12,12,14,1)" : "rgba(248,245,236,1)",
+        gridColor: theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(26,26,26,0.06)",
         hide_side_toolbar: false,
         allow_symbol_change: true,
         withdateranges: true,
@@ -63,6 +77,7 @@ export function AdvancedChart({ symbol = "BINANCE:BTCUSDT" }: { symbol?: string 
 }
 
 export function CryptoHeatmap() {
+  const COMMON = useCommon();
   return (
     <TradingViewWidget
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js"
@@ -81,6 +96,7 @@ export function CryptoHeatmap() {
 }
 
 export function StockHeatmap() {
+  const COMMON = useCommon();
   return (
     <TradingViewWidget
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js"
@@ -100,6 +116,7 @@ export function StockHeatmap() {
 }
 
 export function MarketScreener({ screener = "crypto_mkt" }: { screener?: string }) {
+  const COMMON = useCommon();
   return (
     <TradingViewWidget
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-screener.js"
@@ -116,6 +133,7 @@ export function MarketScreener({ screener = "crypto_mkt" }: { screener?: string 
 }
 
 export function EconomicCalendar() {
+  const COMMON = useCommon();
   return (
     <TradingViewWidget
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-events.js"
@@ -125,6 +143,7 @@ export function EconomicCalendar() {
 }
 
 export function TechnicalGauge({ symbol = "BINANCE:BTCUSDT" }: { symbol?: string }) {
+  const COMMON = useCommon();
   return (
     <TradingViewWidget
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js"

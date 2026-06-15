@@ -41,12 +41,12 @@ export function StreamerAvatar({ streamer, size = 30, rounded = "full", badge = 
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setErrored(true)}
-          className={cn("size-full border border-white/10 object-cover", radius)}
+          className={cn("size-full border border-hairline object-cover", radius)}
         />
       ) : (
         <span
           className={cn(
-            "flex size-full items-center justify-center border border-white/10 bg-white/[0.06] font-semibold text-foreground/85",
+            "flex size-full items-center justify-center border border-hairline bg-overlay-weak font-semibold text-foreground/85",
             radius,
           )}
           style={{ fontSize: size * 0.34 }}
@@ -55,12 +55,12 @@ export function StreamerAvatar({ streamer, size = 30, rounded = "full", badge = 
         </span>
       )}
       {badge ? (
-        <span className="absolute -bottom-0.5 -right-0.5 flex size-[14px] items-center justify-center rounded-full bg-[#161619]">
+        <span className="absolute -bottom-0.5 -right-0.5 flex size-[14px] items-center justify-center rounded-full bg-sidebar">
           <PlatformGlyph platform={primaryPlatform(streamer)} className="size-[9px]" />
         </span>
       ) : null}
       {showLive && streamer.live ? (
-        <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-[#161619] bg-[#46c45a]" />
+        <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-sidebar bg-feed-ok" />
       ) : null}
     </span>
   );

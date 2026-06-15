@@ -312,9 +312,9 @@ export function CommandPalette() {
             exit={{ opacity: 0, scale: 0.985, y: -8 }}
             transition={{ duration: 0.18, ease: EASE }}
             onClick={(e) => e.stopPropagation()}
-            className="mx-auto mt-[18vh] flex w-[min(560px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-white/12 bg-[#1b1b1f] shadow-[0_24px_70px_-12px_rgba(0,0,0,0.9)]"
+            className="mx-auto mt-[18vh] flex w-[min(560px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-hairline-strong bg-card shadow-[0_24px_70px_-12px_rgba(0,0,0,0.9)]"
           >
-            <div className="flex flex-none items-center gap-2.5 border-b border-white/[0.07] px-3.5 py-3">
+            <div className="flex flex-none items-center gap-2.5 border-b border-hairline px-3.5 py-3">
               <Search className="size-4 flex-none text-muted-foreground/70" />
               <input
                 ref={inputRef}
@@ -329,7 +329,7 @@ export function CommandPalette() {
                 aria-label="Search commands"
                 className="min-w-0 flex-1 bg-transparent text-[0.92rem] text-foreground outline-none placeholder:text-muted-foreground/45"
               />
-              <kbd className="flex-none rounded border border-white/12 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground">
+              <kbd className="flex-none rounded border border-hairline-strong bg-overlay-weak px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground">
                 esc
               </kbd>
             </div>
@@ -356,7 +356,7 @@ export function CommandPalette() {
                         onMouseMove={() => setActive(i)}
                         className={cn(
                           "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.84rem] transition-colors",
-                          i === clampedActive ? "bg-white/[0.08] text-foreground" : "text-foreground/85",
+                          i === clampedActive ? "bg-overlay-medium text-foreground" : "text-foreground/85",
                         )}
                       >
                         <Icon className="size-4 flex-none text-muted-foreground" />
@@ -366,7 +366,7 @@ export function CommandPalette() {
                             className={cn(
                               "flex-none font-mono text-[0.62rem] tabular-nums",
                               c.hint === "Active" || c.hint === "On" || c.hint.includes("watching")
-                                ? "text-[#46c45a]"
+                                ? "text-feed-ok"
                                 : "text-muted-foreground/70",
                             )}
                           >
@@ -380,7 +380,7 @@ export function CommandPalette() {
               )}
             </div>
 
-            <div className="flex flex-none items-center gap-3 border-t border-white/[0.07] px-3.5 py-2 text-[0.62rem] text-muted-foreground/70">
+            <div className="flex flex-none items-center gap-3 border-t border-hairline px-3.5 py-2 text-[0.62rem] text-muted-foreground/70">
               <span>
                 <kbd className="font-mono">↑↓</kbd> navigate
               </span>

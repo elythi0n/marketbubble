@@ -31,17 +31,17 @@ export default async function SharePage({ params }: Params) {
   if (!/^[A-Za-z0-9_-]{4,24}$/.test(id) || !getShareCard(id)) notFound();
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-[#101013] px-6 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-background px-6 py-10">
       {/* Plain img: the route serves a dynamic blob — next/image optimization adds nothing here. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/share-card/${id}`}
         alt={`${siteName} highlight`}
-        className="max-h-[80dvh] w-auto rounded-2xl border border-white/[0.1] shadow-[0_32px_90px_-20px_rgba(0,0,0,0.9)]"
+        className="max-h-[80dvh] w-auto rounded-2xl border border-hairline shadow-[0_32px_90px_-20px_rgba(0,0,0,0.9)]"
       />
       <Link
         href="/"
-        className="rounded-lg border border-white/12 bg-white/[0.06] px-4 py-2 text-[0.8rem] font-medium text-[#ededed] transition-colors hover:bg-white/[0.1]"
+        className="rounded-lg border border-hairline-strong bg-overlay-weak px-4 py-2 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
       >
         Watch live on {siteName}
       </Link>

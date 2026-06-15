@@ -6,7 +6,7 @@ import { MoversWidget } from "./movers-widget";
 import { AdvancedChart, CryptoHeatmap } from "./tradingview";
 
 function Card({ height, children }: { height: string; children: React.ReactNode }) {
-  return <div className={`overflow-hidden rounded-lg border border-white/[0.08] ${height}`}>{children}</div>;
+  return <div className={`overflow-hidden rounded-lg border border-hairline ${height}`}>{children}</div>;
 }
 
 /** Stacked, scrollable markets for mobile (dockview is desktop-only). */

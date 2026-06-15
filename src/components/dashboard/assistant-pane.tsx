@@ -99,7 +99,7 @@ function InlineMd({ text }: { text: string }) {
             {p.slice(2, -2)}
           </strong>
         ) : p.startsWith("`") && p.endsWith("`") && p.length > 2 ? (
-          <code key={i} className="rounded bg-white/[0.08] px-1 py-px font-mono text-[0.92em]">
+          <code key={i} className="rounded bg-overlay-medium px-1 py-px font-mono text-[0.92em]">
             {p.slice(1, -1)}
           </code>
         ) : (
@@ -161,7 +161,7 @@ function ToolCard({ name, args, result }: { name: string; args: string; result: 
   const summary = argSummary(args);
 
   return (
-    <div className={cn("overflow-hidden rounded-lg border", failed ? "border-[#ef6a61]/30 bg-[#ef6a61]/[0.05]" : "border-white/[0.08] bg-white/[0.03]")}>
+    <div className={cn("overflow-hidden rounded-lg border", failed ? "border-feed-danger/30 bg-feed-danger/[0.05]" : "border-hairline bg-overlay-weak")}>
       <button
         type="button"
         onClick={() => !pending && setOpen((v) => !v)}
@@ -169,12 +169,12 @@ function ToolCard({ name, args, result }: { name: string; args: string; result: 
         aria-expanded={open}
         className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left"
       >
-        <span className="flex size-5 flex-none items-center justify-center rounded bg-white/[0.06]">
+        <span className="flex size-5 flex-none items-center justify-center rounded bg-overlay-medium">
           <Icon className="size-3 text-muted-foreground" />
         </span>
         <span className="flex-none text-[0.72rem] font-medium text-foreground/90">{meta.label}</span>
         {summary && !open ? <span className="min-w-0 truncate font-mono text-[0.62rem] text-muted-foreground/70">{summary}</span> : null}
-        <span className={cn("ml-auto flex flex-none items-center gap-1 text-[0.62rem] font-medium", pending ? "text-muted-foreground" : failed ? "text-[#ef6a61]" : "text-[#46c45a]")}>
+        <span className={cn("ml-auto flex flex-none items-center gap-1 text-[0.62rem] font-medium", pending ? "text-muted-foreground" : failed ? "text-feed-danger" : "text-feed-ok")}>
           {pending ? (
             <>
               <span className="size-2.5 animate-spin rounded-full border border-current border-t-transparent" aria-hidden />
@@ -189,7 +189,7 @@ function ToolCard({ name, args, result }: { name: string; args: string; result: 
         {!pending ? <ChevronDown className={cn("size-3 flex-none text-muted-foreground transition-transform", open && "rotate-180")} /> : null}
       </button>
       {open && result !== null ? (
-        <div className="border-t border-white/[0.06] px-2.5 py-2">
+        <div className="border-t border-hairline px-2.5 py-2">
           <p className="mb-1 text-[0.56rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Output</p>
           <pre className="max-h-44 overflow-auto rounded bg-black/30 p-2 font-mono text-[0.64rem] leading-relaxed text-foreground/80 mb-scroll">{tryPretty(result)}</pre>
         </div>
@@ -231,7 +231,7 @@ function pairTools(turns: TurnItem[]): RenderItem[] {
 function Gate({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 overflow-y-auto bg-card px-6 py-8 text-center mb-scroll">
-      <span className="flex size-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+      <span className="flex size-11 items-center justify-center rounded-xl border border-hairline bg-overlay-weak">
         <Icon className="size-5 text-muted-foreground" />
       </span>
       <h3 className="text-[0.95rem] font-semibold text-foreground">{title}</h3>
@@ -444,7 +444,7 @@ export function AssistantPane() {
         <button
           type="button"
           onClick={() => update({ assistantOptIn: true })}
-          className="mt-1 inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.06] px-3.5 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-white/[0.1]"
+          className="mt-1 inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak px-3.5 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
         >
           <Sparkles className="size-3.5" />
           Enable assistant
@@ -473,7 +473,7 @@ export function AssistantPane() {
           limits: usage is between you and your provider.
         </p>
         <form onSubmit={submitKey} className="flex w-full max-w-xs flex-col gap-2">
-          <div className="flex flex-wrap items-center justify-center gap-0.5 self-center rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
+          <div className="flex flex-wrap items-center justify-center gap-0.5 self-center rounded-lg border border-hairline bg-overlay-weak p-0.5">
             {byokOptions.map((p) => (
               <button
                 key={p}
@@ -482,7 +482,7 @@ export function AssistantPane() {
                 aria-pressed={active === p}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-[0.72rem] font-medium transition-colors",
-                  active === p ? "bg-white/[0.1] text-foreground" : "text-muted-foreground hover:text-foreground",
+                  active === p ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {PROVIDER_LABEL[p]}
@@ -496,12 +496,12 @@ export function AssistantPane() {
             placeholder={active === "anthropic" ? "sk-ant-…" : "sk-…"}
             aria-label="API key"
             autoComplete="off"
-            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-center font-mono text-[0.78rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-white/20"
+            className="w-full rounded-lg border border-hairline bg-overlay-weak px-3 py-2 text-center font-mono text-[0.78rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-hairline-strong"
           />
           <button
             type="submit"
             disabled={!keyInput.trim()}
-            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.06] text-[0.78rem] font-medium text-foreground transition-colors hover:bg-white/[0.1] disabled:opacity-35"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak text-[0.78rem] font-medium text-foreground transition-colors hover:bg-overlay-medium disabled:opacity-35"
           >
             <Check className="size-3.5" />
             Use key for this session
@@ -529,7 +529,7 @@ export function AssistantPane() {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
       {/* Header */}
-      <header className="flex h-11 flex-none items-center gap-1.5 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-1.5 border-b border-hairline px-3">
         <Sparkles className="size-4 text-muted-foreground" />
         <span className="text-[0.78rem] font-semibold text-foreground">Assistant</span>
         {tokens.in > 0 ? (
@@ -542,10 +542,10 @@ export function AssistantPane() {
             type="button"
             onClick={forgetKey}
             title={`${PROVIDER_LABEL[sessionKey.provider]} key in memory — click to forget now`}
-            className="ml-auto inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[0.66rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="ml-auto inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[0.66rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
           >
             <KeyRound className="size-3.5" />
-            <span className="size-1.5 rounded-full bg-[#46c45a]" aria-hidden />
+            <span className="size-1.5 rounded-full bg-feed-ok" aria-hidden />
           </button>
         ) : selIsManaged ? (
           <span
@@ -567,7 +567,7 @@ export function AssistantPane() {
           }}
           title="New conversation"
           aria-label="New conversation"
-          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
         >
           <Plus className="size-4" />
         </button>
@@ -585,7 +585,7 @@ export function AssistantPane() {
                   key={s}
                   type="button"
                   onClick={() => ask(s)}
-                  className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                  className="rounded-full border border-hairline bg-overlay-weak px-2.5 py-1 text-[0.7rem] text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
                 >
                   {s}
                 </button>
@@ -598,7 +598,7 @@ export function AssistantPane() {
               if (t.kind === "text" && t.role === "user") {
                 return (
                   <div key={i} className="flex justify-end">
-                    <div className="max-w-[85%] rounded-xl rounded-br-sm bg-white/[0.08] px-3 py-2 text-[0.82rem] leading-relaxed text-foreground">
+                    <div className="max-w-[85%] rounded-xl rounded-br-sm bg-overlay-medium px-3 py-2 text-[0.82rem] leading-relaxed text-foreground">
                       {t.text}
                     </div>
                   </div>
@@ -607,7 +607,7 @@ export function AssistantPane() {
               if (t.kind === "text") {
                 return (
                   <div key={i} className="flex gap-2.5">
-                    <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                    <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full border border-hairline bg-overlay-weak">
                       <Sparkles className="size-3 text-muted-foreground" />
                     </span>
                     <div className="min-w-0 flex-1 text-[0.82rem] leading-relaxed text-foreground/90">
@@ -624,7 +624,7 @@ export function AssistantPane() {
                 );
               }
               return (
-                <div key={i} className="flex items-center gap-2 rounded-lg border border-[#ef6a61]/25 bg-[#ef6a61]/[0.06] px-3 py-2 text-[0.74rem] text-[#ef6a61]">
+                <div key={i} className="flex items-center gap-2 rounded-lg border border-feed-danger/25 bg-feed-danger/[0.06] px-3 py-2 text-[0.74rem] text-feed-danger">
                   <TriangleAlert className="size-3.5 flex-none" />
                   <span className="min-w-0">{t.text}</span>
                 </div>
@@ -638,7 +638,7 @@ export function AssistantPane() {
               if (!running || streamingText) return null;
               return (
                 <div className="flex items-center gap-2.5">
-                  <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                  <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full border border-hairline bg-overlay-weak">
                     <Sparkles className="size-3 animate-pulse text-muted-foreground" />
                   </span>
                   <span className="flex items-center gap-1.5 text-[0.74rem] text-muted-foreground">
@@ -658,8 +658,8 @@ export function AssistantPane() {
       </div>
 
       {/* Input */}
-      <div className="flex-none border-t border-white/[0.07] p-2.5">
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] transition-colors focus-within:border-white/20">
+      <div className="flex-none border-t border-hairline p-2.5">
+        <div className="rounded-xl border border-hairline bg-overlay-weak transition-colors focus-within:border-hairline-strong">
           <textarea
             ref={inputRef}
             rows={1}
@@ -686,7 +686,7 @@ export function AssistantPane() {
                 type="button"
                 onClick={() => { setModelOpen((v) => !v); setModelSearch(""); }}
                 aria-expanded={modelOpen}
-                className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[0.64rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+                className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[0.64rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
               >
                 {modelLabel}
                 <ChevronDown className="size-3" />
@@ -694,9 +694,9 @@ export function AssistantPane() {
               {modelOpen ? (
                 <>
                   <div className="fixed inset-0 z-[90]" onClick={() => setModelOpen(false)} aria-hidden />
-                  <div className="absolute bottom-full left-0 z-[100] mb-1.5 w-56 rounded-lg border border-white/12 bg-[#1b1b1f] shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+                  <div className="absolute bottom-full left-0 z-[100] mb-1.5 w-56 rounded-lg border border-hairline-strong bg-card shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
                     {/* Search bar — stays fixed at the top */}
-                    <div className="flex items-center gap-1.5 border-b border-white/[0.07] px-2 py-1.5">
+                    <div className="flex items-center gap-1.5 border-b border-hairline px-2 py-1.5">
                       <Search className="size-3 flex-none text-muted-foreground/60" />
                       <input
                         type="text"
@@ -720,7 +720,7 @@ export function AssistantPane() {
                             <p className="flex items-center gap-1.5 px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                               {PROVIDER_LABEL[p]}
                               {managed.includes(p) ? (
-                                <span className="inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/[0.04] px-1 py-px text-[0.52rem] normal-case tracking-normal">
+                                <span className="inline-flex items-center gap-0.5 rounded border border-hairline bg-overlay-weak px-1 py-px text-[0.52rem] normal-case tracking-normal">
                                   <Lock className="size-2.5" />
                                   Server
                                 </span>
@@ -737,7 +737,7 @@ export function AssistantPane() {
                                   setModelOpen(false);
                                 }}
                                 className={cn(
-                                  "flex w-full items-center rounded-md px-2 py-1.5 text-left text-[0.74rem] transition-colors hover:bg-white/[0.07]",
+                                  "flex w-full items-center rounded-md px-2 py-1.5 text-left text-[0.74rem] transition-colors hover:bg-overlay-medium",
                                   p === sel.provider && m.id === sel.model ? "text-foreground" : "text-foreground/75",
                                 )}
                               >
@@ -755,7 +755,7 @@ export function AssistantPane() {
                             setModelOpen(false);
                             setShowKeyEntry(true);
                           }}
-                          className="mt-0.5 flex w-full items-center gap-1.5 rounded-md border-t border-white/[0.06] px-2 py-1.5 text-left text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                          className="mt-0.5 flex w-full items-center gap-1.5 rounded-md border-t border-hairline px-2 py-1.5 text-left text-[0.7rem] text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
                         >
                           <KeyRound className="size-3" />
                           Bring your own key…
@@ -772,7 +772,7 @@ export function AssistantPane() {
                 type="button"
                 onClick={stop}
                 aria-label="Stop"
-                className="ml-auto flex size-7 items-center justify-center rounded-lg border border-white/12 bg-white/[0.06] text-foreground transition-colors hover:bg-white/[0.1]"
+                className="ml-auto flex size-7 items-center justify-center rounded-lg border border-hairline-strong bg-overlay-weak text-foreground transition-colors hover:bg-overlay-medium"
               >
                 <Square className="size-3 fill-current" />
               </button>

@@ -166,7 +166,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <KeyRound className="size-3.5" />
               Enter
             </button>
-            {loginErr ? <p className="text-center text-[0.72rem] text-[#ef6a61]">{loginErr}</p> : null}
+            {loginErr ? <p className="text-center text-[0.72rem] text-feed-danger">{loginErr}</p> : null}
           </form>
         </div>
       </div>
@@ -178,7 +178,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <div className="marketing-shell-root">
         <div className="pointer-events-none fixed inset-0 z-0 marketing-ambient-base" aria-hidden />
         <div className="relative z-10 flex h-dvh flex-col overflow-hidden">
-          <header className="relative flex h-14 flex-none items-center gap-3 border-b border-white/[0.07] bg-[#141416] px-4">
+          <header className="relative flex h-14 flex-none items-center gap-3 border-b border-hairline bg-background px-4">
             <MarketBubbleLogo className="size-9 text-foreground" />
             <div className="leading-tight">
               <p className="text-sm font-semibold text-foreground">Admin</p>
@@ -198,7 +198,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "inline-flex flex-none items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-medium transition-colors",
-                      active ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground",
+                      active ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <n.icon className={cn("size-3.5", active ? "text-foreground" : "text-muted-foreground/80")} />
@@ -213,7 +213,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 onClick={() => void refresh()}
                 title="Refresh"
                 aria-label="Refresh"
-                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
               >
                 <RefreshCw className="size-4" />
               </button>

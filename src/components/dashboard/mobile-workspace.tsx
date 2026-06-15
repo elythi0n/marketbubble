@@ -27,7 +27,7 @@ function MobileOfflineView({ channel }: { channel: Streamer }) {
   const target = channel.schedule ? nextOccurrence(channel.schedule, now) : null;
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[#0c0c0e] px-4 py-3">
+    <div className="relative flex h-full flex-col overflow-hidden bg-background px-4 py-3">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_0%,rgba(255,255,255,0.04),transparent_80%)]" />
 
       {/* Schedule — centered; the channel identity lives in the sheet/bottom nav, not here. */}
@@ -37,7 +37,7 @@ function MobileOfflineView({ channel }: { channel: Streamer }) {
             {isStarting(channel.schedule, now) ? "Show is starting" : "Next stream"}
           </p>
           {isStarting(channel.schedule, now) ? (
-            <p className="font-mono text-[2.2rem] font-bold leading-none text-[#46c45a]">soon…</p>
+            <p className="font-mono text-[2.2rem] font-bold leading-none text-feed-ok">soon…</p>
           ) : target ? (
             <p className="font-mono text-[2.2rem] font-bold tabular-nums leading-none text-foreground">
               {formatCountdown(target.getTime() - now.getTime())}
@@ -192,7 +192,7 @@ export function MobileWorkspace({ theater = false }: { theater?: boolean }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <div
         className={cn(
-          "flex-none overflow-hidden border-white/[0.07] transition-[height] duration-300 ease-out",
+          "flex-none overflow-hidden border-hairline transition-[height] duration-300 ease-out",
           layout === "focus"
             ? "h-0"
             : layout === "compact"
@@ -208,11 +208,11 @@ export function MobileWorkspace({ theater = false }: { theater?: boolean }) {
         <button
           type="button"
           onClick={() => setLayout("stream")}
-          className="flex flex-none items-center gap-2 border-b border-white/[0.07] bg-[#0c0c0e] px-4 py-2 text-left transition-colors active:bg-white/[0.04]"
+          className="flex flex-none items-center gap-2 border-b border-hairline bg-background px-4 py-2 text-left transition-colors active:bg-overlay-weak"
         >
           <span className="relative flex size-2 flex-none">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#46c45a] opacity-50" />
-            <span className="relative inline-flex size-2 rounded-full bg-[#46c45a]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-feed-ok opacity-50" />
+            <span className="relative inline-flex size-2 rounded-full bg-feed-ok" />
           </span>
           <span className="min-w-0 truncate text-[0.74rem] font-semibold text-foreground">{channel.name}</span>
           <span className="flex-none text-[0.66rem] text-muted-foreground">live · playing in background</span>
@@ -220,7 +220,7 @@ export function MobileWorkspace({ theater = false }: { theater?: boolean }) {
         </button>
       ) : null}
 
-      <div className="flex flex-none items-stretch border-b border-white/[0.07] bg-card">
+      <div className="flex flex-none items-stretch border-b border-hairline bg-card">
         {TABS.map((t) => (
           <button
             key={t}
@@ -234,14 +234,14 @@ export function MobileWorkspace({ theater = false }: { theater?: boolean }) {
             <span className="relative">
               {t === "chat" ? "Chat" : t === "gifts" ? "Gifts" : "Clips"}
               {t !== "clips" && dots[t] ? (
-                <span className="absolute -right-2 top-px size-1.5 rounded-full bg-[#46c45a]" />
+                <span className="absolute -right-2 top-px size-1.5 rounded-full bg-feed-ok" />
               ) : null}
             </span>
           </button>
         ))}
 
         {/* Layout switcher: how much of the screen the stream gets vs. chat. */}
-        <div className="flex flex-none items-center gap-0.5 border-l border-white/[0.07] px-1.5">
+        <div className="flex flex-none items-center gap-0.5 border-l border-hairline px-1.5">
           {LAYOUTS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
@@ -252,8 +252,8 @@ export function MobileWorkspace({ theater = false }: { theater?: boolean }) {
               className={cn(
                 "flex size-7 items-center justify-center rounded-md transition-colors",
                 layout === id
-                  ? "bg-white/[0.08] text-foreground"
-                  : "text-muted-foreground active:bg-white/[0.06]",
+                  ? "bg-overlay-medium text-foreground"
+                  : "text-muted-foreground active:bg-overlay-weak",
               )}
             >
               <Icon className="size-4" />

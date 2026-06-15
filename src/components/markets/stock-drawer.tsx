@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MarketBubbleLogo } from "@/components/dashboard/market-bubble-logo";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useStockDrawer } from "@/lib/markets/stock-drawer-context";
+import { useTheme } from "@/lib/theme/theme-context";
 import { formatChange, formatPrice } from "@/lib/markets/types";
 import type { Ticker } from "@/lib/markets/types";
 
@@ -28,20 +29,22 @@ function tvSymbol(symbol: string): string {
   return TV_SYMBOLS[symbol.toUpperCase()] ?? symbol;
 }
 
-function tvUrl(symbol: string, frameId: string): string {
+function tvUrl(symbol: string, frameId: string, theme: "light" | "dark"): string {
+  // Match the embed chrome to the app surface: dark sidebar graphite vs. light popover paper.
+  const bg = theme === "dark" ? "161619" : "fbf9f2";
   const params = new URLSearchParams({
     frameElementId: frameId,
     symbol: tvSymbol(symbol),
     interval: "D",
-    theme: "dark",
+    theme,
     style: "1",
     locale: "en",
     hide_top_toolbar: "0",
     hidesidetoolbar: "0",
     saveimage: "0",
     enable_publishing: "false",
-    toolbarbg: "161619",
-    bg_color: "161619",
+    toolbarbg: bg,
+    bg_color: bg,
     calendar: "false",
   });
   return `https://www.tradingview.com/widgetembed/?${params}`;
@@ -51,9 +54,9 @@ function DrawerLoader() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6">
       <MarketBubbleLogo className="size-14 text-foreground/70" />
-      <div className="h-[3px] w-28 overflow-hidden rounded-full bg-white/[0.08]">
+      <div className="h-[3px] w-28 overflow-hidden rounded-full bg-overlay-medium">
         <motion.div
-          className="h-full w-1/3 rounded-full bg-white/40"
+          className="h-full w-1/3 rounded-full bg-foreground/40"
           animate={{ x: ["-110%", "330%"] }}
           transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -72,7 +75,7 @@ function TickerHeader({ ticker }: { ticker: Ticker }) {
       </div>
       <div className="mt-0.5 flex items-baseline gap-2">
         <span className="font-mono text-[0.9rem] font-semibold tabular-nums text-foreground">{formatPrice(ticker.price)}</span>
-        <span className={`font-mono text-[0.75rem] font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+        <span className={`font-mono text-[0.75rem] font-medium tabular-nums ${up ? "text-feed-ok" : "text-feed-danger"}`}>
           {formatChange(ticker.changePct)}
         </span>
       </div>
@@ -82,6 +85,7 @@ function TickerHeader({ ticker }: { ticker: Ticker }) {
 
 export function StockDrawer() {
   const { symbol, closeStock } = useStockDrawer();
+  const { resolvedTheme } = useTheme();
   const frameId = useId().replace(/:/g, "");
 
   const [ticker, setTicker] = useState<Ticker | null>(null);
@@ -101,6 +105,12 @@ export function StockDrawer() {
       .catch(() => null);
   }, [symbol]);
 
+  // The iframe is keyed on theme, so switching themes remounts it; show the loader again until
+  // the freshly-themed chart paints.
+  useEffect(() => {
+    setChartLoaded(false);
+  }, [resolvedTheme]);
+
   const tvLink = symbol ? `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol(symbol))}` : "#";
 
   return (
@@ -117,7 +127,7 @@ export function StockDrawer() {
             <button
               type="button"
               aria-label="Close"
-              className="ml-auto flex size-8 flex-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+              className="ml-auto flex size-8 flex-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
             >
               <X className="size-4" />
             </button>
@@ -141,9 +151,9 @@ export function StockDrawer() {
 
           {symbol && (
             <iframe
-              key={symbol}
+              key={`${symbol}-${resolvedTheme}`}
               id={frameId}
-              src={tvUrl(symbol, frameId)}
+              src={tvUrl(symbol, frameId, resolvedTheme === "dark" ? "dark" : "light")}
               className="absolute inset-0 h-full w-full border-0"
               title={`${symbol} chart`}
               onLoad={() => setChartLoaded(true)}

@@ -29,9 +29,9 @@ interface Chatter {
 
 
 function rankColor(rank: number): string {
-  if (rank === 1) return "text-[#d8b25a]";
-  if (rank === 2) return "text-[#c6c6cc]";
-  if (rank === 3) return "text-[#c08457]";
+  if (rank === 1) return "text-feed-warn";
+  if (rank === 2) return "text-foreground/80";
+  if (rank === 3) return "text-[#c08457]"; // bronze medal: decorative, no token; legible on both themes
   return "text-muted-foreground";
 }
 
@@ -76,9 +76,9 @@ function profileUrl(name: string, platform: Platform): string {
 }
 
 const SUB_COLOR: Record<Platform, string> = {
-  twitch: "#9146ff",
-  kick: "#53fc18",
-  x: "#d4d4d8",
+  twitch: "var(--plat-twitch)",
+  kick: "var(--plat-kick)",
+  x: "var(--foreground)",
 };
 
 function SubBadge({ platform }: { platform: Platform }) {
@@ -86,7 +86,7 @@ function SubBadge({ platform }: { platform: Platform }) {
     <span
       title="Platform subscriber"
       className="inline-flex items-center gap-0.5 rounded px-1 py-px text-[0.56rem] font-bold uppercase tracking-wide"
-      style={{ background: `${SUB_COLOR[platform]}22`, color: SUB_COLOR[platform] }}
+      style={{ background: `color-mix(in srgb, ${SUB_COLOR[platform]} 13%, transparent)`, color: SUB_COLOR[platform] }}
     >
       <Star className="size-2.5 fill-current" />
       SUB
@@ -100,7 +100,7 @@ function WalletAvatar({ address, size = 30 }: { address: string; size?: number }
   const h2 = hueFrom(address, 53);
   return (
     <span
-      className="shrink-0 rounded-full border border-white/10"
+      className="shrink-0 rounded-full border border-hairline"
       style={{ width: size, height: size, background: `linear-gradient(135deg, hsl(${h1} 55% 52%), hsl(${h2} 52% 38%))` }}
       aria-hidden
     />
@@ -120,14 +120,14 @@ function ChatterAvatar({ name, platform, size = 30 }: { name: string; platform?:
         loading="lazy"
         referrerPolicy="no-referrer"
         onError={() => setErr(true)}
-        className="shrink-0 rounded-full border border-white/10 object-cover"
+        className="shrink-0 rounded-full border border-hairline object-cover"
         style={{ width: size, height: size }}
       />
     );
   }
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] font-semibold text-foreground/85"
+      className="flex shrink-0 items-center justify-center rounded-full border border-hairline bg-overlay-weak font-semibold text-foreground/85"
       style={{ width: size, height: size, fontSize: size * 0.34 }}
     >
       {initials(name)}
@@ -267,7 +267,7 @@ function EmptyChattersPodium({ compact = false }: { compact?: boolean }) {
             "flex min-w-0 flex-col items-center rounded-2xl border text-center",
             first
               ? "border-dashed border-[#d8b25a]/20 bg-[#d8b25a]/[0.025] -mt-2"
-              : "border-dashed border-white/[0.07] mt-1",
+              : "border-dashed border-hairline mt-1",
             compact
               ? first ? "px-2 pb-3.5 pt-4" : "px-2 pb-3 pt-3.5"
               : first ? "px-5 pb-6 pt-7" : "px-5 pb-5 pt-6",
@@ -278,7 +278,7 @@ function EmptyChattersPodium({ compact = false }: { compact?: boolean }) {
             #{rank}
           </span>
           <span
-            className="rounded-full border border-dashed border-white/[0.12] bg-white/[0.025]"
+            className="rounded-full border border-dashed border-hairline-strong bg-overlay-weak"
             style={{
               width: first ? (compact ? 46 : 64) : compact ? 38 : 50,
               height: first ? (compact ? 46 : 64) : compact ? 38 : 50,
@@ -403,7 +403,7 @@ export function LeaderboardContent() {
         <p className="mt-2.5 text-base text-muted-foreground">Real on-chain traders and the most active chatters.</p>
       </header>
 
-      <div className="mt-6 inline-flex rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
+      <div className="mt-6 inline-flex rounded-lg border border-hairline bg-overlay-weak p-0.5">
         {(["chatters", "traders"] as Tab[]).map((t) => (
           <button
             key={t}
@@ -411,7 +411,7 @@ export function LeaderboardContent() {
             onClick={() => setTab(t)}
             className={cn(
               "rounded-md px-4 py-1.5 text-[0.8rem] font-medium transition-colors",
-              tab === t ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground",
+              tab === t ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t === "traders" ? "Top traders" : "Top chatters"}
@@ -429,7 +429,7 @@ export function LeaderboardContent() {
         )}
 
         {tab === "chatters" && chattersFetched && chatters.length === 0 ? (
-          <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
             <div className="flex flex-col items-center gap-2.5 py-14 text-center">
               <MessageSquare className="size-8 text-muted-foreground/25" />
               <p className="text-[0.95rem] font-medium text-muted-foreground">No chatters yet</p>
@@ -439,11 +439,11 @@ export function LeaderboardContent() {
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
             <table className="w-full border-collapse">
               {tab === "traders" ? (
                 <>
-                  <thead className="border-b border-white/[0.07] bg-white/[0.02] text-left">
+                  <thead className="border-b border-hairline bg-overlay-weak text-left">
                     <tr>
                       <th className={cn("w-12", TH)}>#</th>
                       <th className={TH}>Trader</th>
@@ -462,7 +462,7 @@ export function LeaderboardContent() {
                       traders.map((t, i) => {
                         const up = t.pnl30d >= 0;
                         return (
-                          <tr key={t.address} className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]">
+                          <tr key={t.address} className="border-b border-hairline transition-colors last:border-b-0 hover:bg-overlay-weak">
                             <td className={cn("px-3 py-3 font-mono text-[0.95rem] font-bold tabular-nums", rankColor(i + 1))}>{i + 1}</td>
                             <td className="px-3 py-3">
                               <a
@@ -478,7 +478,7 @@ export function LeaderboardContent() {
                                 </span>
                               </a>
                             </td>
-                            <td className={cn("px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums", up ? "text-[#46c45a]" : "text-[#ef6a61]")}>
+                            <td className={cn("px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums", up ? "text-feed-ok" : "text-feed-danger")}>
                               {formatPct(t.pnl30d)}
                             </td>
                             <td className="hidden px-3 py-3 text-right font-mono text-[0.86rem] tabular-nums text-foreground sm:table-cell">{t.winRate}%</td>
@@ -487,7 +487,7 @@ export function LeaderboardContent() {
                               <span
                                 className={cn(
                                   "rounded px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide",
-                                  t.bias === "short" ? "bg-[#ef6a61]/15 text-[#ef6a61]" : "bg-[#46c45a]/15 text-[#46c45a]",
+                                  t.bias === "short" ? "bg-feed-danger/15 text-feed-danger" : "bg-feed-ok/15 text-feed-ok",
                                 )}
                               >
                                 {t.bias === "short" ? "Short" : "Long"}
@@ -501,7 +501,7 @@ export function LeaderboardContent() {
                 </>
               ) : (
                 <>
-                  <thead className="border-b border-white/[0.07] bg-white/[0.02] text-left">
+                  <thead className="border-b border-hairline bg-overlay-weak text-left">
                     <tr>
                       <th className={cn("w-12", TH)}>#</th>
                       <th className={TH}>Chatter</th>
@@ -518,8 +518,8 @@ export function LeaderboardContent() {
                       chatters.map((c, i) => (
                         <tr
                           key={`${c.platform}:${c.name}`}
-                          className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.03]"
-                          style={c.isSubscriber ? { background: `${SUB_COLOR[c.platform]}08` } : undefined}
+                          className="border-b border-hairline transition-colors last:border-b-0 hover:bg-overlay-weak"
+                          style={c.isSubscriber ? { background: `color-mix(in srgb, ${SUB_COLOR[c.platform]} 3%, transparent)` } : undefined}
                         >
                           <td className={cn("px-3 py-3 font-mono text-[0.95rem] font-bold tabular-nums", rankColor(i + 1))}>{i + 1}</td>
                           <td className="px-3 py-3">
@@ -540,8 +540,8 @@ export function LeaderboardContent() {
                             </a>
                           </td>
                           <td className="hidden px-3 py-3 sm:table-cell">
-                            <span className="block h-1.5 w-full max-w-[12rem] overflow-hidden rounded-full bg-white/[0.06]">
-                              <span className="block h-full rounded-full bg-[#aab3c0]/70" style={{ width: `${(c.messages / maxMsgs) * 100}%` }} />
+                            <span className="block h-1.5 w-full max-w-[12rem] overflow-hidden rounded-full bg-overlay-weak">
+                              <span className="block h-full rounded-full bg-feed-link/70" style={{ width: `${(c.messages / maxMsgs) * 100}%` }} />
                             </span>
                           </td>
                           <td className="px-3 py-3 text-right font-mono text-[0.9rem] font-semibold tabular-nums text-foreground">{compactCount(c.messages)}</td>

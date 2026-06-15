@@ -30,9 +30,9 @@ function ClipCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-[230px] shrink-0 flex-col overflow-hidden rounded-xl bg-white/[0.03] text-left transition-colors hover:bg-white/[0.06]"
+      className="group flex w-[230px] shrink-0 flex-col overflow-hidden rounded-xl bg-overlay-weak text-left transition-colors hover:bg-overlay-medium"
     >
-      <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-[#141416]">
+      <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-background">
         {thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={thumbnail} alt={title} className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100" />
@@ -82,8 +82,8 @@ function OfflinePanel({ channel, target }: { channel: Streamer; target: Date | n
         </h2>
         {channel.schedule && isStarting(channel.schedule, now) ? (
           <p className="mt-3 flex items-center justify-center gap-2 text-sm">
-            <span className="size-1.5 animate-pulse rounded-full bg-[#46c45a]" />
-            <span className="font-semibold text-[#46c45a]">Show is starting</span>
+            <span className="size-1.5 animate-pulse rounded-full bg-feed-ok" />
+            <span className="font-semibold text-feed-ok">Show is starting</span>
             <span className="text-muted-foreground">· the stream will appear here shortly</span>
           </p>
         ) : target ? (
@@ -138,13 +138,13 @@ function OfflinePanel({ channel, target }: { channel: Streamer; target: Date | n
                 key={t.symbol}
                 type="button"
                 onClick={() => openStock(t.symbol)}
-                className="flex items-center justify-between rounded-lg bg-white/[0.03] px-3.5 py-2.5 text-left transition-colors hover:bg-white/[0.06]"
+                className="flex items-center justify-between rounded-lg bg-overlay-weak px-3.5 py-2.5 text-left transition-colors hover:bg-overlay-medium"
               >
                 <div className="flex flex-col leading-tight">
                   <span className="font-mono text-[0.84rem] font-semibold text-foreground">{t.symbol}</span>
                   <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">{formatPrice(t.price)}</span>
                 </div>
-                <span className={`font-mono text-[0.78rem] font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+                <span className={`font-mono text-[0.78rem] font-medium tabular-nums ${up ? "text-feed-ok" : "text-feed-danger"}`}>
                   {formatChange(t.changePct)}
                 </span>
               </button>
@@ -201,7 +201,7 @@ export function StreamEmbed({ channel, platform: platformProp }: { channel: Stre
           href={`https://twitch.tv/${twitchHandle}`}
           target="_blank"
           rel="noreferrer noopener"
-          className="inline-flex items-center gap-1.5 rounded-md border border-white/12 bg-white/[0.05] px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.09]"
+          className="inline-flex items-center gap-1.5 rounded-md border border-hairline-strong bg-overlay-weak px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-overlay-medium"
         >
           <ExternalLink className="size-3.5" />
           Watch {channel.name} on Twitch
@@ -243,7 +243,7 @@ export function StreamPane() {
       : (channel.livePlatform ?? primaryPlatform(channel));
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[#0c0c0e]">
+    <div className="relative flex h-full flex-col overflow-hidden bg-background">
       <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-10%,rgba(255,255,255,0.05),transparent_60%)]" />
       {!offline ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.05]">
@@ -266,13 +266,13 @@ export function StreamPane() {
           <p className="truncate text-xs text-muted-foreground">{channel.title}</p>
         </div>
         {offline ? (
-          <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-muted-foreground">
+          <span className="rounded-md border border-hairline bg-overlay-weak px-2 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-muted-foreground">
             Offline
           </span>
         ) : (
           <>
             {livePlatforms.length > 1 ? (
-              <span className="flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.04] p-0.5" title="Choose which platform's player to watch">
+              <span className="flex items-center gap-0.5 rounded-md border border-hairline bg-overlay-weak p-0.5" title="Choose which platform's player to watch">
                 {livePlatforms.map((p) => (
                   <button
                     key={p}
@@ -281,7 +281,7 @@ export function StreamPane() {
                     aria-label={`Watch on ${p}`}
                     className={cn(
                       "flex size-6 items-center justify-center rounded transition-all",
-                      p === activePlatform ? "bg-white/[0.1]" : "opacity-45 hover:opacity-100",
+                      p === activePlatform ? "bg-overlay-medium" : "opacity-45 hover:opacity-100",
                     )}
                   >
                     <PlatformGlyph platform={p} className="size-3.5" />
@@ -289,11 +289,11 @@ export function StreamPane() {
                 ))}
               </span>
             ) : null}
-            <span className="flex items-center gap-1.5 rounded-md bg-[#46c45a]/15 px-2 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-[#46c45a]">
-              <span className="size-1.5 rounded-full bg-[#46c45a]" />
+            <span className="flex items-center gap-1.5 rounded-md bg-feed-ok/15 px-2 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-feed-ok">
+              <span className="size-1.5 rounded-full bg-feed-ok" />
               Live
             </span>
-            <span className="rounded-md border border-white/10 bg-black/30 px-2 py-1 text-[0.72rem] font-medium tabular-nums text-foreground/90">
+            <span className="rounded-md border border-hairline bg-overlay-weak px-2 py-1 text-[0.72rem] font-medium tabular-nums text-foreground/90">
               {hasVideo(channel) ? `${formatCount(channel.viewers)} watching` : "live thread"}
             </span>
           </>

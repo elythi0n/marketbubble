@@ -45,18 +45,18 @@ function GiveawayOverlay() {
   return (
     <div
       className="overlay-root flex h-dvh items-end justify-center overflow-hidden p-6"
-      style={{ background: bg === "transparent" ? "transparent" : "#141416", fontSize: `${scale}rem` }}
+      style={{ background: bg === "transparent" ? "transparent" : "var(--background)", fontSize: `${scale}rem` }}
     >
       {giveaway ? (
-        <div className="w-full max-w-[26em] rounded-2xl border border-white/12 bg-[#161619]/95 p-[1.1em] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)]">
-          <p className="flex items-center justify-center gap-[0.5em] text-[0.66em] font-bold uppercase tracking-[0.22em] text-[#85858d]">
+        <div className="w-full max-w-[26em] rounded-2xl border border-hairline-strong bg-sidebar/95 p-[1.1em] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)]">
+          <p className="flex items-center justify-center gap-[0.5em] text-[0.66em] font-bold uppercase tracking-[0.22em] text-muted-foreground">
             <Gift style={{ width: "1.3em", height: "1.3em" }} />
             Giveaway
           </p>
           <GiveawayReel giveaway={giveaway} className="mt-[0.5em]" />
         </div>
       ) : bg !== "transparent" ? (
-        <p className="m-auto text-sm text-[#85858d]">No giveaway running — start one from /admin/giveaway</p>
+        <p className="m-auto text-sm text-muted-foreground">No giveaway running — start one from /admin/giveaway</p>
       ) : null}
     </div>
   );

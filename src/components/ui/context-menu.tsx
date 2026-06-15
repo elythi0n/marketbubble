@@ -68,11 +68,11 @@ export function ContextMenu({ x, y, entries, onClose }: Props) {
           e.preventDefault();
           e.stopPropagation();
         }}
-        className="fixed z-[151] w-56 rounded-lg border border-white/12 bg-[#1b1b1f] p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]"
+        className="fixed z-[151] w-56 rounded-lg border border-hairline-strong bg-popover p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]"
       >
         {entries.map((entry, i) => {
           if (entry.type === "separator") {
-            return <div key={i} className="mx-1 my-1 border-t border-white/[0.07]" aria-hidden />;
+            return <div key={i} className="mx-1 my-1 border-t border-hairline" aria-hidden />;
           }
           if (entry.type === "heading") {
             return (
@@ -92,8 +92,8 @@ export function ContextMenu({ x, y, entries, onClose }: Props) {
                 onClose();
               }}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.8rem] transition-colors hover:bg-white/[0.07]",
-                entry.danger ? "text-[#ef6a61] hover:text-[#ef6a61]" : "text-foreground/90 hover:text-foreground",
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.8rem] transition-colors hover:bg-overlay-medium",
+                entry.danger ? "text-feed-danger hover:text-feed-danger" : "text-foreground/90 hover:text-foreground",
               )}
             >
               {Icon ? <Icon className={cn("size-3.5 flex-none", entry.danger ? "" : "text-muted-foreground")} /> : null}

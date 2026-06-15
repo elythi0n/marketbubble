@@ -12,6 +12,7 @@ import {
   type FilterField,
   type FilterRule,
 } from "@/lib/settings/settings-context";
+import { useTheme, type ThemeChoice } from "@/lib/theme/theme-context";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -45,7 +46,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       onClick={() => onChange(!checked)}
       className={cn(
         "relative h-[18px] w-8 flex-none rounded-full transition-colors",
-        checked ? "bg-[#46c45a]/80" : "bg-white/[0.12]",
+        checked ? "bg-feed-ok/80" : "bg-overlay-strong",
       )}
     >
       <span
@@ -69,7 +70,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
+    <div className="flex items-center gap-0.5 rounded-lg border border-hairline bg-overlay-weak p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
@@ -78,7 +79,7 @@ function Segmented<T extends string>({
           aria-pressed={o.value === value}
           className={cn(
             "rounded-md px-2 py-1 text-[0.7rem] font-medium transition-colors",
-            o.value === value ? "bg-white/[0.1] text-foreground" : "text-muted-foreground hover:text-foreground",
+            o.value === value ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           {o.label}
@@ -91,7 +92,7 @@ function Segmented<T extends string>({
 function ChatTab() {
   const { settings, update } = useSettings();
   return (
-    <div className="divide-y divide-white/[0.05]">
+    <div className="divide-y divide-hairline">
       <Row label="Density" hint="Row spacing and base font size in chat">
         <Segmented<ChatDensity>
           value={settings.density}
@@ -119,7 +120,7 @@ function ChatTab() {
           onChange={(e) => update({ mentionNames: e.target.value })}
           placeholder="banks, marketbubble"
           aria-label="Mention names"
-          className="w-44 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[0.76rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-white/20"
+          className="w-44 rounded-lg border border-hairline bg-overlay-weak px-2.5 py-1.5 text-[0.76rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-hairline-strong"
         />
       </Row>
     </div>
@@ -132,23 +133,23 @@ function FilterChip({ rule, onRemove }: { rule: FilterRule; onRemove: () => void
     <li
       className={cn(
         "flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
-        highlight ? "border-[#aab3c0]/25 bg-[#aab3c0]/[0.07]" : "border-[#ef6a61]/25 bg-[#ef6a61]/[0.06]",
+        highlight ? "border-feed-link/25 bg-feed-link/[0.07]" : "border-feed-danger/25 bg-feed-danger/[0.06]",
       )}
     >
       {highlight ? (
-        <Highlighter className="size-3.5 flex-none text-[#aab3c0]" />
+        <Highlighter className="size-3.5 flex-none text-feed-link" />
       ) : (
-        <VolumeX className="size-3.5 flex-none text-[#ef6a61]" />
+        <VolumeX className="size-3.5 flex-none text-feed-danger" />
       )}
       <span className="min-w-0 flex-1 truncate font-mono text-[0.78rem] text-foreground">{rule.pattern}</span>
-      <span className="flex-none rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[0.58rem] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="flex-none rounded border border-hairline bg-overlay-weak px-1.5 py-0.5 text-[0.58rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {rule.field === "author" ? "User" : "Text"}
       </span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove filter “${rule.pattern}”`}
-        className="flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+        className="flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
       >
         <X className="size-3.5" />
       </button>
@@ -178,7 +179,7 @@ function FiltersTab() {
       </p>
 
       <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
-        <div className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 transition-colors focus-within:border-white/20 focus-within:bg-white/[0.05]">
+        <div className="flex items-center gap-2 rounded-lg border border-hairline bg-overlay-weak px-2.5 py-1.5 transition-colors focus-within:border-hairline-strong focus-within:bg-overlay-medium">
           <input
             type="text"
             value={pattern}
@@ -208,7 +209,7 @@ function FiltersTab() {
           <button
             type="submit"
             disabled={!pattern.trim()}
-            className="ml-auto inline-flex h-[26px] items-center gap-1 rounded-lg border border-white/12 bg-white/[0.06] px-2.5 text-[0.72rem] font-medium text-foreground transition-colors hover:bg-white/[0.1] disabled:opacity-35 disabled:hover:bg-white/[0.06]"
+            className="ml-auto inline-flex h-[26px] items-center gap-1 rounded-lg border border-hairline-strong bg-overlay-weak px-2.5 text-[0.72rem] font-medium text-foreground transition-colors hover:bg-overlay-medium disabled:opacity-35 disabled:hover:bg-overlay-weak"
           >
             <Plus className="size-3.5" />
             Add
@@ -240,7 +241,7 @@ function AssistantTab() {
         on a server) so the assistant can search it. Reloading the page wipes everything. Bring-your-own keys are also held in
         memory only and go straight from your browser to the provider.
       </p>
-      <div className="mt-2 divide-y divide-white/[0.05]">
+      <div className="mt-2 divide-y divide-hairline">
         <Row label="AI Assistant" hint="Gather session chat in memory and enable the Assistant panel">
           <Toggle checked={settings.assistantOptIn} onChange={(assistantOptIn) => update({ assistantOptIn })} label="AI Assistant" />
         </Row>
@@ -258,7 +259,7 @@ function AssistantTab() {
       </div>
 
       <h4 className="mb-1.5 mt-5 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Providers</h4>
-      <ul className="divide-y divide-white/[0.05]">
+      <ul className="divide-y divide-hairline">
         {PROVIDERS.map((p) => {
           const active = managed.includes(p);
           return (
@@ -267,13 +268,13 @@ function AssistantTab() {
               {active ? (
                 <span
                   title="Configured via server environment — locked; the key never reaches the browser"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-[#46c45a]/25 bg-[#46c45a]/[0.08] px-2 py-1 text-[0.64rem] font-semibold text-[#46c45a]"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-feed-ok/25 bg-feed-ok/[0.08] px-2 py-1 text-[0.64rem] font-semibold text-feed-ok"
                 >
                   <Lock className="size-3" />
                   Active · server
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[0.64rem] font-medium text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak px-2 py-1 text-[0.64rem] font-medium text-muted-foreground">
                   <KeyRound className="size-3" />
                   Your own key
                 </span>
@@ -299,6 +300,7 @@ function AssistantTab() {
 
 function WorkspaceTab() {
   const { settings, update, reset } = useSettings();
+  const { theme, setTheme } = useTheme();
   const [notifyBlocked, setNotifyBlocked] = useState(false);
   const resetLayout = () => {
     localStorage.removeItem("mb-dock-layout-v2");
@@ -324,7 +326,18 @@ function WorkspaceTab() {
   };
 
   return (
-    <div className="divide-y divide-white/[0.05]">
+    <div className="divide-y divide-hairline">
+      <Row label="Theme" hint="Light, dark, or follow your system setting">
+        <Segmented<ThemeChoice>
+          value={theme}
+          onChange={setTheme}
+          options={[
+            { value: "light", label: "Light" },
+            { value: "dark", label: "Dark" },
+            { value: "system", label: "Auto" },
+          ]}
+        />
+      </Row>
       <Row label="Animations" hint="Interface motion — panel slides, shimmer, pulsing dots. Off = instant and calm">
         <Toggle checked={settings.animations} onChange={(animations) => update({ animations })} label="Animations" />
       </Row>
@@ -342,7 +355,7 @@ function WorkspaceTab() {
         <button
           type="button"
           onClick={() => window.open("/overlay", "_blank")}
-          className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 text-[0.72rem] font-medium text-foreground transition-colors hover:bg-white/[0.09]"
+          className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak px-2.5 text-[0.72rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
         >
           <Cast className="size-3.5" />
           Open overlay
@@ -352,7 +365,7 @@ function WorkspaceTab() {
         <button
           type="button"
           onClick={resetLayout}
-          className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 text-[0.72rem] font-medium text-foreground transition-colors hover:bg-white/[0.09]"
+          className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak px-2.5 text-[0.72rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
         >
           <RotateCcw className="size-3.5" />
           Reset layout
@@ -362,7 +375,7 @@ function WorkspaceTab() {
         <button
           type="button"
           onClick={reset}
-          className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[#ef6a61]/30 bg-[#ef6a61]/[0.08] px-2.5 text-[0.72rem] font-medium text-[#ef6a61] transition-colors hover:bg-[#ef6a61]/[0.14]"
+          className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-feed-danger/30 bg-feed-danger/[0.08] px-2.5 text-[0.72rem] font-medium text-feed-danger transition-colors hover:bg-feed-danger/[0.14]"
         >
           <RotateCcw className="size-3.5" />
           Reset all
@@ -377,7 +390,7 @@ export function SettingsPane() {
   const [tab, setTab] = useState<TabId>("chat");
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-1 border-b border-white/[0.07] px-2.5">
+      <header className="flex h-11 flex-none items-center gap-1 border-b border-hairline px-2.5">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -386,7 +399,7 @@ export function SettingsPane() {
             aria-pressed={tab === t.id}
             className={cn(
               "rounded-lg px-2.5 py-1.5 text-[0.76rem] font-medium transition-colors",
-              tab === t.id ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground",
+              tab === t.id ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground",
             )}
           >
             {t.label}

@@ -47,11 +47,11 @@ function formatCount(n: number): string {
 }
 
 function fngColor(value: number): string {
-  if (value >= 75) return "#46c45a";
-  if (value >= 56) return "#86efac";
-  if (value >= 45) return "#d4d4d8";
-  if (value >= 25) return "#f59e0b";
-  return "#ef6a61";
+  if (value >= 75) return "var(--feed-ok)";
+  if (value >= 56) return "var(--feed-ok)";
+  if (value >= 45) return "var(--foreground)";
+  if (value >= 25) return "var(--feed-warn)";
+  return "var(--feed-danger)";
 }
 
 // ─── headline with cashtag highlights ─────────────────────────────────────────
@@ -84,7 +84,7 @@ function FearGreedBadge({ value, classification }: FearGreed) {
           stroke="currentColor"
           strokeWidth="2.5"
           strokeLinecap="round"
-          className="text-white/[0.1]"
+          className="text-foreground/[0.1]"
         />
         <path
           d="M2 14 A12 12 0 0 1 26 14"
@@ -108,8 +108,8 @@ function FearGreedBadge({ value, classification }: FearGreed) {
 // ─── article meta row (breaking + category) ───────────────────────────────────
 
 const CAT_LABEL: Record<string, string> = { crypto: "Crypto", markets: "Markets" };
-const CAT_DOT: Record<string, string> = { crypto: "bg-[#a8a8f8]", markets: "bg-[#46c45a]" };
-const CAT_TEXT: Record<string, string> = { crypto: "text-[#a8a8f8]", markets: "text-[#46c45a]" };
+const CAT_DOT: Record<string, string> = { crypto: "bg-[#a8a8f8]", markets: "bg-feed-ok" };
+const CAT_TEXT: Record<string, string> = { crypto: "text-[#a8a8f8]", markets: "text-feed-ok" };
 
 function ArticleMeta({ category, publishedAt }: { category: string; publishedAt: string }) {
   const breaking = isBreaking(publishedAt);
@@ -117,8 +117,8 @@ function ArticleMeta({ category, publishedAt }: { category: string; publishedAt:
     <span className="inline-flex items-center gap-2">
       {breaking && (
         <span className="inline-flex items-center gap-1">
-          <span className="size-1.5 animate-pulse rounded-full bg-[#ef6a61]" />
-          <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.16em] text-[#ef6a61]">Breaking</span>
+          <span className="size-1.5 animate-pulse rounded-full bg-feed-danger" />
+          <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.16em] text-feed-danger">Breaking</span>
         </span>
       )}
       <span className="inline-flex items-center gap-1.5">
@@ -147,7 +147,7 @@ function MarketTicker({ tickers }: { tickers: Ticker[] }) {
   if (tickers.length === 0) return null;
   const items = [...tickers, ...tickers];
   return (
-    <div className="overflow-hidden border-y border-white/[0.06] bg-[#0d0d0f] py-[7px]">
+    <div className="overflow-hidden border-y border-hairline bg-background py-[7px]">
       <style>{`
         @keyframes mb-ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
         .mb-ticker-track { animation: mb-ticker 55s linear infinite; }
@@ -158,10 +158,10 @@ function MarketTicker({ tickers }: { tickers: Ticker[] }) {
           <span key={i} className="flex items-center gap-2 px-5 text-nowrap">
             <span className="font-mono text-[0.68rem] font-semibold tabular-nums text-foreground/70">{t.symbol}</span>
             <span className="font-mono text-[0.68rem] tabular-nums text-foreground/55">{formatPrice(t.price)}</span>
-            <span className={cn("font-mono text-[0.63rem] tabular-nums", t.changePct >= 0 ? "text-[#46c45a]" : "text-[#ef6a61]")}>
+            <span className={cn("font-mono text-[0.63rem] tabular-nums", t.changePct >= 0 ? "text-feed-ok" : "text-feed-danger")}>
               {formatChange(t.changePct)}
             </span>
-            <span className="text-white/[0.1]">·</span>
+            <span className="text-foreground/[0.1]">·</span>
           </span>
         ))}
       </div>
@@ -187,7 +187,7 @@ function TagStrip({
         <span className="flex-none font-mono text-[0.58rem] uppercase tracking-[0.16em] text-muted-foreground/35">
           Trending
         </span>
-        <div className="h-3 w-px flex-none bg-white/[0.08]" />
+        <div className="h-3 w-px flex-none bg-overlay-medium" />
         {tags.map(({ tag, count }) => {
           const isActive = active === tag;
           return (
@@ -198,8 +198,8 @@ function TagStrip({
               className={cn(
                 "flex-none inline-flex items-center gap-1.5 rounded-full px-3 py-[3px] text-[0.68rem] font-medium transition-colors",
                 isActive
-                  ? "bg-white/[0.12] text-foreground ring-1 ring-white/[0.18]"
-                  : "bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground",
+                  ? "bg-overlay-strong text-foreground ring-1 ring-hairline"
+                  : "bg-overlay-weak text-muted-foreground hover:bg-overlay-medium hover:text-foreground",
               )}
             >
               {tag}
@@ -236,7 +236,7 @@ function HeroArticle({ article }: { article: NewsArticle }) {
       <h2 className="text-[1.9rem] font-bold leading-[1.08] tracking-[-0.01em] text-foreground transition-opacity group-hover:opacity-80 sm:text-[2.3rem] lg:text-[2.7rem]">
         <HeadlineText text={article.title} />
       </h2>
-      <div className="h-px bg-white/[0.12]" />
+      <div className="h-px bg-hairline-strong" />
       {article.thumbnail ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -276,7 +276,7 @@ function SideArticle({ article, last = false }: { article: NewsArticle; last?: b
         </h3>
         <Dateline source={article.source} publishedAt={article.publishedAt} />
       </Link>
-      {!last ? <div className="h-px bg-white/[0.07]" /> : null}
+      {!last ? <div className="h-px bg-hairline" /> : null}
     </>
   );
 }
@@ -292,7 +292,7 @@ function GridArticle({ article, featured = false }: { article: NewsArticle; feat
       className="group flex min-w-0 flex-col outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
       {article.thumbnail ? (
-        <div className={cn("relative w-full overflow-hidden bg-[#0e0e10]", featured ? "aspect-[21/9]" : "aspect-video")}>
+        <div className={cn("relative w-full overflow-hidden bg-background", featured ? "aspect-[21/9]" : "aspect-video")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={article.thumbnail}
@@ -300,7 +300,7 @@ function GridArticle({ article, featured = false }: { article: NewsArticle; feat
             className="absolute inset-0 h-full w-full object-cover opacity-80 transition-opacity group-hover:opacity-65"
             loading="lazy"
           />
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[#141416] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
         </div>
       ) : null}
       <div className="flex flex-1 flex-col gap-2.5 p-4">
@@ -332,9 +332,9 @@ function ClipGridCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col overflow-hidden rounded-lg bg-white/[0.03] text-left transition-colors hover:bg-white/[0.055]"
+      className="group flex flex-col overflow-hidden rounded-lg bg-overlay-weak text-left transition-colors hover:bg-overlay-medium"
     >
-      <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-[#141416]">
+      <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-background">
         {clip.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={clip.thumbnail} alt={clip.title} className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-75" />
@@ -342,7 +342,7 @@ function ClipGridCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
           <ClipSourceIcon platform={clip.platform} className="size-7 opacity-[0.08]" />
         )}
         <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/50 backdrop-blur-sm">
+          <span className="flex size-9 items-center justify-center rounded-full border border-hairline-strong bg-black/50 backdrop-blur-sm">
             <Play className="size-3.5 translate-x-px fill-foreground text-foreground" />
           </span>
         </span>
@@ -368,11 +368,11 @@ function ClipGridCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
 function SectionRule({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-4 py-2">
-      <div className="h-px flex-1 bg-white/[0.1]" />
+      <div className="h-px flex-1 bg-hairline" />
       <span className="font-mono text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground/55">
         {label}
       </span>
-      <div className="h-px flex-1 bg-white/[0.1]" />
+      <div className="h-px flex-1 bg-hairline" />
     </div>
   );
 }
@@ -380,7 +380,7 @@ function SectionRule({ label }: { label: string }) {
 // ─── skeleton loader ──────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded bg-white/[0.04]", className)} />;
+  return <div className={cn("animate-pulse rounded bg-overlay-weak", className)} />;
 }
 
 function NewsLoader() {
@@ -531,15 +531,15 @@ export function NewsContent() {
         </div>
 
         <div className="mt-3 space-y-[3px]">
-          <div className="h-[2px] bg-white/25" />
-          <div className="h-px bg-white/[0.1]" />
+          <div className="h-[2px] bg-hairline-strong" />
+          <div className="h-px bg-hairline" />
         </div>
 
         <p className="mt-2.5 text-center font-mono text-[0.65rem] uppercase tracking-[0.22em] text-muted-foreground/70">
           Financial Intelligence · Crypto · Markets · Trading
         </p>
 
-        <div className="mt-2.5 h-px bg-white/[0.1]" />
+        <div className="mt-2.5 h-px bg-hairline" />
       </header>
 
       {/* ── Market ticker strip ───────────────────────────────────────────── */}
@@ -555,7 +555,7 @@ export function NewsContent() {
         <button
           type="button"
           onClick={acceptPending}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-white/[0.1] bg-white/[0.04] py-2.5 text-[0.75rem] font-medium text-foreground/80 transition-colors hover:bg-white/[0.07] hover:text-foreground"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-hairline bg-overlay-weak py-2.5 text-[0.75rem] font-medium text-foreground/80 transition-colors hover:bg-overlay-medium hover:text-foreground"
         >
           <RefreshCw className="size-3.5 text-[#a8a8f8]" />
           {newCount} new {newCount === 1 ? "story" : "stories"} — click to load
@@ -584,11 +584,11 @@ export function NewsContent() {
           <>
             {/* ── Head: full-width hero + article sidebar ─────────────────── */}
             {hero ? (
-              <div className="grid grid-cols-1 gap-0 lg:grid-cols-[3fr_2fr] lg:divide-x lg:divide-white/[0.08]">
+              <div className="grid grid-cols-1 gap-0 lg:grid-cols-[3fr_2fr] lg:divide-x lg:divide-hairline">
                 <div className="pr-0 lg:pr-8">
                   <HeroArticle article={hero} />
                 </div>
-                <div className="border-t border-white/[0.08] pl-0 pt-6 lg:border-t-0 lg:pl-8 lg:pt-0">
+                <div className="border-t border-hairline pl-0 pt-6 lg:border-t-0 lg:pl-8 lg:pt-0">
                   {sidebar.map((a, i) => (
                     <SideArticle key={a.id} article={a} last={i === sidebar.length - 1} />
                   ))}
@@ -612,11 +612,11 @@ export function NewsContent() {
             {grid.length > 0 ? (
               <div className="mt-8">
                 <SectionRule label={activeTag ? `Tagged "${activeTag}"` : "Latest"} />
-                <div className="mt-1 grid grid-cols-1 gap-px bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-1 grid grid-cols-1 gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-4">
                   {grid.map((a, i) => {
                     const featured = i === 0;
                     return (
-                      <div key={a.id} className={cn("bg-[#141416]", featured && "sm:col-span-2")}>
+                      <div key={a.id} className={cn("bg-background", featured && "sm:col-span-2")}>
                         <GridArticle article={a} featured={featured} />
                       </div>
                     );
@@ -629,7 +629,7 @@ export function NewsContent() {
       </div>
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer className="mt-10 border-t border-white/[0.07] pt-5">
+      <footer className="mt-10 border-t border-hairline pt-5">
         <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
           <span className={cn(walburn.className, "text-sm uppercase tracking-[0.08em] text-muted-foreground/50")}>
             MarketBubble News

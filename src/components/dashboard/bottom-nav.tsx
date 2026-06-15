@@ -46,7 +46,7 @@ export function BottomNav({ onOpenChannels, liveCount }: { onOpenChannels?: () =
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   const fabClass =
-    "relative -top-3.5 flex size-[3.25rem] items-center justify-center rounded-full border border-white/12 bg-[#1b1b1f] shadow-[0_10px_26px_-8px_rgba(0,0,0,0.85)] transition-transform active:scale-95";
+    "relative -top-3.5 flex size-[3.25rem] items-center justify-center rounded-full border border-hairline-strong bg-card shadow-[0_10px_26px_-8px_rgba(0,0,0,0.85)] transition-transform active:scale-95";
 
   const channelsFab: ReactNode = onOpenChannels ? (
     <button type="button" onClick={onOpenChannels} aria-label="Channels" title="Channels" className={fabClass}>
@@ -60,7 +60,7 @@ export function BottomNav({ onOpenChannels, liveCount }: { onOpenChannels?: () =
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-white/[0.08] bg-[#141416]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-hairline bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
       aria-label="Primary"
     >
       <div className="flex flex-1">
@@ -70,7 +70,7 @@ export function BottomNav({ onOpenChannels, liveCount }: { onOpenChannels?: () =
             <span className="relative">
               <Users className="size-5" strokeWidth={2.4} />
               {liveCount && liveCount > 0 ? (
-                <span className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#46c45a] px-0.5 font-mono text-[0.52rem] font-bold leading-none text-black">
+                <span className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-feed-ok px-0.5 font-mono text-[0.52rem] font-bold leading-none text-black">
                   {liveCount}
                 </span>
               ) : null}

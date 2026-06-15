@@ -52,12 +52,12 @@ function ClipRow({ clip, active, onClick }: { clip: Clip; active: boolean; onCli
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex w-full gap-2.5 border-b border-white/[0.04] p-2.5 text-left transition-colors",
-        active ? "bg-white/[0.07]" : "hover:bg-white/[0.04]",
+        "group flex w-full gap-2.5 border-b border-hairline p-2.5 text-left transition-colors",
+        active ? "bg-overlay-medium" : "hover:bg-overlay-weak",
       )}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-video w-[88px] flex-none overflow-hidden rounded-md bg-[#0c0c0e]">
+      <div className="relative aspect-video w-[88px] flex-none overflow-hidden rounded-md bg-background">
         {clip.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={clip.thumbnail} alt={clip.title} className="h-full w-full object-cover" />
@@ -134,7 +134,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
         {/* Darker backdrop for the dark app */}
         <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
 
-        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 flex h-[88dvh] w-[92vw] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#131315] shadow-2xl outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 md:flex-row">
+        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 flex h-[88dvh] w-[92vw] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-hairline bg-background shadow-2xl outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 md:flex-row">
           <DialogTitle className="sr-only">{clip?.title ?? "Clips"}</DialogTitle>
 
           {clip && (
@@ -163,7 +163,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                           href={clip.url}
                           target="_blank"
                           rel="noreferrer noopener"
-                          className="relative z-10 flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-5 py-2.5 text-sm font-medium text-foreground backdrop-blur-sm transition-colors hover:bg-white/20"
+                          className="relative z-10 flex items-center gap-2 rounded-xl border border-hairline bg-overlay-medium px-5 py-2.5 text-sm font-medium text-foreground backdrop-blur-sm transition-colors hover:bg-overlay-strong"
                         >
                           <ExternalLink className="size-4" />
                           Watch on {clip.platform}
@@ -174,7 +174,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                 </div>
 
                 {/* Compact info strip pinned to bottom */}
-                <div className="flex flex-none items-center justify-between gap-4 border-t border-white/[0.06] px-5 py-3">
+                <div className="flex flex-none items-center justify-between gap-4 border-t border-hairline px-5 py-3">
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-[0.88rem] font-semibold text-foreground">{clip.title}</h2>
                     <div className="mt-0.5 flex items-center gap-2 text-[0.7rem] text-muted-foreground">
@@ -191,7 +191,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                         onClick={share}
                         className="flex items-center gap-1.5 text-[0.68rem] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
                       >
-                        {copied ? <Check className="size-3 text-[#46c45a]" /> : <Share2 className="size-3" />}
+                        {copied ? <Check className="size-3 text-feed-ok" /> : <Share2 className="size-3" />}
                         {copied ? "Copied" : "Share"}
                       </button>
                       <a
@@ -209,11 +209,11 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
               </div>
 
               {/* Divider */}
-              <div className="h-px w-full flex-none bg-white/[0.06] md:h-auto md:w-px" />
+              <div className="h-px w-full flex-none bg-overlay-weak md:h-auto md:w-px" />
 
               {/* ── Right (bottom on mobile): scrollable clips list ── */}
               <div className="flex h-[30dvh] w-full flex-none flex-col md:h-auto md:w-[260px]">
-                <div className="flex flex-none items-center justify-between border-b border-white/[0.06] px-3 py-2.5">
+                <div className="flex flex-none items-center justify-between border-b border-hairline px-3 py-2.5">
                   <span className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Videos
                   </span>
@@ -221,7 +221,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
                     type="button"
                     onClick={onClose}
                     aria-label="Close"
-                    className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground"
+                    className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-overlay-weak hover:text-foreground"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -246,7 +246,7 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-12 w-full flex-none items-center justify-center gap-2 border-t border-white/[0.08] bg-white/[0.03] text-[0.74rem] font-semibold uppercase tracking-[0.1em] text-foreground transition-colors active:bg-white/[0.07] md:hidden"
+                className="flex h-12 w-full flex-none items-center justify-center gap-2 border-t border-hairline bg-overlay-weak text-[0.74rem] font-semibold uppercase tracking-[0.1em] text-foreground transition-colors active:bg-overlay-medium md:hidden"
               >
                 <X className="size-4" />
                 Close

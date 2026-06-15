@@ -26,13 +26,13 @@ function formatDate(iso: string): string {
 }
 
 const CATEGORY_COLOR: Record<string, string> = {
-  crypto: "text-[#d8b25a]",
-  markets: "text-[#46c45a]",
+  crypto: "text-feed-warn",
+  markets: "text-feed-ok",
 };
 
 const CATEGORY_PILL: Record<string, string> = {
-  crypto: "bg-[#d8b25a]/10 text-[#d8b25a]",
-  markets: "bg-[#46c45a]/10 text-[#46c45a]",
+  crypto: "bg-feed-warn/10 text-feed-warn",
+  markets: "bg-feed-ok/10 text-feed-ok",
 };
 
 export function NewsDrawer() {
@@ -46,7 +46,7 @@ export function NewsDrawer() {
         {article && (
           <div className="flex h-full flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex flex-none items-center justify-between border-b border-white/[0.07] px-4 py-3">
+            <div className="flex flex-none items-center justify-between border-b border-hairline px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className={`text-[0.6rem] font-bold uppercase tracking-[0.16em] ${CATEGORY_COLOR[article.category] ?? "text-muted-foreground"}`}>
                   {article.category}
@@ -62,7 +62,7 @@ export function NewsDrawer() {
                 type="button"
                 onClick={closeArticle}
                 aria-label="Close"
-                className="flex size-7 flex-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+                className="flex size-7 flex-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
               >
                 <X className="size-3.5" />
               </button>
@@ -84,7 +84,7 @@ export function NewsDrawer() {
 
               {/* Category pill + author */}
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className={`rounded px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.12em] ${CATEGORY_PILL[article.category] ?? "bg-white/[0.05] text-muted-foreground"}`}>
+                <span className={`rounded px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.12em] ${CATEGORY_PILL[article.category] ?? "bg-overlay-weak text-muted-foreground"}`}>
                   {article.category}
                 </span>
                 {article.author && (
@@ -112,7 +112,7 @@ export function NewsDrawer() {
                   {article.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[0.65rem] text-muted-foreground/70"
+                      className="rounded-full border border-hairline bg-overlay-weak px-2.5 py-0.5 text-[0.65rem] text-muted-foreground/70"
                     >
                       {tag}
                     </span>
@@ -121,7 +121,7 @@ export function NewsDrawer() {
               )}
 
               {/* Divider */}
-              <div className="mt-6 border-t border-white/[0.06]" />
+              <div className="mt-6 border-t border-hairline" />
 
               {/* Meta footer */}
               <div className="mt-3 flex items-center gap-1.5 text-[0.68rem] text-muted-foreground/50">
@@ -135,7 +135,7 @@ export function NewsDrawer() {
                 href={article.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-4 py-3 text-[0.84rem] font-semibold text-foreground transition-colors hover:bg-white/[0.1]"
+                className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-overlay-weak px-4 py-3 text-[0.84rem] font-semibold text-foreground transition-colors hover:bg-overlay-medium"
               >
                 <ExternalLink className="size-4" />
                 Read full article on {article.source}

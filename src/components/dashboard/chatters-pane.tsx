@@ -90,7 +90,7 @@ export function ChattersPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-hairline px-3">
         <Users className="size-4 text-muted-foreground" />
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-foreground">Chat Roster</span>
         {chatters.length > 0 ? (
@@ -99,7 +99,7 @@ export function ChattersPane() {
               type="button"
               onClick={() => setSortBy((s) => (s === "count" ? "recent" : "count"))}
               title={sortBy === "count" ? "Sort by most recent" : "Sort by message count"}
-              className="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+              className="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
             >
               {sortBy === "count" ? <Hash className="size-3" /> : <Clock className="size-3" />}
               <span className="text-[0.62rem] font-medium">{sortBy === "count" ? "count" : "recent"}</span>
@@ -123,7 +123,7 @@ export function ChattersPane() {
         <>
           {/* Per-platform filter pills — click to show only that platform, click again to reset */}
           {multiPlatform ? (
-            <div className="flex gap-1.5 border-b border-white/[0.06] px-3 py-1.5">
+            <div className="flex gap-1.5 border-b border-hairline px-3 py-1.5">
               {PLATFORM_ORDER.filter((p) => byPlatform[p]).map((p) => {
                 const active = platformFilter === p;
                 const dimmed = platformFilter !== null && !active;
@@ -136,7 +136,7 @@ export function ChattersPane() {
                     title={active ? "Show all platforms" : `Show only ${p}`}
                     className={cn(
                       "flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-all",
-                      active ? "bg-white/[0.1] ring-1 ring-white/[0.14]" : "bg-white/[0.04] hover:bg-white/[0.07]",
+                      active ? "bg-overlay-medium ring-1 ring-hairline-strong" : "bg-overlay-weak hover:bg-overlay-medium",
                       dimmed && "opacity-35",
                     )}
                   >
@@ -149,7 +149,7 @@ export function ChattersPane() {
           ) : null}
 
           {/* Search bar */}
-          <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-3 py-1.5">
+          <div className="flex items-center gap-1.5 border-b border-hairline px-3 py-1.5">
             <Search className="size-3 flex-none text-muted-foreground/50" />
             <input
               type="text"
@@ -182,14 +182,14 @@ export function ChattersPane() {
               filtered.map((c) => {
                 const isFocused = focusedAuthor?.toLowerCase() === c.name.toLowerCase();
                 return (
-                  <li key={`${c.platform}:${c.name}`} className="border-b border-white/[0.04] last:border-b-0">
+                  <li key={`${c.platform}:${c.name}`} className="border-b border-hairline last:border-b-0">
                     <button
                       type="button"
                       onClick={() => onChatterClick(c.name)}
                       title={isFocused ? "Click to clear focus" : "Click to filter chat to this user"}
                       className={cn(
-                        "flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-white/[0.05]",
-                        isFocused && "bg-white/[0.07]",
+                        "flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-overlay-weak",
+                        isFocused && "bg-overlay-medium",
                       )}
                     >
                       <PlatformGlyph platform={c.platform} className={cn("size-3 flex-none", !multiPlatform && "opacity-40")} />
@@ -212,7 +212,7 @@ export function ChattersPane() {
             )}
           </ul>
 
-          <p className="flex-none border-t border-white/[0.05] px-3 py-1.5 text-[0.6rem] text-muted-foreground/45">
+          <p className="flex-none border-t border-hairline px-3 py-1.5 text-[0.6rem] text-muted-foreground/45">
             Active chatters from session buffer · sorted by {sortBy === "count" ? "message count" : "most recent"}
           </p>
         </>

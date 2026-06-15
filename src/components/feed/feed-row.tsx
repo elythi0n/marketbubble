@@ -31,9 +31,9 @@ function CashtagInfo({ symbol }: { symbol: string }) {
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <span className="font-mono text-sm font-bold text-[#d8b25a]">${symbol}</span>
+        <span className="font-mono text-sm font-bold text-feed-warn">${symbol}</span>
         {ticker ? (
-          <span className={`font-mono text-xs font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+          <span className={`font-mono text-xs font-medium tabular-nums ${up ? "text-feed-ok" : "text-feed-danger"}`}>
             {formatChange(ticker.changePct)}
           </span>
         ) : null}
@@ -68,7 +68,7 @@ function ViewerInfo({ message }: { message: FeedMessage }) {
       {roles.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1">
           {roles.map((r) => (
-            <span key={r} className="rounded border border-white/12 bg-white/[0.05] px-1.5 py-0.5 text-[0.62rem] font-medium text-foreground/80">
+            <span key={r} className="rounded border border-hairline-strong bg-overlay-weak px-1.5 py-0.5 text-[0.62rem] font-medium text-foreground/80">
               {r}
             </span>
           ))}

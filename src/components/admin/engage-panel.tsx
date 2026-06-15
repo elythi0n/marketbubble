@@ -18,7 +18,7 @@ const POLL_DURATIONS = [
 
 function FinalChip() {
   return (
-    <span className="flex flex-none items-center gap-1.5 rounded-md border border-[#d8b25a]/30 bg-[#d8b25a]/[0.1] px-2 py-1 text-[0.62rem] font-bold uppercase tracking-wide text-[#d8b25a]">
+    <span className="flex flex-none items-center gap-1.5 rounded-md border border-feed-warn/30 bg-feed-warn/[0.1] px-2 py-1 text-[0.62rem] font-bold uppercase tracking-wide text-feed-warn">
       <Lock className="size-3" />
       Final
     </span>
@@ -125,18 +125,18 @@ export function EngagePanel() {
                     key={o.id}
                     className={cn(
                       "relative overflow-hidden rounded-lg border px-3 py-2",
-                      isWinner ? "border-[#d8b25a]/40 bg-[#d8b25a]/[0.05]" : "border-white/[0.08] bg-white/[0.02]",
+                      isWinner ? "border-feed-warn/40 bg-feed-warn/[0.05]" : "border-hairline bg-overlay-weak",
                     )}
                   >
                     <span
-                      className={cn("absolute inset-y-0 left-0 transition-[width] duration-500", isWinner ? "bg-[#d8b25a]/15" : "bg-[#aab3c0]/10")}
+                      className={cn("absolute inset-y-0 left-0 transition-[width] duration-500", isWinner ? "bg-feed-warn/15" : "bg-feed-link/10")}
                       style={{ width: `${pct}%` }}
                       aria-hidden
                     />
                     <span className="relative flex items-center gap-2.5 text-[0.8rem]">
                       <span className="font-mono text-[0.66rem] text-muted-foreground">{o.id}</span>
                       <span className="min-w-0 flex-1 truncate font-medium text-foreground">{o.label}</span>
-                      {isWinner ? <Trophy className="size-3.5 text-[#d8b25a]" /> : null}
+                      {isWinner ? <Trophy className="size-3.5 text-feed-warn" /> : null}
                       <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">
                         {count} votes · {o.chatVotes} chat · {pct}%
                       </span>
@@ -145,7 +145,7 @@ export function EngagePanel() {
                 );
               })}
             </ul>
-            <div className="mt-3 flex items-center gap-2 border-t border-white/[0.05] pt-3">
+            <div className="mt-3 flex items-center gap-2 border-t border-hairline pt-3">
               {poll.status === "open" ? (
                 <button type="button" onClick={() => void pollAction("lock")} disabled={busy} className={GHOST_BTN}>
                   <Lock className="size-3.5" />
@@ -173,7 +173,7 @@ export function EngagePanel() {
             />
             {pollOptions.map((o, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="flex size-8 flex-none items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] font-mono text-[0.7rem] text-muted-foreground">
+                <span className="flex size-8 flex-none items-center justify-center rounded-lg border border-hairline bg-overlay-weak font-mono text-[0.7rem] text-muted-foreground">
                   {i + 1}
                 </span>
                 <input
@@ -193,7 +193,7 @@ export function EngagePanel() {
                   Option
                 </button>
               ) : null}
-              <div className="flex items-center gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
+              <div className="flex items-center gap-0.5 rounded-lg border border-hairline bg-overlay-weak p-0.5">
                 {POLL_DURATIONS.map((d) => (
                   <button
                     key={d.value}
@@ -202,7 +202,7 @@ export function EngagePanel() {
                     aria-pressed={pollDuration === d.value}
                     className={cn(
                       "rounded-md px-2 py-1 text-[0.7rem] font-medium transition-colors",
-                      pollDuration === d.value ? "bg-white/[0.1] text-foreground" : "text-muted-foreground hover:text-foreground",
+                      pollDuration === d.value ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {d.label}
@@ -220,7 +220,7 @@ export function EngagePanel() {
               </button>
             </div>
             {predictions.length > 0 ? (
-              <div className="mt-1 border-t border-white/[0.05] pt-2.5">
+              <div className="mt-1 border-t border-hairline pt-2.5">
                 <p className="mb-1.5 flex items-center gap-1.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   <TrendingUp className="size-3" />
                   From Polymarket
@@ -234,7 +234,7 @@ export function EngagePanel() {
                         setPollQuestion(p.question);
                         setPollOptions(["Yes", "No"]);
                       }}
-                      className="truncate rounded-md px-2 py-1.5 text-left text-[0.74rem] text-foreground/75 transition-colors hover:bg-white/[0.06] hover:text-foreground"
+                      className="truncate rounded-md px-2 py-1.5 text-left text-[0.74rem] text-foreground/75 transition-colors hover:bg-overlay-weak hover:text-foreground"
                     >
                       {p.question}
                     </button>

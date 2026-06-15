@@ -51,7 +51,7 @@ export function CashtagTrendsPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-hairline px-3">
         <CircleDollarSign className="size-4 text-muted-foreground" />
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-foreground">Tickers in chat</span>
         <span className="ml-auto text-[0.62rem] text-muted-foreground">last 10 min</span>
@@ -75,23 +75,23 @@ export function CashtagTrendsPane() {
                 <button
                   type="button"
                   onClick={() => openStock(symbol)}
-                  className="relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-white/[0.05]"
+                  className="relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-overlay-weak"
                 >
                   {/* Relative-share bar behind the row */}
                   <span
-                    className="absolute inset-y-1 left-0 rounded-r bg-white/[0.04]"
+                    className="absolute inset-y-1 left-0 rounded-r bg-overlay-weak"
                     style={{ width: `${(count / max) * 100}%` }}
                     aria-hidden
                   />
                   <span className="relative font-mono text-[0.84rem] font-semibold text-foreground">${symbol}</span>
-                  <span className="relative rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.62rem] tabular-nums text-muted-foreground">
+                  <span className="relative rounded bg-overlay-weak px-1.5 py-0.5 font-mono text-[0.62rem] tabular-nums text-muted-foreground">
                     {count}×
                   </span>
                   <span className="relative ml-auto flex flex-col items-end leading-tight">
                     {quote ? (
                       <>
                         <span className="font-mono text-[0.74rem] tabular-nums text-foreground/90">{formatPrice(quote.price)}</span>
-                        <span className={cn("font-mono text-[0.66rem] font-medium tabular-nums", up ? "text-[#46c45a]" : "text-[#ef6a61]")}>
+                        <span className={cn("font-mono text-[0.66rem] font-medium tabular-nums", up ? "text-feed-ok" : "text-feed-danger")}>
                           {formatChange(quote.changePct)}
                         </span>
                       </>

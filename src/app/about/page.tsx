@@ -84,19 +84,19 @@ export default function AboutPage() {
             Kick and X with every chat and every chart in one dashboard.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-            <span className="inline-flex items-center gap-2 rounded-lg border border-[#46c45a]/25 bg-[#46c45a]/[0.08] px-3 py-1.5 text-[0.78rem] font-semibold text-[#46c45a]">
-              <span className="size-1.5 rounded-full bg-[#46c45a]" />
+            <span className="inline-flex items-center gap-2 rounded-lg border border-feed-ok/25 bg-feed-ok/[0.08] px-3 py-1.5 text-[0.78rem] font-semibold text-feed-ok">
+              <span className="size-1.5 rounded-full bg-feed-ok" />
               {SCHEDULE}
             </span>
             <a
               href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"
               target="_blank"
               rel="noreferrer noopener"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+              className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-overlay-weak px-3 py-1.5 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
             >
               Presented with
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/polymarket.svg" alt="Polymarket" className="h-4 w-auto invert" />
+              <img src="/polymarket.svg" alt="Polymarket" className="h-4 w-auto dark:invert" />
             </a>
           </div>
         </header>
@@ -105,7 +105,7 @@ export default function AboutPage() {
         <section className="mt-12">
           <div className="grid gap-3 sm:grid-cols-3">
             {THEMES.map((t) => (
-              <div key={t.title} className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-4 text-center">
+              <div key={t.title} className="rounded-xl border border-hairline bg-overlay-weak px-4 py-4 text-center">
                 <h3 className="font-brand-wordmark text-base uppercase tracking-[0.05em] text-foreground">{t.title}</h3>
                 <p className="mt-1.5 text-[0.78rem] leading-relaxed text-muted-foreground">{t.text}</p>
               </div>
@@ -120,14 +120,14 @@ export default function AboutPage() {
             {HOSTS.map((host) => (
               <article
                 key={host.name}
-                className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]"
+                className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]"
               >
-                <div className="flex items-center gap-4 border-b border-white/[0.06] bg-white/[0.02] px-5 py-4">
+                <div className="flex items-center gap-4 border-b border-hairline bg-overlay-weak px-5 py-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={host.avatar}
                     alt={host.name}
-                    className="size-16 rounded-full border border-white/10 object-cover"
+                    className="size-16 rounded-full border border-hairline object-cover"
                   />
                   <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-foreground">{host.name}</h3>
@@ -144,7 +144,7 @@ export default function AboutPage() {
                       href={l.href}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={l.icon} alt="" className="size-3 opacity-70" />
@@ -166,7 +166,7 @@ export default function AboutPage() {
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {DASHBOARD_FEATURES.map((f) => (
-              <div key={f.title} className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5">
+              <div key={f.title} className="rounded-xl border border-hairline bg-overlay-weak px-4 py-3.5">
                 <h3 className="text-[0.85rem] font-semibold text-foreground">{f.title}</h3>
                 <p className="mt-1 text-[0.78rem] leading-relaxed text-muted-foreground">{f.text}</p>
               </div>

@@ -50,19 +50,19 @@ function PollOverlay() {
   return (
     <div
       className="overlay-root flex h-dvh items-end justify-center overflow-hidden p-6"
-      style={{ background: bg === "transparent" ? "transparent" : "#141416", fontSize: `${scale}rem` }}
+      style={{ background: bg === "transparent" ? "transparent" : "var(--background)", fontSize: `${scale}rem` }}
     >
       {poll ? (
-        <div className="w-full max-w-[34em] rounded-2xl border border-white/12 bg-[#161619]/95 p-[1.1em] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)]">
+        <div className="w-full max-w-[34em] rounded-2xl border border-hairline-strong bg-sidebar/95 p-[1.1em] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)]">
           <div className="flex items-center gap-[0.6em]">
-            <p className="min-w-0 flex-1 text-[1.15em] font-bold leading-snug text-[#ededed]">{poll.question}</p>
+            <p className="min-w-0 flex-1 text-[1.15em] font-bold leading-snug text-foreground">{poll.question}</p>
             {locked ? (
-              <span className="flex flex-none items-center gap-[0.35em] rounded-md border border-[#d8b25a]/35 bg-[#d8b25a]/[0.12] px-[0.6em] py-[0.25em] text-[0.62em] font-bold uppercase tracking-widest text-[#d8b25a]">
+              <span className="flex flex-none items-center gap-[0.35em] rounded-md border border-feed-warn/35 bg-feed-warn/[0.12] px-[0.6em] py-[0.25em] text-[0.62em] font-bold uppercase tracking-widest text-feed-warn">
                 <Lock style={{ width: "1.1em", height: "1.1em" }} />
                 Final
               </span>
             ) : poll.endsAt ? (
-              <span className="flex-none rounded-md border border-white/12 bg-black/40 px-[0.55em] py-[0.2em] font-mono text-[0.95em] font-bold tabular-nums text-[#ededed]">
+              <span className="flex-none rounded-md border border-hairline-strong bg-black/40 px-[0.55em] py-[0.2em] font-mono text-[0.95em] font-bold tabular-nums text-foreground">
                 {remaining(poll.endsAt, now)}
               </span>
             ) : null}
@@ -77,31 +77,31 @@ function PollOverlay() {
                 <div
                   key={o.id}
                   className={`relative overflow-hidden rounded-xl border px-[0.8em] py-[0.55em] ${
-                    isWinner ? "border-[#d8b25a]/50 bg-[#d8b25a]/[0.08]" : "border-white/[0.09] bg-white/[0.03]"
+                    isWinner ? "border-feed-warn/50 bg-feed-warn/[0.08]" : "border-hairline bg-overlay-weak"
                   }`}
                 >
                   <span
-                    className={`absolute inset-y-0 left-0 transition-[width] duration-700 ${isWinner ? "bg-[#d8b25a]/20" : "bg-[#aab3c0]/12"}`}
+                    className={`absolute inset-y-0 left-0 transition-[width] duration-700 ${isWinner ? "bg-feed-warn/20" : "bg-feed-link/12"}`}
                     style={{ width: `${pct}%` }}
                     aria-hidden
                   />
                   <span className="relative flex items-center gap-[0.6em]">
-                    <span className="font-mono text-[0.78em] text-[#85858d]">{o.id}</span>
-                    <span className="min-w-0 flex-1 truncate text-[0.95em] font-semibold text-[#ededed]">{o.label}</span>
-                    {isWinner ? <Trophy className="flex-none text-[#d8b25a]" style={{ width: "1.1em", height: "1.1em" }} /> : null}
-                    <span className="flex-none font-mono text-[0.9em] font-bold tabular-nums text-[#ededed]">{pct}%</span>
+                    <span className="font-mono text-[0.78em] text-muted-foreground">{o.id}</span>
+                    <span className="min-w-0 flex-1 truncate text-[0.95em] font-semibold text-foreground">{o.label}</span>
+                    {isWinner ? <Trophy className="flex-none text-feed-warn" style={{ width: "1.1em", height: "1.1em" }} /> : null}
+                    <span className="flex-none font-mono text-[0.9em] font-bold tabular-nums text-foreground">{pct}%</span>
                   </span>
                 </div>
               );
             })}
           </div>
 
-          <p className="mt-[0.7em] text-center text-[0.66em] font-medium uppercase tracking-[0.18em] text-[#85858d]">
+          <p className="mt-[0.7em] text-center text-[0.66em] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             {locked ? `${total.toLocaleString()} votes · locked` : `Type 1–${poll.options.length} in chat or vote on marketbubble.virta.lol`}
           </p>
         </div>
       ) : bg !== "transparent" ? (
-        <p className="m-auto text-sm text-[#85858d]">No active poll — start one from /admin</p>
+        <p className="m-auto text-sm text-muted-foreground">No active poll — start one from /admin</p>
       ) : null}
     </div>
   );

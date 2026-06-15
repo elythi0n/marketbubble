@@ -39,7 +39,7 @@ function Identity({ channel }: { channel: Streamer }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.4, ease: EASE, delay: 0.05 }}
-      className="flex h-14 max-w-full items-center gap-3 rounded-xl border border-white/10 bg-black/35 px-3.5 backdrop-blur-md"
+      className="flex h-14 max-w-full items-center gap-3 rounded-xl border border-hairline bg-background/85 px-3.5 backdrop-blur-md"
     >
       <StreamerAvatar streamer={channel} size={44} showLive={false} dim={false} />
       <div className="min-w-0 flex-1 leading-tight">
@@ -51,8 +51,8 @@ function Identity({ channel }: { channel: Streamer }) {
             ))}
           </span>
           {channel.live ? (
-            <span className="flex shrink-0 items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wide text-[#46c45a]">
-              <span className="size-1.5 rounded-full bg-[#46c45a]" style={{ boxShadow: "0 0 7px rgba(70,196,90,0.7)" }} />
+            <span className="flex shrink-0 items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wide text-feed-ok">
+              <span className="size-1.5 rounded-full bg-feed-ok" style={{ boxShadow: "0 0 7px rgba(70,196,90,0.7)" }} />
               Live
             </span>
           ) : (
@@ -70,7 +70,7 @@ function StageStat({ label, value, emphasis }: { label: string; value: ReactNode
     <div className="flex flex-col items-center justify-center px-3.5">
       <span className={`flex items-center gap-1.5 font-semibold leading-none tabular-nums text-foreground ${emphasis ? "text-[1.05rem]" : "text-[0.92rem]"}`}>
         {emphasis ? (
-          <span className="size-1.5 rounded-full bg-[#46c45a]" style={{ boxShadow: "0 0 6px rgba(70,196,90,0.65)" }} />
+          <span className="size-1.5 rounded-full bg-feed-ok" style={{ boxShadow: "0 0 6px rgba(70,196,90,0.65)" }} />
         ) : null}
         {value}
       </span>
@@ -93,7 +93,7 @@ function StageStats() {
   const showChatters = viewers > 0 && uniqueChatters > 0;
 
   return (
-    <div className="flex h-14 items-stretch divide-x divide-white/10 rounded-xl border border-white/10 bg-black/35 backdrop-blur-md">
+    <div className="flex h-14 items-stretch divide-x divide-hairline rounded-xl border border-hairline bg-background/85 backdrop-blur-md">
       {showViewers ? <StageStat label="Viewers" emphasis value={<AnimatedNumber value={viewers} />} /> : null}
       {showChatters ? <StageStat label="Chatters" value={<AnimatedNumber value={uniqueChatters} />} /> : null}
       {topMover ? (
@@ -102,7 +102,7 @@ function StageStats() {
           value={
             <AnimatedSwap swapKey={`${topMover.symbol}:${topMover.changePct}`}>
               <span>{topMover.symbol}</span>
-              <span className={up ? "text-[#46c45a]" : "text-[#ef6a61]"}>{formatChange(topMover.changePct)}</span>
+              <span className={up ? "text-feed-ok" : "text-feed-danger"}>{formatChange(topMover.changePct)}</span>
             </AnimatedSwap>
           }
         />
@@ -129,8 +129,8 @@ function NextStreamStage({ channel }: { channel: Streamer }) {
       </h2>
       {channel.schedule && isStarting(channel.schedule, now) ? (
         <p className="flex items-center gap-2 text-sm">
-          <span className="size-1.5 animate-pulse rounded-full bg-[#46c45a]" />
-          <span className="font-semibold text-[#46c45a]">Show is starting</span>
+          <span className="size-1.5 animate-pulse rounded-full bg-feed-ok" />
+          <span className="font-semibold text-feed-ok">Show is starting</span>
           <span className="text-muted-foreground">· the stream will appear here shortly</span>
         </p>
       ) : target ? (
@@ -192,7 +192,7 @@ function StageLastGift() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: EASE }}
-              className="flex flex-none items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-[#141416]/85 px-3.5 py-2.5 backdrop-blur-md"
+              className="flex flex-none items-center gap-3 overflow-hidden rounded-xl border border-hairline bg-background/85 px-3.5 py-2.5 backdrop-blur-md"
               style={{ boxShadow: `inset 2px 0 0 ${view.accent}` }}
             >
               <span
@@ -320,7 +320,7 @@ export function StageOverlay() {
                 className="flex items-center"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/polymarket.svg" alt="Polymarket" className="h-[27px] w-auto opacity-90 invert transition-opacity hover:opacity-100" />
+                <img src="/polymarket.svg" alt="Polymarket" className="h-[27px] w-auto opacity-90 transition-opacity hover:opacity-100 dark:invert" />
               </a>
             </div>
 
@@ -354,7 +354,7 @@ export function StageOverlay() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.985 }}
               transition={{ duration: 0.45, ease: EASE }}
-              className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/40"
+              className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-hairline bg-background/85"
             >
               {showVideo ? (
                 <StreamEmbed channel={channel} />
@@ -378,7 +378,7 @@ export function StageOverlay() {
               <StageLastGift />
               {/* Live poll above the chat, options stacked top-to-bottom. */}
               <PollCard variant="stage" />
-              <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 bg-[#141416]/85 backdrop-blur-md">
+              <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-hairline bg-background/85 backdrop-blur-md">
                 <Feed
                   messages={messages}
                   showSource
@@ -397,7 +397,7 @@ export function StageOverlay() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.45, ease: EASE, delay: 0.04 }}
-            className="flex-none overflow-hidden rounded-xl border border-white/10"
+            className="flex-none overflow-hidden rounded-xl border border-hairline"
           >
             <PredictionsMarquee />
           </motion.div>
@@ -408,7 +408,7 @@ export function StageOverlay() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.45, ease: EASE }}
-            className="flex-none overflow-hidden rounded-xl border border-white/10"
+            className="flex-none overflow-hidden rounded-xl border border-hairline"
           >
             <Marquee large />
           </motion.div>

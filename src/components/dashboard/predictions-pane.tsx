@@ -43,7 +43,7 @@ export function PredictionsPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Predictions
         </span>
@@ -54,7 +54,7 @@ export function PredictionsPane() {
           disabled={refreshing}
           title="Refresh"
           aria-label="Refresh predictions"
-          className="flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-60"
+          className="flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground disabled:opacity-60"
         >
           <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
         </button>
@@ -68,8 +68,8 @@ export function PredictionsPane() {
             <li key={p.id} className="mb-2 last:mb-0">
               <Card
                 {...(p.url ? { href: p.url, target: "_blank", rel: "noopener noreferrer" } : {})}
-                className={`group block rounded-lg border border-white/[0.07] bg-white/[0.02] p-3 transition-colors ${
-                  p.url ? "cursor-pointer hover:border-white/[0.14] hover:bg-white/[0.04]" : ""
+                className={`group block rounded-lg border border-hairline bg-overlay-weak p-3 transition-colors ${
+                  p.url ? "cursor-pointer hover:border-hairline-strong hover:bg-overlay-weak" : ""
                 }`}
               >
                 <div className="flex items-start gap-2">
@@ -81,14 +81,14 @@ export function PredictionsPane() {
                     />
                   ) : null}
                 </div>
-                <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                  <span className="bg-[#46c45a]" style={{ width: `${p.yesPercent}%` }} />
-                  <span className="bg-[#ef6a61]" style={{ width: `${p.noPercent}%` }} />
+                <div className="mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-overlay-weak">
+                  <span className="bg-feed-ok" style={{ width: `${p.yesPercent}%` }} />
+                  <span className="bg-feed-danger" style={{ width: `${p.noPercent}%` }} />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[0.7rem]">
-                  <span className="font-mono font-semibold tabular-nums text-[#46c45a]">Yes {p.yesPercent}%</span>
+                  <span className="font-mono font-semibold tabular-nums text-feed-ok">Yes {p.yesPercent}%</span>
                   <span className="text-muted-foreground">{p.volume} Vol</span>
-                  <span className="font-mono font-semibold tabular-nums text-[#ef6a61]">No {p.noPercent}%</span>
+                  <span className="font-mono font-semibold tabular-nums text-feed-danger">No {p.noPercent}%</span>
                 </div>
               </Card>
             </li>

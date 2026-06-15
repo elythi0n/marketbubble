@@ -36,7 +36,7 @@ export function HealthPanel() {
             </li>
           ))}
         </ul>
-        <p className="mt-3 border-t border-white/[0.05] pt-2.5 text-[0.68rem] text-muted-foreground/80">
+        <p className="mt-3 border-t border-hairline pt-2.5 text-[0.68rem] text-muted-foreground/80">
           {live.length > 0
             ? `${formatCount(live.reduce((n, s) => n + s.viewers, 0))} combined viewers`
             : "Nobody is live right now"}
@@ -97,7 +97,7 @@ export function HealthPanel() {
           ) : null}
         </ul>
         {status ? (
-          <p className="mt-3 border-t border-white/[0.05] pt-2.5 text-[0.68rem] text-muted-foreground/80">
+          <p className="mt-3 border-t border-hairline pt-2.5 text-[0.68rem] text-muted-foreground/80">
             Demo {status.flags.demoDisabled ? "disabled" : "enabled"} · auth via {status.flags.keySource} ·{" "}
             {status.flags.siteUrl}
           </p>

@@ -44,7 +44,7 @@ const SOCIALS = [
 function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover?: boolean }) {
   return (
     <>
-      <div className={cn("relative flex aspect-video items-center justify-center overflow-hidden bg-[#141416]", !streamer.live && "opacity-70")}>
+      <div className={cn("relative flex aspect-video items-center justify-center overflow-hidden bg-background", !streamer.live && "opacity-70")}>
         {streamer.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={streamer.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -52,13 +52,13 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
           <MarketBubbleLogo className="size-12 text-foreground opacity-[0.08]" />
         )}
         {streamer.live ? (
-          <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-[#46c45a]/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-[#46c45a]">
-            <span className="size-1 rounded-full bg-[#46c45a]" />
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-feed-ok/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-feed-ok">
+            <span className="size-1 rounded-full bg-feed-ok" />
             Live
           </span>
         ) : streamer.schedule && isStarting(streamer.schedule, new Date()) ? (
-          <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-[#46c45a]/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-[#46c45a]">
-            <span className="size-1 animate-pulse rounded-full bg-[#46c45a]" />
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-feed-ok/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-feed-ok">
+            <span className="size-1 animate-pulse rounded-full bg-feed-ok" />
             Starting
           </span>
         ) : (
@@ -68,7 +68,7 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
         )}
         {streamer.live && hasVideo(streamer) ? (
           <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[0.8rem] font-semibold tabular-nums text-foreground">
-            <span className="size-1.5 rounded-full bg-[#ef6a61]" />
+            <span className="size-1.5 rounded-full bg-feed-danger" />
             {formatViewers(streamer.viewers)}
           </span>
         ) : null}
@@ -82,7 +82,7 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
         <StreamerAvatar streamer={streamer} size={22} />
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
           <span className="flex items-center gap-1.5">
-            {streamer.pinned ? <Pin className="size-3 shrink-0 fill-current text-[#d8b25a]" aria-label="Pinned" /> : null}
+            {streamer.pinned ? <Pin className="size-3 shrink-0 fill-current text-feed-warn" aria-label="Pinned" /> : null}
             <span className={cn("truncate text-[0.82rem] font-medium", streamer.live ? "text-foreground" : "text-muted-foreground")}>
               {streamer.name}
             </span>
@@ -134,12 +134,12 @@ function ChannelCard({
         // Pinned keeps its golden frame even while selected — being the active channel
         // shouldn't hide that the operator pinned it.
         streamer.pinned && active
-          ? "border-[#d8b25a]/60 bg-[#d8b25a]/[0.07] shadow-[0_0_18px_-8px_rgba(216,178,90,0.55)]"
+          ? "border-feed-warn/60 bg-feed-warn/[0.07] shadow-[0_0_18px_-8px_rgba(216,178,90,0.55)]"
           : streamer.pinned
-            ? "border-[#d8b25a]/40 bg-[#d8b25a]/[0.04] shadow-[0_0_16px_-8px_rgba(216,178,90,0.45)] hover:bg-[#d8b25a]/[0.08]"
+            ? "border-feed-warn/40 bg-feed-warn/[0.04] shadow-[0_0_16px_-8px_rgba(216,178,90,0.45)] hover:bg-feed-warn/[0.08]"
             : active
-              ? "border-white/20 bg-white/[0.05]"
-              : "border-transparent hover:bg-white/[0.04]",
+              ? "border-hairline-strong bg-overlay-weak"
+              : "border-transparent hover:bg-overlay-weak",
       )}
     >
       <ChannelCardBody streamer={streamer} />
@@ -175,20 +175,20 @@ function CollapsedStreamerButton({
         aria-current={active ? "true" : undefined}
         className={cn(
           "group relative flex w-full items-center justify-center rounded-lg p-0.5 transition-colors",
-          active ? "bg-white/[0.08]" : "hover:bg-white/[0.05]",
-          streamer.pinned && "ring-1 ring-inset ring-[#d8b25a]/45",
+          active ? "bg-overlay-medium" : "hover:bg-overlay-weak",
+          streamer.pinned && "ring-1 ring-inset ring-feed-warn/45",
         )}
       >
         {active ? (
-          <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#e4e4e4]" aria-hidden />
+          <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-foreground" aria-hidden />
         ) : null}
         <StreamerAvatar streamer={streamer} size={38} rounded="lg" />
         {streamer.pinned ? (
           <span
-            className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full border border-[#d8b25a]/40 bg-[#26221a]"
+            className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full border border-feed-warn/40 bg-secondary"
             aria-label="Pinned"
           >
-            <Pin className="size-2.5 fill-current text-[#d8b25a]" />
+            <Pin className="size-2.5 fill-current text-feed-warn" />
           </span>
         ) : null}
       </button>
@@ -196,7 +196,7 @@ function CollapsedStreamerButton({
       {rect
         ? createPortal(
             <div
-              className="pointer-events-none fixed z-[120] w-[248px] overflow-hidden rounded-lg border border-white/12 bg-[#1b1b1f] shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+              className="pointer-events-none fixed z-[120] w-[248px] overflow-hidden rounded-lg border border-hairline-strong bg-popover shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
               style={{
                 left: rect.right + 10,
                 top: Math.min(rect.top - 6, window.innerHeight - 210),
@@ -273,11 +273,11 @@ export function Sidebar() {
         if (!expanded) setExpanded(true);
       }}
       className={cn(
-        "relative z-20 flex flex-none flex-col border-r border-white/[0.07] bg-[#161619]",
+        "relative z-20 flex flex-none flex-col border-r border-hairline bg-sidebar",
         expanded ? "w-64" : "w-14 cursor-pointer",
       )}
     >
-      <div className={cn("flex h-11 flex-none items-center border-b border-white/[0.06]", expanded ? "px-3" : "justify-center")}>
+      <div className={cn("flex h-11 flex-none items-center border-b border-hairline", expanded ? "px-3" : "justify-center")}>
         {expanded ? (
           <span className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {polled ? "Channels" : "Checking who's live…"}
@@ -333,7 +333,7 @@ export function Sidebar() {
 
       {/* Social links: a wrapping row that flows to a column when collapsed, animating with the
           sidebar width. Icons are muted/grayscale together and light up to brand color on hover. */}
-      <div className="flex-none border-t border-white/[0.06] p-2.5" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-none border-t border-hairline p-2.5" onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-wrap content-center justify-center gap-1">
           {SOCIALS.map((s) => (
             <motion.a
@@ -345,7 +345,7 @@ export function Sidebar() {
               rel="noreferrer noopener"
               title={s.name}
               aria-label={s.name}
-              className="group flex items-center justify-center rounded-md p-2 transition-colors hover:bg-white/[0.06]"
+              className="group flex items-center justify-center rounded-md p-2 transition-colors hover:bg-overlay-weak"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

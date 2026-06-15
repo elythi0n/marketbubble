@@ -39,6 +39,26 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /*
+   * Theme-aware semantic tokens. These replace what used to be hardcoded white-alpha values so
+   * surfaces, hairlines, and accents flip between the dark and light themes. Use the matching
+   * utilities (border-hairline, bg-overlay-weak, text-feed-ok, …) instead of literal white/black
+   * alphas in components.
+   */
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-overlay-weak: var(--overlay-weak);
+  --color-overlay-medium: var(--overlay-medium);
+  --color-overlay-strong: var(--overlay-strong);
+  --color-accent-strong: var(--accent-strong);
+  --color-feed-ok: var(--feed-ok);
+  --color-feed-warn: var(--feed-warn);
+  --color-feed-danger: var(--feed-danger);
+  --color-feed-link: var(--feed-link);
+  --color-feed-text-2: var(--feed-text-2);
+  --color-plat-twitch: var(--plat-twitch);
+  --color-plat-kick: var(--plat-kick);
+  --color-plat-x: var(--plat-x);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,12 +69,83 @@
 }
 
 /*
- * Graphite palette. A disciplined dark gray (cues from the debut: #161616 floor, #ededed text,
- * #e4e4e4 light-gray accent). Platform colors appear only as small glyph/rail accents.
+ * Light theme — warm paper. Background #f1ede2, ink #1a1a1a, with green #2f6b4f (gains), red
+ * #a43228 (losses), and amber #b7893c (warnings/brand accent). This is the default-light palette;
+ * the dark graphite palette lives in `.dark` below. The no-flash script and ThemeProvider toggle
+ * the `.dark` class on <html>; the brand default is dark, so unset visitors get `.dark`.
  */
 :root {
+  --graphite-floor: #e8e2d2;
+  /* Platform identity, used only as small glyph accents. Twitch/Kick are darkened for contrast on
+     the pale paper; the X glyph is near-white on dark, so it flips to ink here. */
+  --plat-twitch: #8a4fd6;
+  --plat-kick: #3fae2a;
+  --plat-x: #1a1a1a;
+  --marketing-scrollbar-thumb: rgb(26 26 26 / 0.18);
+  --marketing-scrollbar-thumb-hover: rgb(26 26 26 / 0.3);
+  --marketing-scrollbar-track: transparent;
+  --background: #f1ede2;
+  --foreground: #1a1a1a;
+  --card: #f8f5ec;
+  --card-foreground: #1a1a1a;
+  --popover: #fbf9f2;
+  --popover-foreground: #1a1a1a;
+  --primary: #1a1a1a;
+  --primary-foreground: #f5f1e7;
+  --secondary: #e6e0d0;
+  --secondary-foreground: #1a1a1a;
+  --muted: #e9e3d4;
+  --muted-foreground: #6f6a5d;
+  --accent: #e2dcc9;
+  --accent-foreground: #1a1a1a;
+  /* Solid ink accent for filled affordances (send button, active pill) on the light paper. */
+  --accent-strong: #1a1a1a;
+  /* Muted steel for interactive text (links, mentions). */
+  --feed-link: #3a5f8a;
+  --destructive: #a43228;
+  --border: rgb(26 26 26 / 0.12);
+  --input: rgb(26 26 26 / 0.16);
+  --ring: rgb(26 26 26 / 0.35);
+  --chart-1: #2a2a2e;
+  --chart-2: #55555c;
+  --chart-3: #80808a;
+  --chart-4: #a8a89e;
+  --chart-5: #c9c4b4;
+  --radius: 0.5rem;
+  --sidebar: #ece6d6;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #1a1a1a;
+  --sidebar-primary-foreground: #f5f1e7;
+  --sidebar-accent: #e2dcc9;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: rgb(26 26 26 / 0.1);
+  --sidebar-ring: rgb(26 26 26 / 0.35);
+  /* Structural tokens (replace hardcoded white-alphas). */
+  --hairline: rgb(26 26 26 / 0.12);
+  --hairline-strong: rgb(26 26 26 / 0.18);
+  --overlay-weak: rgb(26 26 26 / 0.04);
+  --overlay-medium: rgb(26 26 26 / 0.08);
+  --overlay-strong: rgb(26 26 26 / 0.14);
+  --grip-active: rgb(26 26 26 / 0.5);
+  /* Feed semantics tuned for the warm paper. */
+  --feed-ok: #2f6b4f;
+  --feed-warn: #b7893c;
+  --feed-danger: #a43228;
+  --feed-text-2: #6f6a5d;
+  /* Ambient marketing layers. Light keeps a clean paper wash (grain dropped — it reads as dirt on
+     a pale ground); dark layers in tiled noise (see the `.dark` override below). */
+  --ambient-gradient: linear-gradient(160deg, #f4f0e6, #efeadd 55%, #e9e3d3);
+  --glow-1: radial-gradient(circle, rgb(183 137 60 / 0.22), transparent 70%);
+  --glow-2: radial-gradient(circle, rgb(47 107 79 / 0.16), transparent 70%);
+  --glow-3: radial-gradient(circle, rgb(183 137 60 / 0.14), transparent 70%);
+}
+
+/*
+ * Graphite palette (dark theme). A disciplined dark gray (cues from the debut: #161616 floor,
+ * #ededed text, #e4e4e4 light-gray accent). Platform colors appear only as small glyph/rail accents.
+ */
+.dark {
   --graphite-floor: #121214;
-  /* Platform identity, used only as small glyph accents (never backgrounds/text tints). */
   --plat-twitch: #a970ff;
   --plat-kick: #53fc18;
   --plat-x: #e7e9ea;
@@ -88,7 +179,6 @@
   --chart-3: #7c7c84;
   --chart-4: #56565d;
   --chart-5: #3a3a40;
-  --radius: 0.5rem;
   --sidebar: #161619;
   --sidebar-foreground: #ededed;
   --sidebar-primary: #e4e4e4;
@@ -97,49 +187,23 @@
   --sidebar-accent-foreground: #ededed;
   --sidebar-border: rgb(255 255 255 / 0.07);
   --sidebar-ring: rgb(228 228 228 / 0.5);
-}
-
-.dark {
-  --graphite-floor: #121214;
-  --plat-twitch: #a970ff;
-  --plat-kick: #53fc18;
-  --plat-x: #e7e9ea;
-  --marketing-scrollbar-thumb: rgb(255 255 255 / 0.16);
-  --marketing-scrollbar-thumb-hover: rgb(255 255 255 / 0.26);
-  --marketing-scrollbar-track: transparent;
-  --background: #141416;
-  --foreground: #ededed;
-  --card: #1b1b1f;
-  --card-foreground: #ededed;
-  --popover: #1d1d21;
-  --popover-foreground: #ededed;
-  --primary: #ededed;
-  --primary-foreground: #161618;
-  --secondary: #222227;
-  --secondary-foreground: #ededed;
-  --muted: #1f1f23;
-  --muted-foreground: #9a9aa2;
-  --accent: #26262c;
-  --accent-foreground: #ededed;
-  --accent-strong: #e4e4e4;
-  --feed-link: #aab3c0;
-  --destructive: oklch(0.65 0.17 25);
-  --border: rgb(255 255 255 / 0.09);
-  --input: rgb(255 255 255 / 0.11);
-  --ring: rgb(228 228 228 / 0.5);
-  --chart-1: #d7d7db;
-  --chart-2: #a7a7ae;
-  --chart-3: #7c7c84;
-  --chart-4: #56565d;
-  --chart-5: #3a3a40;
-  --sidebar: #161619;
-  --sidebar-foreground: #ededed;
-  --sidebar-primary: #e4e4e4;
-  --sidebar-primary-foreground: #161618;
-  --sidebar-accent: #26262c;
-  --sidebar-accent-foreground: #ededed;
-  --sidebar-border: rgb(255 255 255 / 0.07);
-  --sidebar-ring: rgb(228 228 228 / 0.5);
+  /* Structural tokens. */
+  --hairline: rgb(255 255 255 / 0.09);
+  --hairline-strong: rgb(255 255 255 / 0.11);
+  --overlay-weak: rgb(255 255 255 / 0.05);
+  --overlay-medium: rgb(255 255 255 / 0.09);
+  --overlay-strong: rgb(255 255 255 / 0.14);
+  --grip-active: rgb(228 228 228 / 0.65);
+  /* Feed semantics. */
+  --feed-ok: #46c45a;
+  --feed-warn: #d8a13a;
+  --feed-danger: #ef6a61;
+  --feed-text-2: #8b8b93;
+  /* Ambient marketing layers. */
+  --ambient-gradient: linear-gradient(160deg, #161618, #131315 55%, #101012);
+  --glow-1: radial-gradient(circle, rgb(120 142 188 / 0.32), transparent 70%);
+  --glow-2: radial-gradient(circle, rgb(156 150 184 / 0.26), transparent 70%);
+  --glow-3: radial-gradient(circle, rgb(110 134 178 / 0.22), transparent 70%);
 }
 
 @layer base {
@@ -209,10 +273,15 @@
 }
 
 @layer utilities {
-  /** Graphite floor + faint SVG grain (overlay, tiled noise). No separate background-color. */
+  /** Floor + ambient wash. Light = clean paper gradient; dark adds tiled SVG grain (see override). */
   .marketing-ambient-base {
+    background-image: var(--ambient-gradient);
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+  .dark .marketing-ambient-base {
     background-image:
-      linear-gradient(160deg, #161618, #131315 55%, #101012),
+      var(--ambient-gradient),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' width='400' height='400'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.2'/%3E%3C/svg%3E");
     background-blend-mode: overlay;
     background-size: cover, 200px 200px;
@@ -226,7 +295,7 @@
   }
 
   /*
-   * Solid graphite panel surface for stream/chat panes and widgets. Deliberately no backdrop-blur:
+   * Solid panel surface for stream/chat panes and widgets. Deliberately no backdrop-blur:
    * stacked blur layers are the main cause of janky tab dragging, and read as generic glassmorphism.
    */
   .mb-surface {
@@ -237,7 +306,7 @@
   /* Compact, low-contrast scrollbar for dense scroll regions (feed, lists). */
   .mb-scroll {
     scrollbar-width: thin;
-    scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+    scrollbar-color: var(--marketing-scrollbar-thumb) transparent;
   }
   /* OBS overlay: no scrollbars anywhere — it's a passive browser source. */
   .overlay-root * {
@@ -257,10 +326,10 @@
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: padding-box;
-    background-color: rgb(255 255 255 / 0.16);
+    background-color: var(--marketing-scrollbar-thumb);
   }
   .mb-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(255 255 255 / 0.28);
+    background-color: var(--marketing-scrollbar-thumb-hover);
   }
 
   /* Right-to-left ticker. The track holds two identical copies; -50% loops seamlessly. */
@@ -307,7 +376,7 @@
     top: -10%;
     width: 30rem;
     height: 30rem;
-    background: radial-gradient(circle, rgb(120 142 188 / 0.32), transparent 70%);
+    background: var(--glow-1);
     animation: mb-drift-1 28s ease-in-out infinite;
   }
   .mb-glow-2 {
@@ -315,7 +384,7 @@
     bottom: -12%;
     width: 27rem;
     height: 27rem;
-    background: radial-gradient(circle, rgb(156 150 184 / 0.26), transparent 70%);
+    background: var(--glow-2);
     animation: mb-drift-2 34s ease-in-out infinite;
   }
   .mb-glow-3 {
@@ -323,7 +392,7 @@
     top: 38%;
     width: 24rem;
     height: 24rem;
-    background: radial-gradient(circle, rgb(110 134 178 / 0.22), transparent 70%);
+    background: var(--glow-3);
     animation: mb-drift-3 40s ease-in-out infinite;
   }
   @keyframes mb-drift-1 {
@@ -412,39 +481,31 @@
   cursor: none !important;
 }
 
-/* Feed semantic accents (badges + event bands). */
-:root,
-.dark {
-  --feed-ok: #46c45a;
-  --feed-warn: #d8a13a;
-  --feed-danger: #ef6a61;
-  --feed-text-2: #8b8b93;
-}
-
 /*
  * Dockview theme: based on the neutral `dockview-theme-dark` (gray, no blue). The compound selector
- * `.mb-dock.dockview-theme-dark` outranks dockview's own single-class rules so our graphite values
- * win regardless of stylesheet order. The tab strip matches the page floor so tabs read as part of
- * the page, not a separate widget.
+ * `.mb-dock.dockview-theme-dark` outranks dockview's own single-class rules so our values win
+ * regardless of stylesheet order. Driven entirely off our semantic tokens, so it flips with the
+ * theme even though the `dockview-theme-dark` class name is constant. The tab strip matches the page
+ * floor so tabs read as part of the page, not a separate widget.
  */
 .mb-dock.dockview-theme-dark {
   --dv-background-color: transparent;
   --dv-group-view-background-color: transparent;
-  --dv-tabs-and-actions-container-background-color: #141416;
-  --dv-activegroup-visiblepanel-tab-background-color: rgb(255 255 255 / 0.06);
+  --dv-tabs-and-actions-container-background-color: var(--background);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--overlay-medium);
   --dv-activegroup-hiddenpanel-tab-background-color: transparent;
   --dv-inactivegroup-visiblepanel-tab-background-color: transparent;
   --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
-  --dv-activegroup-visiblepanel-tab-color: #ededed;
-  --dv-activegroup-hiddenpanel-tab-color: #85858d;
-  --dv-inactivegroup-visiblepanel-tab-color: #c6c6cc;
-  --dv-inactivegroup-hiddenpanel-tab-color: #85858d;
-  --dv-separator-border: rgb(255 255 255 / 0.08);
-  --dv-paneview-active-outline-color: rgb(228 228 228 / 0.5);
-  --dv-active-sash-color: rgb(228 228 228 / 0.45);
+  --dv-activegroup-visiblepanel-tab-color: var(--foreground);
+  --dv-activegroup-hiddenpanel-tab-color: var(--feed-text-2);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--muted-foreground);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--feed-text-2);
+  --dv-separator-border: var(--hairline);
+  --dv-paneview-active-outline-color: var(--ring);
+  --dv-active-sash-color: var(--ring);
   --dv-active-sash-transition-delay: 0s;
   --dv-tab-divider-color: transparent;
-  --dv-icon-hover-background-color: rgb(255 255 255 / 0.08);
+  --dv-icon-hover-background-color: var(--overlay-medium);
   --dv-tabs-and-actions-container-height: 38px;
   --dv-floating-box-shadow: 0 18px 48px -20px rgb(0 0 0 / 0.7);
 }
@@ -458,7 +519,7 @@
 }
 /* Inactive tabs respond on hover (the strip had no hover state; only the overflow menu did). */
 .mb-dock .dv-tab:not(.dv-active-tab):hover {
-  background-color: rgb(255 255 255 / 0.04);
+  background-color: var(--overlay-weak);
 }
 
 /* Custom DockTab content (icon + title + optional close for added panels). */
@@ -491,8 +552,8 @@
   height: 6px;
   flex: none;
   border-radius: 9999px;
-  background: #46c45a;
-  box-shadow: 0 0 6px rgb(70 196 90 / 0.5);
+  background: var(--feed-ok);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--feed-ok) 50%, transparent);
 }
 .mb-dock .mb-dock-tab-close {
   display: inline-flex;
@@ -509,7 +570,7 @@
     opacity 0.12s ease;
 }
 .mb-dock .mb-dock-tab-close:hover {
-  background: rgb(255 255 255 / 0.12);
+  background: var(--overlay-strong);
   color: var(--foreground);
   opacity: 1;
 }
@@ -551,12 +612,12 @@
   width: 5px;
   height: 40px;
   border-radius: 3px;
-  background: rgb(228 228 228 / 0.18);
+  background: var(--hairline-strong);
   transition: background 0.15s ease, width 0.15s ease;
 }
 .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash.dv-enabled:hover::after,
 .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash.dv-sash-active::after {
-  background: rgb(228 228 228 / 0.65);
+  background: var(--grip-active);
   width: 5px;
 }
 
@@ -570,30 +631,29 @@
   width: 40px;
   height: 5px;
   border-radius: 3px;
-  background: rgb(228 228 228 / 0.18);
+  background: var(--hairline-strong);
   transition: background 0.15s ease;
 }
 .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash.dv-enabled:hover::after,
 .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash.dv-sash-active::after {
-  background: rgb(228 228 228 / 0.65);
+  background: var(--grip-active);
 }
 
 /*
  * Tab overflow dropdown: dockview places this popup inside .dv-shell (a sibling
  * of .mb-dock, not a descendant), so .mb-dock-scoped selectors don't reach it.
- * Use .dv-shell scope and hardcoded graphite values since the popup sits outside
- * our CSS variable cascade.
+ * The global theme tokens still cascade from <html>, so drive it off those.
  */
 .dv-shell .dv-tabs-overflow-container {
-  background-color: #1b1b1f !important;
-  border: 1px solid rgb(255 255 255 / 0.10) !important;
+  background-color: var(--popover) !important;
+  border: 1px solid var(--hairline) !important;
   border-radius: 8px !important;
   min-width: 180px;
   padding: 4px;
   box-shadow: 0 18px 46px -18px rgb(0 0 0 / 0.85);
   font-size: 12.5px;
   letter-spacing: 0.01em;
-  color: #c6c6cc;
+  color: var(--muted-foreground);
 }
 
 .dv-shell .dv-tabs-overflow-container .dv-tab:not(:last-child) {
@@ -605,18 +665,18 @@
 }
 
 .dv-shell .dv-tabs-overflow-container .dv-active-tab {
-  background-color: rgb(255 255 255 / 0.07) !important;
-  color: #ededed !important;
+  background-color: var(--overlay-medium) !important;
+  color: var(--foreground) !important;
 }
 
 .dv-shell .dv-tabs-overflow-container .dv-inactive-tab {
   background-color: transparent !important;
-  color: #85858d !important;
+  color: var(--feed-text-2) !important;
 }
 
 .dv-shell .dv-tabs-overflow-container .dv-inactive-tab:hover {
-  background-color: rgb(255 255 255 / 0.05) !important;
-  color: #c6c6cc !important;
+  background-color: var(--overlay-weak) !important;
+  color: var(--muted-foreground) !important;
 }
 
 /* mb-dock-tab content inside the overflow dropdown (no .mb-dock ancestor here). */
@@ -642,7 +702,7 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  color: #8b8b93;
+  color: var(--feed-text-2);
   opacity: 0.7;
   transition:
     background-color 0.12s ease,
@@ -651,15 +711,15 @@
 }
 
 .dv-shell .dv-tabs-overflow-container .mb-dock-tab-close:hover {
-  background: rgb(255 255 255 / 0.12);
-  color: #ededed;
+  background: var(--overlay-strong);
+  color: var(--foreground);
   opacity: 1;
 }
 
 /* The "…" trigger button that appears in the tab strip when tabs overflow.
    This button lives inside .mb-dock (inside the tab bar), not in .dv-shell. */
 .mb-dock .dv-tabs-overflow-dropdown-default {
-  color: #8b8b93;
+  color: var(--feed-text-2);
   border-radius: 5px;
   font-size: 12px;
   letter-spacing: 0.01em;
@@ -667,7 +727,7 @@
 }
 
 .mb-dock .dv-tabs-overflow-dropdown-default:hover {
-  background-color: rgb(255 255 255 / 0.08) !important;
+  background-color: var(--overlay-medium) !important;
 }
 
 /* Animations toggle (Settings → Workspace). The shell sets data-no-anim on <html> when motion is
