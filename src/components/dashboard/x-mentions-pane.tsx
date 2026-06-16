@@ -26,8 +26,8 @@ function initials(name: string): string {
 
 function MentionRow({ m }: { m: XMention }) {
   return (
-    <li className="flex gap-2.5 border-b border-white/[0.04] px-3 py-2.5 transition-colors hover:bg-white/[0.03]">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-[0.66rem] font-semibold text-foreground/85">
+    <li className="flex gap-2.5 border-b border-hairline px-3 py-2.5 transition-colors hover:bg-overlay-weak">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-hairline bg-overlay-weak text-[0.66rem] font-semibold text-foreground/85">
         {initials(m.name)}
       </span>
       <div className="min-w-0 flex-1">
@@ -96,12 +96,12 @@ export function XMentionsPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           X Mentions
         </span>
         {isStale && (
-          <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[0.58rem] text-muted-foreground/50">
+          <span className="rounded bg-overlay-weak px-1.5 py-0.5 text-[0.58rem] text-muted-foreground/50">
             cached
           </span>
         )}

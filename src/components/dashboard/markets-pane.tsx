@@ -6,7 +6,7 @@ import { formatChange, formatPrice } from "@/lib/markets/types";
 
 function PaneHeader({ title, hint }: { title: string; hint?: string }) {
   return (
-    <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+    <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
       <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{title}</span>
       {hint ? <span className="ml-auto text-[0.62rem] text-muted-foreground/80">{hint}</span> : null}
     </header>
@@ -27,7 +27,7 @@ export function MarketsPane() {
               <button
                 type="button"
                 onClick={() => openStock(t.symbol)}
-                className="flex w-full items-center gap-3 border-b border-white/[0.04] px-3 py-2 text-left transition-colors hover:bg-white/[0.05]"
+                className="flex w-full items-center gap-3 border-b border-hairline px-3 py-2 text-left transition-colors hover:bg-overlay-weak"
               >
                 <div className="flex min-w-0 flex-1 flex-col leading-tight">
                   <span className="font-mono text-[0.84rem] font-semibold text-foreground">{t.symbol}</span>
@@ -35,7 +35,7 @@ export function MarketsPane() {
                 </div>
                 <div className="flex flex-col items-end leading-tight">
                   <span className="font-mono text-[0.82rem] tabular-nums text-foreground">{formatPrice(t.price)}</span>
-                  <span className={`font-mono text-[0.68rem] font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+                  <span className={`font-mono text-[0.68rem] font-medium tabular-nums ${up ? "text-feed-ok" : "text-feed-danger"}`}>
                     {formatChange(t.changePct)}
                   </span>
                 </div>

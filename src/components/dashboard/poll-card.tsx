@@ -68,20 +68,20 @@ export function PollCard({ variant = "banner" }: { variant?: "banner" | "stage" 
       className={cn(
         "flex-none",
         stage
-          ? "rounded-xl border border-white/10 bg-[#141416]/85 px-3.5 py-3 backdrop-blur-md"
-          : "border-b border-white/[0.07] bg-white/[0.02] px-4 py-2",
+          ? "rounded-xl border border-hairline bg-background/85 px-3.5 py-3 backdrop-blur-md"
+          : "border-b border-hairline bg-overlay-weak px-4 py-2",
       )}
     >
       <div className="flex items-center gap-2.5">
-        <BarChart3 className="size-3.5 flex-none text-[#aab3c0]" />
+        <BarChart3 className="size-3.5 flex-none text-feed-link" />
         <p className="min-w-0 flex-1 truncate text-[0.8rem] font-semibold text-foreground">{poll.question}</p>
         {locked ? (
-          <span className="flex flex-none items-center gap-1.5 rounded-md border border-[#d8b25a]/30 bg-[#d8b25a]/[0.1] px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-[#d8b25a]">
+          <span className="flex flex-none items-center gap-1.5 rounded-md border border-feed-warn/30 bg-feed-warn/[0.1] px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-feed-warn">
             <Lock className="size-3" />
             Final
           </span>
         ) : poll.endsAt ? (
-          <span className="flex-none rounded-md border border-white/10 bg-black/30 px-2 py-0.5 font-mono text-[0.7rem] tabular-nums text-foreground/90">
+          <span className="flex-none rounded-md border border-hairline bg-overlay-medium px-2 py-0.5 font-mono text-[0.7rem] tabular-nums text-foreground/90">
             {remaining(poll.endsAt, now)}
           </span>
         ) : null}
@@ -107,22 +107,22 @@ export function PollCard({ variant = "banner" }: { variant?: "banner" | "stage" 
               className={cn(
                 "relative flex-1 overflow-hidden rounded-lg border px-2.5 py-1.5 text-left transition-colors",
                 isWinner
-                  ? "border-[#d8b25a]/45 bg-[#d8b25a]/[0.08]"
+                  ? "border-feed-warn/45 bg-feed-warn/[0.08]"
                   : isMine
-                    ? "border-[#aab3c0]/40 bg-white/[0.05]"
-                    : "border-white/[0.08] bg-white/[0.02]",
-                locked ? "cursor-default opacity-95" : "hover:bg-white/[0.05]",
+                    ? "border-feed-link/40 bg-overlay-weak"
+                    : "border-hairline bg-overlay-weak",
+                locked ? "cursor-default opacity-95" : "hover:bg-overlay-weak",
               )}
             >
               <span
-                className={cn("absolute inset-y-0 left-0 transition-[width] duration-500", isWinner ? "bg-[#d8b25a]/15" : "bg-[#aab3c0]/10")}
+                className={cn("absolute inset-y-0 left-0 transition-[width] duration-500", isWinner ? "bg-feed-warn/15" : "bg-feed-link/10")}
                 style={{ width: `${pct}%` }}
                 aria-hidden
               />
               <span className="relative flex items-center gap-2">
                 <span className="font-mono text-[0.66rem] text-muted-foreground">{o.id}</span>
                 <span className="min-w-0 flex-1 truncate text-[0.78rem] font-medium text-foreground">{o.label}</span>
-                {isWinner ? <Trophy className="size-3.5 flex-none text-[#d8b25a]" /> : null}
+                {isWinner ? <Trophy className="size-3.5 flex-none text-feed-warn" /> : null}
                 <span className="flex-none font-mono text-[0.7rem] tabular-nums text-foreground/85">{pct}%</span>
               </span>
             </button>

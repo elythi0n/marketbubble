@@ -72,7 +72,7 @@ function TradesView() {
               target="_blank"
               rel="noopener noreferrer"
               title={`View ${t.shortHash} on Hyperliquid Explorer`}
-              className="flex items-center gap-3 border-b border-white/[0.04] px-3 py-2 transition-colors hover:bg-white/[0.04]"
+              className="flex items-center gap-3 border-b border-hairline px-3 py-2 transition-colors hover:bg-overlay-weak"
             >
               <span className="w-[5.5rem] shrink-0 truncate font-mono text-[0.68rem] text-muted-foreground/60">
                 {t.shortHash}
@@ -80,7 +80,7 @@ function TradesView() {
               <span className="w-10 shrink-0 font-mono text-[0.8rem] font-semibold text-foreground">{t.asset}</span>
               <span
                 className={`shrink-0 rounded px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide ${
-                  t.side === "long" ? "bg-[#46c45a]/15 text-[#46c45a]" : "bg-[#ef6a61]/15 text-[#ef6a61]"
+                  t.side === "long" ? "bg-feed-ok/15 text-feed-ok" : "bg-feed-danger/15 text-feed-danger"
                 }`}
               >
                 {t.side}
@@ -151,7 +151,7 @@ function TradersView() {
               target="_blank"
               rel="noopener noreferrer"
               title={`View ${shortAddress(t.address)} on Hyperstats`}
-              className="flex items-center gap-3 border-b border-white/[0.04] px-3 py-2 transition-colors hover:bg-white/[0.04]"
+              className="flex items-center gap-3 border-b border-hairline px-3 py-2 transition-colors hover:bg-overlay-weak"
             >
               <span className="w-5 shrink-0 text-right font-mono text-[0.66rem] tabular-nums text-muted-foreground/60">
                 {i + 1}
@@ -166,20 +166,20 @@ function TradersView() {
                 </span>
               </span>
               {t.grade ? (
-                <span className="shrink-0 rounded bg-white/[0.08] px-1.5 py-0.5 font-mono text-[0.6rem] font-semibold text-foreground/90">
+                <span className="shrink-0 rounded bg-overlay-medium px-1.5 py-0.5 font-mono text-[0.6rem] font-semibold text-foreground/90">
                   {t.grade}
                 </span>
               ) : null}
               <span
                 className={`w-20 shrink-0 text-right font-mono text-[0.74rem] font-semibold tabular-nums ${
-                  up ? "text-[#46c45a]" : "text-[#ef6a61]"
+                  up ? "text-feed-ok" : "text-feed-danger"
                 }`}
               >
                 {formatUsd(t.pnl30dUsd)}
               </span>
               <span
                 className={`w-12 shrink-0 text-right font-mono text-[0.66rem] tabular-nums ${
-                  up ? "text-[#46c45a]/80" : "text-[#ef6a61]/80"
+                  up ? "text-feed-ok/80" : "text-feed-danger/80"
                 }`}
               >
                 {up ? "+" : ""}
@@ -200,15 +200,15 @@ export function HyperliquidPane() {
     (active: boolean) =>
       `rounded-md px-2 py-0.5 text-[0.66rem] font-medium uppercase tracking-[0.08em] transition-colors ${
         active
-          ? "bg-white/[0.1] text-foreground"
-          : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
+          ? "bg-overlay-medium text-foreground"
+          : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground"
       }`,
     [],
   );
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Hyperliquid
         </span>

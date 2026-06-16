@@ -19,20 +19,21 @@ function ClipCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col overflow-hidden rounded-xl bg-white/[0.03] text-left transition-colors active:bg-white/[0.06]"
+      className="group flex flex-col overflow-hidden rounded-xl bg-overlay-weak text-left transition-colors active:bg-overlay-weak"
     >
-      <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-[#141416]">
+      <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-background">
         {thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={thumbnail} alt={title} className="absolute inset-0 h-full w-full object-cover opacity-90" />
         ) : (
           <ClipSourceIcon platform={platform} className="size-8 opacity-[0.08]" />
         )}
+        {/* Overlays a clip thumbnail (video frame) — fixed white-on-black, theme-independent. */}
         <span className="absolute flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/40 opacity-0 transition-opacity group-active:opacity-100">
-          <Play className="size-3.5 translate-x-px fill-foreground text-foreground" />
+          <Play className="size-3.5 translate-x-px fill-white text-white" />
         </span>
         {duration ? (
-          <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.58rem] tabular-nums text-foreground/90">
+          <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.58rem] tabular-nums text-white/90">
             {duration}
           </span>
         ) : null}
@@ -57,7 +58,7 @@ export function ClipsPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-hairline px-3">
         <Clapperboard className="size-4 text-muted-foreground" />
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-foreground">
           Recent broadcasts

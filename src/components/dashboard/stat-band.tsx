@@ -20,7 +20,7 @@ function StatCell({ label, emphasis, children }: { label: string; emphasis?: boo
         }`}
       >
         {emphasis ? (
-          <span className="size-[7px] rounded-full bg-[#46c45a]" style={{ boxShadow: "0 0 7px rgba(70,196,90,0.65)" }} />
+          <span className="size-[7px] rounded-full bg-feed-ok" style={{ boxShadow: "0 0 7px rgba(70,196,90,0.65)" }} />
         ) : null}
         {children}
       </span>
@@ -44,7 +44,7 @@ function NextStreamCell({ schedule }: { schedule: NonNullable<Streamer["schedule
   return (
     <StatCell label={starting ? "Show is starting" : schedule.label}>
       <AnimatedSwap swapKey={countdown}>
-        <span className={starting ? "text-[#46c45a]" : "text-muted-foreground/90"}>{countdown}</span>
+        <span className={starting ? "text-feed-ok" : "text-muted-foreground/90"}>{countdown}</span>
       </AnimatedSwap>
     </StatCell>
   );
@@ -78,8 +78,8 @@ export function StatBand() {
   };
 
   return (
-    <div className="relative z-20 flex h-[3.25rem] flex-none items-center overflow-x-auto border-b border-white/[0.07] bg-[#141416] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="mx-auto flex items-stretch divide-x divide-white/[0.07]">
+    <div className="relative z-20 flex h-[3.25rem] flex-none items-center overflow-x-auto border-b border-hairline bg-background [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mx-auto flex items-stretch divide-x divide-hairline">
 
         {/* Combined viewers across all live streamers; the schedule countdown when none are live. */}
         {anyLive ? (
@@ -99,7 +99,7 @@ export function StatBand() {
               animate="visible"
               exit="hidden"
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-stretch border-l border-white/[0.07]"
+              className="flex items-stretch border-l border-hairline"
             >
               <StatCell label="Chatters">
                 <AnimatedNumber value={uniqueChatters} />
@@ -114,11 +114,11 @@ export function StatBand() {
               animate="visible"
               exit="hidden"
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-stretch border-l border-white/[0.07]"
+              className="flex items-stretch border-l border-hairline"
             >
               <StatCell label="Trending">
                 <AnimatedSwap swapKey={topCashtag}>
-                  <span className="text-[#d8b25a]">${topCashtag}</span>
+                  <span className="text-feed-warn">${topCashtag}</span>
                 </AnimatedSwap>
               </StatCell>
             </motion.div>
@@ -131,7 +131,7 @@ export function StatBand() {
               animate="visible"
               exit="hidden"
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-stretch border-l border-white/[0.07]"
+              className="flex items-stretch border-l border-hairline"
             >
               <StatCell label="Gifts">
                 <AnimatedNumber value={giftCount} />
@@ -145,7 +145,7 @@ export function StatBand() {
             {topMover ? (
               <>
                 <span>{topMover.symbol}</span>
-                <span className={moverUp ? "text-[#46c45a]" : "text-[#ef6a61]"}>{formatChange(topMover.changePct)}</span>
+                <span className={moverUp ? "text-feed-ok" : "text-feed-danger"}>{formatChange(topMover.changePct)}</span>
               </>
             ) : (
               <span className="text-muted-foreground/60">—</span>

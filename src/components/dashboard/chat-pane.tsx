@@ -59,20 +59,20 @@ function formatCount(n: number): string {
 
 /** Per-channel visibility for the merged feed: a dropdown of live channels with checkboxes. */
 function ChannelFilter({
-  liveStreamers,
+  channels,
   hiddenIds,
   onToggle,
   onShowAll,
 }: {
-  liveStreamers: Streamer[];
+  channels: Streamer[];
   hiddenIds: readonly string[];
   onToggle: (id: string) => void;
   onShowAll: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const hidden = new Set(hiddenIds);
-  const visibleCount = liveStreamers.filter((s) => !hidden.has(s.id)).length;
-  const filtering = visibleCount < liveStreamers.length;
+  const visibleCount = channels.filter((s) => !hidden.has(s.id)).length;
+  const filtering = visibleCount < channels.length;
 
   return (
     <div className="relative flex items-center">
@@ -87,14 +87,14 @@ function ChannelFilter({
               className={cn(
                 "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 transition-colors",
                 filtering
-                  ? "bg-white/[0.08] text-foreground hover:bg-white/[0.12]"
-                  : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground",
+                  ? "bg-overlay-medium text-foreground hover:bg-overlay-strong"
+                  : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground",
               )}
             >
               <ListFilter className="size-4" />
               {filtering ? (
                 <span className="font-mono text-[0.64rem] tabular-nums leading-none">
-                  {visibleCount}/{liveStreamers.length}
+                  {visibleCount}/{channels.length}
                 </span>
               ) : null}
             </button>
@@ -106,9 +106,9 @@ function ChannelFilter({
       {open ? (
         <>
           <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute left-0 top-full z-[100] mt-1.5 w-56 rounded-lg border border-white/12 bg-[#1b1b1f] p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+          <div className="absolute left-0 top-full z-[100] mt-1.5 w-56 rounded-lg border border-hairline-strong bg-card p-1 shadow-[var(--shadow-popover)]">
             <p className="px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Channels in feed</p>
-            {liveStreamers.map((s) => {
+            {channels.map((s) => {
               const shown = !hidden.has(s.id);
               return (
                 <button
@@ -117,20 +117,20 @@ function ChannelFilter({
                   onClick={() => onToggle(s.id)}
                   role="menuitemcheckbox"
                   aria-checked={shown}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.8rem] text-foreground/90 transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.8rem] text-foreground/90 transition-colors hover:bg-overlay-medium hover:text-foreground"
                 >
                   <span
                     className={cn(
                       "flex size-4 flex-none items-center justify-center rounded border transition-colors",
-                      shown ? "border-transparent bg-foreground text-background" : "border-white/20 bg-white/[0.04]",
+                      shown ? "border-transparent bg-foreground text-background" : "border-hairline-strong bg-overlay-weak",
                     )}
                   >
                     {shown ? <Check className="size-3" strokeWidth={3} /> : null}
                   </span>
-                  <PlatformGlyph platform={primaryPlatform(s)} className="size-3.5 flex-none" />
-                  <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                  <PlatformGlyph platform={primaryPlatform(s)} className={cn("size-3.5 flex-none", !s.live && "opacity-50")} />
+                  <span className={cn("min-w-0 flex-1 truncate", !s.live && "text-muted-foreground")}>{s.name}</span>
                   <span className="flex-none font-mono text-[0.64rem] tabular-nums text-muted-foreground">
-                    {formatCount(s.viewers)}
+                    {s.live ? formatCount(s.viewers) : "offline"}
                   </span>
                 </button>
               );
@@ -139,7 +139,7 @@ function ChannelFilter({
               <button
                 type="button"
                 onClick={onShowAll}
-                className="mt-0.5 flex w-full items-center justify-center rounded-md border-t border-white/[0.06] px-2 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                className="mt-0.5 flex w-full items-center justify-center rounded-md border-t border-hairline px-2 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
               >
                 Show all channels
               </button>
@@ -195,7 +195,12 @@ export function ChatPane() {
   const toggleChannel = (id: string) =>
     saveHidden(hiddenIds.includes(id) ? hiddenIds.filter((x) => x !== id) : [...hiddenIds, id]);
 
-  const liveStreamers = streamers.filter((s) => s.live);
+  // Merge mode connects every roster channel — offline ones too — because people keep chatting
+  // when a streamer is offline. So the filter lists all channels (live first), not just live ones.
+  const feedChannels = useMemo(
+    () => [...streamers].sort((a, b) => Number(b.live) - Number(a.live)),
+    [streamers],
+  );
 
   // Messages carry the platform handle as `channel`; map handles back to roster entries.
   const handleToStreamer = useMemo(() => {
@@ -285,9 +290,9 @@ export function ChatPane() {
     <div className="flex h-full flex-col overflow-hidden bg-card">
       <TooltipProvider>
         {/* Options bar */}
-        <header className="flex h-11 flex-none items-center gap-1.5 border-b border-white/[0.07] px-3">
+        <header className="flex h-11 flex-none items-center gap-1.5 border-b border-hairline px-3">
           {/* Zoom stepper: one bordered pill, like the segmented controls everywhere else. */}
-          <div className="flex h-8 items-center rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
+          <div className="flex h-8 items-center rounded-lg border border-hairline bg-overlay-weak p-0.5">
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -296,7 +301,7 @@ export function ChatPane() {
                     onClick={() => zoom(-STEP)}
                     disabled={scale <= MIN_SCALE}
                     aria-label="Make chat smaller"
-                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                   >
                     <ZoomOut className="size-3.5" />
                   </button>
@@ -315,7 +320,7 @@ export function ChatPane() {
                     className={`min-w-[4ch] rounded-md px-1 py-1 text-center font-mono text-[0.64rem] tabular-nums transition-colors ${
                       scale === DEFAULT_SCALE
                         ? "text-muted-foreground/70"
-                        : "text-foreground hover:bg-white/[0.07]"
+                        : "text-foreground hover:bg-overlay-medium"
                     }`}
                   >
                     {Math.round(scale * 100)}%
@@ -332,7 +337,7 @@ export function ChatPane() {
                     onClick={() => zoom(STEP)}
                     disabled={scale >= MAX_SCALE}
                     aria-label="Make chat bigger"
-                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                   >
                     <ZoomIn className="size-3.5" />
                   </button>
@@ -353,8 +358,8 @@ export function ChatPane() {
                   aria-label={readHelper ? "Turn off read helper" : "Turn on read helper"}
                   className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 transition-colors ${
                     readHelper
-                      ? "bg-[#a8a8f8]/12 text-[#a8a8f8] hover:bg-[#a8a8f8]/18"
-                      : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                      ? "bg-accent-violet/12 text-accent-violet hover:bg-accent-violet/18"
+                      : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground"
                   }`}
                 >
                   <Eye className="size-4" />
@@ -381,8 +386,8 @@ export function ChatPane() {
                   aria-pressed={mergeAll}
                   className={`inline-flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2.5 transition-colors ${
                     mergeAll
-                      ? "bg-white/[0.08] text-foreground hover:bg-white/[0.12]"
-                      : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                      ? "bg-overlay-medium text-foreground hover:bg-overlay-strong"
+                      : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground"
                   }`}
                 >
                   <Layers className="size-4 shrink-0" />
@@ -397,17 +402,17 @@ export function ChatPane() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Per-channel visibility, only meaningful when merging more than one live channel. */}
-          {mergeAll && liveStreamers.length > 1 ? (
+          {/* Per-channel visibility, only meaningful when merging more than one channel. */}
+          {mergeAll && feedChannels.length > 1 ? (
             <ChannelFilter
-              liveStreamers={liveStreamers}
+              channels={feedChannels}
               hiddenIds={hiddenIds}
               onToggle={toggleChannel}
               onShowAll={() => saveHidden([])}
             />
           ) : null}
 
-          <span className="ml-auto flex flex-none items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+          <span className="ml-auto flex flex-none items-center gap-2 rounded-lg bg-overlay-weak px-2.5 py-1.5">
             {PLATFORMS.map((platform) => {
               // Find the status for any provider whose id starts with the platform name.
               const status = Object.entries(statuses).find(([id]) => id.startsWith(platform))?.[1];
@@ -432,8 +437,8 @@ export function ChatPane() {
         </header>
 
         {/* Full-width search — desktop only; on mobile it just eats vertical space. */}
-        <div className="hidden flex-none border-b border-white/[0.07] px-2.5 py-2 md:block">
-          <div className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 transition-colors focus-within:border-white/20 focus-within:bg-white/[0.05]">
+        <div className="hidden flex-none border-b border-hairline px-2.5 py-2 md:block">
+          <div className="flex items-center gap-2 rounded-lg border border-hairline bg-overlay-weak px-2.5 py-1.5 transition-colors focus-within:border-hairline-strong focus-within:bg-overlay-weak">
             <Search className="size-4 flex-none text-muted-foreground/70" />
             <input
               type="text"
@@ -448,7 +453,7 @@ export function ChatPane() {
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="Clear search"
-                className="flex size-5 flex-none items-center justify-center rounded text-muted-foreground/70 transition-colors hover:bg-white/[0.08] hover:text-foreground"
+                className="flex size-5 flex-none items-center justify-center rounded text-muted-foreground/70 transition-colors hover:bg-overlay-medium hover:text-foreground"
               >
                 <X className="size-3.5" />
               </button>
@@ -459,8 +464,8 @@ export function ChatPane() {
 
       {/* Author focus banner — click a username in chat to focus, click again or clear here. */}
       {focusAuthor ? (
-        <div className="flex flex-none items-center gap-2 border-b border-white/[0.07] bg-[#aab3c0]/[0.07] px-3 py-1.5">
-          <AtSign className="size-3.5 flex-none text-[#aab3c0]" />
+        <div className="flex flex-none items-center gap-2 border-b border-hairline bg-feed-link/[0.07] px-3 py-1.5">
+          <AtSign className="size-3.5 flex-none text-feed-link" />
           <span className="min-w-0 truncate text-[0.74rem] text-foreground/90">
             Focused on <b className="font-semibold">{focusAuthor}</b>
           </span>
@@ -468,7 +473,7 @@ export function ChatPane() {
             type="button"
             onClick={() => changeFocusAuthor(null)}
             aria-label="Clear author focus"
-            className="ml-auto flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            className="ml-auto flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
           >
             <X className="size-3.5" />
           </button>

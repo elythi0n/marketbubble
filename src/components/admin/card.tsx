@@ -24,9 +24,9 @@ export function Card({
 }) {
   return (
     // No overflow-hidden — floating UI inside (Select listboxes) must be able to spill past the card.
-    <div className={cn("flex flex-col rounded-xl border border-white/[0.08] bg-[#161619]/85", className)}>
-      <header className="flex flex-none items-center gap-3 rounded-t-xl border-b border-white/[0.06] bg-white/[0.02] px-4 py-3">
-        <span className="flex size-8 flex-none items-center justify-center rounded-lg border border-white/10 bg-white/[0.04]">
+    <div className={cn("flex flex-col rounded-xl border border-hairline bg-sidebar/85", className)}>
+      <header className="flex flex-none items-center gap-3 rounded-t-xl border-b border-hairline bg-overlay-weak px-4 py-3">
+        <span className="flex size-8 flex-none items-center justify-center rounded-lg border border-hairline bg-overlay-weak">
           <Icon className="size-4 text-muted-foreground" />
         </span>
         <div className="min-w-0 flex-1 leading-tight">

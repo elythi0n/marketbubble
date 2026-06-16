@@ -473,7 +473,7 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Share highlight"
@@ -481,14 +481,14 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex w-full max-w-xl flex-col gap-3 rounded-2xl border border-white/[0.1] bg-[#161619] p-4 shadow-[0_32px_90px_-20px_rgba(0,0,0,0.95)]">
+      <div className="flex w-full max-w-xl flex-col gap-3 rounded-2xl border border-hairline bg-sidebar p-4 shadow-[var(--shadow-modal)]">
         <div className="flex items-center gap-2">
           <h2 className="text-[0.9rem] font-semibold text-foreground">Share highlight</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="ml-auto inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="ml-auto inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
           >
             <X className="size-4" />
           </button>
@@ -498,12 +498,12 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
           ref={canvasRef}
           width={W}
           height={H}
-          className="mx-auto h-auto max-h-[62vh] w-auto max-w-full rounded-xl border border-white/[0.08]"
+          className="mx-auto h-auto max-h-[62vh] w-auto max-w-full rounded-xl border border-hairline"
         />
 
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => void copyImage()} className={GHOST_BTN}>
-            {copied ? <Check className="size-3.5 text-[#46c45a]" /> : <Copy className="size-3.5" />}
+            {copied ? <Check className="size-3.5 text-feed-ok" /> : <Copy className="size-3.5" />}
             {copied ? "Copied" : "Copy image"}
           </button>
           <button type="button" onClick={download} className={QUIET_BTN}>

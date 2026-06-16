@@ -17,7 +17,7 @@ const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-black/60 backdrop-blur-sm", className)} {...props} />
+  <DrawerPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-scrim backdrop-blur-sm", className)} {...props} />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
@@ -30,7 +30,7 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-[480px] flex-col border-l border-white/[0.08] bg-[#161619] outline-none",
+        "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-[480px] flex-col border-l border-hairline bg-sidebar outline-none",
         className,
       )}
       {...props}
@@ -50,11 +50,11 @@ const DrawerTitle = React.forwardRef<
 DrawerTitle.displayName = "DrawerTitle";
 
 function DrawerHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-none items-center gap-3 border-b border-white/[0.07] px-4 py-3", className)} {...props} />;
+  return <div className={cn("flex flex-none items-center gap-3 border-b border-hairline px-4 py-3", className)} {...props} />;
 }
 
 function DrawerFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-none items-center border-t border-white/[0.07] px-4 py-3", className)} {...props} />;
+  return <div className={cn("flex flex-none items-center border-t border-hairline px-4 py-3", className)} {...props} />;
 }
 
 export { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, DrawerPortal, DrawerTitle, DrawerTrigger };

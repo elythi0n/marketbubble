@@ -89,11 +89,11 @@ function ClipRadarCard() {
             <Toggle checked={cfg.enabled} onChange={(v) => void patch({ enabled: v })} label="Auto clip radar" />
           </div>
 
-          <ul className="flex flex-col gap-2 border-t border-white/[0.05] pt-3 text-[0.76rem]">
-            <li className="flex items-center gap-2.5">
+          <ul className="flex flex-col gap-2 border-t border-hairline pt-3 text-[0.76rem]">
+            <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <StatusDot ok={st.relayConfigured ? st.relayOk : null} />
               <span className="flex-1 text-foreground/90">Relay velocity</span>
-              <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">
+              <span className="break-all font-mono text-[0.7rem] tabular-nums text-muted-foreground">
                 {!st.relayConfigured
                   ? "RELAY_URL not set"
                   : !cfg.enabled
@@ -103,10 +103,10 @@ function ClipRadarCard() {
                       : "unreachable"}
               </span>
             </li>
-            <li className="flex items-center gap-2.5">
+            <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <StatusDot ok={st.clipTokenConfigured ? true : null} />
               <span className="flex-1 text-foreground/90">Twitch clipping</span>
-              <span className="font-mono text-[0.7rem] text-muted-foreground">
+              <span className="break-all font-mono text-[0.7rem] text-muted-foreground">
                 {st.clipTokenConfigured ? "token configured" : "moments only (set TWITCH_CLIP_TOKEN)"}
               </span>
             </li>
@@ -120,7 +120,7 @@ function ClipRadarCard() {
             ) : null}
           </ul>
 
-          <div className="grid gap-2 border-t border-white/[0.05] pt-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 border-t border-hairline pt-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Sensitivity
               <Select
@@ -190,7 +190,7 @@ function ObsSourcesCard() {
 
   return (
     <Card title="OBS sources" hint="Browser-source URLs for live production" icon={Clapperboard} className="lg:col-span-2">
-      <ul className="flex flex-col divide-y divide-white/[0.05]">
+      <ul className="flex flex-col divide-y divide-hairline">
         {sources.map((s) => (
           <li key={s.path} className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0">
             <div className="min-w-0 flex-1 leading-tight">
@@ -208,14 +208,14 @@ function ObsSourcesCard() {
               rel="noreferrer noopener"
               title={`Preview ${s.label}`}
               aria-label={`Preview ${s.label}`}
-              className="inline-flex size-6 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+              className="inline-flex size-6 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
             >
               <ExternalLink className="size-3.5" />
             </a>
           </li>
         ))}
       </ul>
-      <p className="mt-3 border-t border-white/[0.05] pt-2.5 text-[0.64rem] text-muted-foreground/70">
+      <p className="mt-3 border-t border-hairline pt-2.5 text-[0.64rem] text-muted-foreground/70">
         Copied URLs include <span className="font-mono">bg=transparent</span> for OBS; the preview button opens the
         readable dark version. Add <span className="font-mono">&scale=1.4</span> to taste.
       </p>
@@ -272,9 +272,9 @@ export function ControlsPanel() {
   };
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Live feature flags" hint="Pushed to every open dashboard instantly" icon={ToggleRight}>
-        <ul className="flex flex-col divide-y divide-white/[0.05]">
+        <ul className="flex flex-col divide-y divide-hairline">
           {[
             { key: "assistant", label: "AI Assistant", hint: "Panel, launcher and palette entries" },
             { key: "demo", label: "Demo mode", hint: "Switches and the offline nudge; demo viewers snap back to live" },
@@ -292,7 +292,7 @@ export function ControlsPanel() {
             );
           })}
         </ul>
-        <p className="mt-3 border-t border-white/[0.05] pt-2.5 text-[0.64rem] text-muted-foreground/70">
+        <p className="mt-3 border-t border-hairline pt-2.5 text-[0.64rem] text-muted-foreground/70">
           In memory — a restart restores the build defaults.
         </p>
       </Card>
@@ -325,7 +325,7 @@ export function ControlsPanel() {
               const set = (patch: Partial<FilterDraftRow>) =>
                 setFilterDraft((cur) => (cur ? cur.map((row, j) => (j === i ? { ...row, ...patch } : row)) : cur));
               return (
-                <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-white/[0.06] bg-white/[0.015] p-2 sm:grid-cols-[1fr_6.5rem_6.5rem_2rem] sm:border-0 sm:bg-transparent sm:p-0">
+                <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-hairline bg-overlay-weak p-2 sm:grid-cols-[1fr_6.5rem_6.5rem_2rem] sm:border-0 sm:bg-transparent sm:p-0">
                   <input
                     type="text"
                     value={f.pattern}
@@ -356,14 +356,14 @@ export function ControlsPanel() {
                     type="button"
                     onClick={() => setFilterDraft((cur) => (cur ? cur.filter((_, j) => j !== i) : cur))}
                     aria-label={`Remove filter ${f.pattern || i + 1}`}
-                    className="inline-flex size-8 items-center justify-center justify-self-end rounded-lg text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-[#ef6a61] sm:justify-self-auto"
+                    className="inline-flex size-8 items-center justify-center justify-self-end rounded-lg text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-feed-danger sm:justify-self-auto"
                   >
                     <Trash2 className="size-3.5" />
                   </button>
                 </div>
               );
             })}
-            <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.05] pt-3">
+            <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
               {filterDraft.length < 20 ? (
                 <button
                   type="button"
@@ -406,7 +406,7 @@ export function ControlsPanel() {
             type="button"
             onClick={() => void clearXBuffer()}
             disabled={busy}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#ef6a61]/30 bg-[#ef6a61]/[0.08] px-3 text-[0.76rem] font-medium text-[#ef6a61] transition-colors hover:bg-[#ef6a61]/[0.14] disabled:opacity-35"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-feed-danger/30 bg-feed-danger/[0.08] px-3 text-[0.76rem] font-medium text-feed-danger transition-colors hover:bg-feed-danger/[0.14] disabled:opacity-35"
           >
             <Trash2 className="size-3.5" />
             Clear X chat buffer

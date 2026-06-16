@@ -15,7 +15,7 @@
   transition: background-color 0.1s ease;
 }
 .row:hover {
-  background: rgb(255 255 255 / 0.04);
+  background: var(--overlay-weak);
 }
 
 /*
@@ -53,7 +53,7 @@
 
 /* The message body, inline right after the username. */
 .body {
-  color: rgb(255 255 255 / 0.9);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
 }
 .action .author {
   margin-right: 0.4em;
@@ -200,7 +200,7 @@
   font-weight: 600;
 }
 .cashtag {
-  color: #d8b25a;
+  color: var(--feed-warn);
   font-weight: 650;
   cursor: help;
 }
@@ -231,7 +231,7 @@
   display: inline-flex;
   align-items: center;
   border-radius: 0.5em;
-  background: rgb(255 255 255 / 0.08);
+  background: var(--overlay-medium);
   color: var(--feed-text-2);
   font-family: var(--font-mono);
   font-size: 0.74em;

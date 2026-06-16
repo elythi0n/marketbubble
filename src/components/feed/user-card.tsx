@@ -52,7 +52,7 @@ function formatCount(n: number): string {
 
 function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2 leading-tight">
+    <div className="rounded-lg border border-hairline bg-overlay-weak px-2.5 py-2 leading-tight">
       <p className="text-[0.56rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
       <p className="mt-1 font-mono text-[0.92rem] font-bold tabular-nums text-foreground">{value}</p>
       {sub ? <p className="mt-0.5 text-[0.6rem] text-muted-foreground">{sub}</p> : null}
@@ -130,11 +130,11 @@ function UserCardBody({
       aria-label={`${target.author} — chatter card`}
       style={pos}
       onClick={(e) => e.stopPropagation()}
-      className="fixed z-[151] flex w-[19rem] flex-col rounded-xl border border-white/12 bg-[#1b1b1f] shadow-[0_24px_60px_-18px_rgba(0,0,0,0.9)]"
+      className="fixed z-[151] flex w-[19rem] flex-col rounded-xl border border-hairline-strong bg-card shadow-[var(--shadow-card)]"
     >
-      <header className="flex items-center gap-2.5 border-b border-white/[0.07] px-3 py-2.5">
+      <header className="flex items-center gap-2.5 border-b border-hairline px-3 py-2.5">
         <span
-          className="flex size-8 flex-none items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[0.8rem] font-bold"
+          className="flex size-8 flex-none items-center justify-center rounded-full border border-hairline bg-overlay-weak text-[0.8rem] font-bold"
           style={{ color }}
           aria-hidden
         >
@@ -154,7 +154,7 @@ function UserCardBody({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+          className="inline-flex size-7 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
         >
           <X className="size-3.5" />
         </button>
@@ -164,7 +164,7 @@ function UserCardBody({
         {roles.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {roles.map((r) => (
-              <span key={r} className="rounded border border-white/12 bg-white/[0.05] px-1.5 py-0.5 text-[0.6rem] font-medium text-foreground/80">
+              <span key={r} className="rounded border border-hairline-strong bg-overlay-weak px-1.5 py-0.5 text-[0.6rem] font-medium text-foreground/80">
                 {r}
               </span>
             ))}
@@ -205,15 +205,15 @@ function UserCardBody({
         </div>
       </div>
 
-      <footer className="flex items-center gap-2 border-t border-white/[0.07] px-3 py-2">
+      <footer className="flex items-center gap-2 border-t border-hairline px-3 py-2">
         <button
           type="button"
           onClick={onFocusToggle}
           className={cn(
             "inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[0.7rem] font-medium transition-colors",
             focused
-              ? "border-[#46c45a]/30 bg-[#46c45a]/[0.1] text-[#46c45a] hover:bg-[#46c45a]/[0.16]"
-              : "border-white/12 bg-white/[0.06] text-foreground hover:bg-white/[0.1]",
+              ? "border-feed-ok/30 bg-feed-ok/[0.1] text-feed-ok hover:bg-feed-ok/[0.16]"
+              : "border-hairline-strong bg-overlay-weak text-foreground hover:bg-overlay-medium",
           )}
         >
           <AtSign className="size-3" />

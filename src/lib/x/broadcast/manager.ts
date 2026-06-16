@@ -36,6 +36,48 @@ function toBufferMessage(msg: BroadcastChatMessage, channel: string | undefined)
   };
 }
 
+/**
+ * Live status + occupancy (viewer count) per X source, keyed by normalized handle / broadcast id.
+ * The dashboard reads it through /api/x/stream so X-only channels can show real viewer numbers,
+ * the same way Twitch/Kick channels do. Module-level singleton, stable for the process lifetime.
+ */
+export interface XSourceStatus {
+  live: boolean;
+  viewers: number;
+  title?: string;
+  updatedAt: number;
+}
+
+function statusStore(): Map<string, XSourceStatus> {
+  const g = globalThis as typeof globalThis & { __xSourceStatus?: Map<string, XSourceStatus> };
+  return (g.__xSourceStatus ??= new Map());
+}
+
+/** Normalize a source to its lookup key: broadcast id from a link, else the bare lowercased handle. */
+function normHandle(src: string): string {
+  const link = /broadcasts\/([A-Za-z0-9]+)/i.exec(src);
+  if (link) return link[1].toLowerCase();
+  return src.trim().replace(/^@/, "").toLowerCase();
+}
+
+/** Merge a status patch onto every (defined) key — the configured source plus the broadcaster handle. */
+function setSourceStatus(keys: (string | undefined)[], patch: Partial<XSourceStatus>): void {
+  const store = statusStore();
+  const now = Date.now();
+  for (const k of keys) {
+    if (!k) continue;
+    const key = normHandle(k);
+    if (!key) continue;
+    const prev = store.get(key) ?? { live: false, viewers: 0, updatedAt: now };
+    store.set(key, { ...prev, ...patch, updatedAt: now });
+  }
+}
+
+/** Latest known status for an X handle (used by /api/x/stream). */
+export function getXSourceStatus(handle: string): XSourceStatus | undefined {
+  return statusStore().get(normHandle(handle));
+}
+
 function runSource(
   source: string,
   pollMs: number | (() => number),
@@ -57,6 +99,8 @@ function runSource(
     const resolved = await resolveBroadcast(source);
     if (cancelled || isStopped()) return;
     if (!resolved) {
+      // Nothing live for this source right now — mark it offline so the dashboard reflects it.
+      setSourceStatus([source], { live: false, viewers: 0 });
       schedule();
       return;
     }
@@ -67,6 +111,7 @@ function runSource(
     const finish = (reason: string) => {
       if (settled) return;
       settled = true;
+      setSourceStatus([source, channel], { live: false, viewers: 0 });
       log(`${source}: ${reason}`);
       reader?.stop();
       reader = null;
@@ -77,8 +122,15 @@ function runSource(
       onMessage: (m) => pushMessages([toBufferMessage(m, channel)]),
       onMeta: (meta) => {
         if (meta.broadcaster && !channel) channel = meta.broadcaster;
+        // Occupancy frames carry the live viewer count; the initial show frame carries the title.
+        setSourceStatus([source, channel, meta.broadcaster], {
+          live: true,
+          ...(typeof meta.occupancy === "number" ? { viewers: meta.occupancy } : {}),
+          ...(meta.title ? { title: meta.title } : {}),
+        });
       },
       onState: (state) => {
+        if (state === "live") setSourceStatus([source, channel], { live: true });
         if (state === "ended") finish(`broadcast ${resolved.id} ended`);
       },
       log,

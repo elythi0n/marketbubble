@@ -13,11 +13,11 @@ function TickerItem({ ticker, large }: { ticker: Ticker; large?: boolean }) {
     <span className={cn("flex items-center gap-2", large ? "px-7" : "px-5")}>
       <span className={cn("font-mono font-semibold tracking-wide text-foreground/90", size)}>{ticker.symbol}</span>
       <span className={cn("font-mono tabular-nums text-muted-foreground", size)}>{formatPrice(ticker.price)}</span>
-      <span className={cn("inline-flex items-center gap-0.5 font-mono font-medium tabular-nums", size, up ? "text-[#3fb950]" : "text-[#f0685f]")}>
+      <span className={cn("inline-flex items-center gap-0.5 font-mono font-medium tabular-nums", size, up ? "text-feed-ok" : "text-feed-danger")}>
         {up ? <TrendingUp className={large ? "size-4" : "size-3"} /> : <TrendingDown className={large ? "size-4" : "size-3"} />}
         {formatChange(ticker.changePct)}
       </span>
-      <span aria-hidden className="ml-3 size-1 rounded-full bg-white/15" />
+      <span aria-hidden className="ml-3 size-1 rounded-full bg-overlay-strong" />
     </span>
   );
 }
@@ -29,7 +29,7 @@ export function Marquee({ tickers: tickersProp, large }: { tickers?: Ticker[]; l
   const durationSeconds = Math.max(48, tickers.length * 4.8);
 
   return (
-    <div className={cn("mb-marquee relative z-20 flex flex-none items-center overflow-hidden border-b border-white/[0.07] bg-white/[0.012]", large ? "h-12" : "h-9")}>
+    <div className={cn("mb-marquee relative z-20 flex flex-none items-center overflow-hidden border-b border-hairline bg-overlay-weak", large ? "h-12" : "h-9")}>
       <div className="mb-marquee-track" style={{ ["--mb-marquee-duration" as string]: `${durationSeconds}s` }}>
         {[0, 1].map((copy) => (
           <div key={copy} className="flex items-center" aria-hidden={copy === 1}>
@@ -41,8 +41,8 @@ export function Marquee({ tickers: tickersProp, large }: { tickers?: Ticker[]; l
       </div>
 
       {/* Edge fades so items dissolve rather than clip at the rails. */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#141416] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#141416] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
 }

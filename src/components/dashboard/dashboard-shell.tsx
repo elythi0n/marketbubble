@@ -26,6 +26,7 @@ import { useIsMobile, usePhoneLandscape } from "@/lib/use-is-mobile";
 import { HighlightsBridge } from "./highlights-bridge";
 import { StageOverlay } from "./stage-overlay";
 import { AnnouncementBanner } from "./announcement-banner";
+import { MobileThemeChip } from "@/components/theme-toggle";
 import { BottomNav } from "./bottom-nav";
 import { CommandPalette } from "./command-palette";
 import { PollCard } from "./poll-card";
@@ -101,12 +102,16 @@ function FeedBridge({ children }: { children: ReactNode }) {
   // connection set stable across live/offline transitions (no reconnect churn).
   const sources = mergeAll ? streamers : selected ? [selected] : [];
 
+  // The X chat provider polls the shared /api/x/chat buffer (browser-extension + server bridge).
+  // Attach it whenever an active source broadcasts on X — in demo too, so X-only channels get chat.
+  const hasXSource = sources.some((s) => s.handles.x);
+
   const makeProviders = () => [
     ...sources.flatMap((s) => [
       ...(s.handles.twitch ? [createTwitchIRCProvider({ channel: s.handles.twitch })] : []),
       ...(s.handles.kick ? [createKickProvider({ slug: s.handles.kick })] : []),
     ]),
-    ...(isDemo ? [] : [createXChatProvider()]),
+    ...(hasXSource ? [createXChatProvider()] : []),
   ];
 
   // This key encodes the active source set so connections rebuild only when that set changes,
@@ -167,7 +172,7 @@ function DemoNudge() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[45] mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-white/12 bg-[#1b1b1f] py-2.5 pl-3.5 pr-2 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)] md:bottom-6"
+          className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[45] mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-hairline-strong bg-card py-2.5 pl-3.5 pr-2 shadow-[var(--shadow-card)] md:bottom-6"
         >
           <Clapperboard className="size-4 flex-none text-muted-foreground" />
           <div className="min-w-0 leading-tight">
@@ -188,7 +193,7 @@ function DemoNudge() {
             type="button"
             onClick={dismiss}
             aria-label="Dismiss"
-            className="flex size-6 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+            className="flex size-6 flex-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
           >
             <X className="size-3.5" />
           </button>
@@ -320,6 +325,9 @@ function MobileShell({ sheetOpen, setSheetOpen }: { sheetOpen: boolean; setSheet
         </>
       ) : null}
       <StreamerSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      {/* Floating theme toggle — hidden in landscape "theater" view, which would otherwise
+          overlap the stream player's top edge. */}
+      {!theater ? <MobileThemeChip /> : null}
     </div>
   );
 }

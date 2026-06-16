@@ -103,7 +103,7 @@ function Popover({ state, children, onClose }: { state: PopoverState; children: 
         role="dialog"
         style={pos}
         onClick={(e) => e.stopPropagation()}
-        className="fixed z-[151] w-60 rounded-xl border border-white/12 bg-[#1b1b1f] p-2.5 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.9)]"
+        className="fixed z-[151] w-60 rounded-xl border border-hairline-strong bg-card p-2.5 shadow-[var(--shadow-card)]"
       >
         {children}
       </div>
@@ -164,15 +164,15 @@ export function ScheduleCalendar({
                 )}
               >
                 {DAY_SHORT[d]}
-                {d === now.weekday ? <span className="ml-1 inline-block size-1 -translate-y-0.5 rounded-full bg-[#46c45a]" /> : null}
+                {d === now.weekday ? <span className="ml-1 inline-block size-1 -translate-y-0.5 rounded-full bg-feed-ok" /> : null}
               </span>
             ))}
           </div>
 
           {/* Hour rows */}
-          <div className="overflow-hidden rounded-lg border border-white/[0.07]">
+          <div className="overflow-hidden rounded-lg border border-hairline">
             {hours.map((h) => (
-              <div key={h} className="grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-white/[0.05] last:border-b-0">
+              <div key={h} className="grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-hairline last:border-b-0">
                 <span className="flex items-center justify-end pr-2 font-mono text-[0.6rem] tabular-nums text-muted-foreground/70">
                   {hour12(h)}
                 </span>
@@ -186,11 +186,11 @@ export function ScheduleCalendar({
                       onClick={(e) => setPopover({ x: e.clientX, y: e.clientY, mode: { type: "place", weekday: d, hour: h } })}
                       aria-label={`Schedule for ${DAY_FULL[d]} ${hour12(h)} PT`}
                       className={cn(
-                        "relative flex min-h-9 flex-wrap content-center items-center gap-1 border-l border-white/[0.05] px-1 py-0.5 text-left transition-colors hover:bg-white/[0.03]",
-                        isNow && "bg-[#46c45a]/[0.04]",
+                        "relative flex min-h-9 flex-wrap content-center items-center gap-1 border-l border-hairline px-1 py-0.5 text-left transition-colors hover:bg-overlay-weak",
+                        isNow && "bg-feed-ok/[0.04]",
                       )}
                     >
-                      {isNow ? <span className="absolute inset-y-0 left-0 w-[2px] bg-[#46c45a]/50" aria-hidden /> : null}
+                      {isNow ? <span className="absolute inset-y-0 left-0 w-[2px] bg-feed-ok/50" aria-hidden /> : null}
                       {slots.map((s) => (
                         <span
                           key={s.index}
@@ -208,7 +208,7 @@ export function ScheduleCalendar({
                             }
                           }}
                           title={`${s.name} — ${slotLabel(d, h)}`}
-                          className="flex max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.06] py-0.5 pl-1 pr-2 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.1]"
+                          className="flex max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak py-0.5 pl-1 pr-2 backdrop-blur-sm transition-colors hover:border-hairline-strong hover:bg-overlay-medium"
                         >
                           <StreamerAvatar streamer={streamerOf[s.index]} size={18} rounded="lg" badge={false} showLive={false} dim={false} />
                           <span className="truncate text-[0.66rem] font-semibold leading-tight text-foreground/90">{s.name}</span>
@@ -224,14 +224,14 @@ export function ScheduleCalendar({
       </div>
 
       {/* Unscheduled + publish */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.05] pt-3">
+      <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
         {unscheduled.length > 0 ? (
           <span className="flex flex-wrap items-center gap-1.5 text-[0.68rem] text-muted-foreground">
             No slot:
             {unscheduled.map((e) => (
               <span
                 key={e.index}
-                className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] py-0.5 pl-1 pr-2 text-[0.66rem] font-medium text-foreground/75"
+                className="flex items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak py-0.5 pl-1 pr-2 text-[0.66rem] font-medium text-foreground/75"
               >
                 <StreamerAvatar streamer={streamerOf[e.index]} size={16} rounded="lg" badge={false} showLive={false} dim={false} />
                 {e.name || `#${e.index + 1}`}
@@ -308,7 +308,7 @@ function PlacePanel({
             key={i}
             type="button"
             onClick={() => onPick(i)}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.76rem] text-foreground/85 transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.76rem] text-foreground/85 transition-colors hover:bg-overlay-weak hover:text-foreground"
           >
             <StreamerAvatar streamer={asStreamer(e)} size={20} badge={false} showLive={false} dim={false} />
             <span className="min-w-0 flex-1 truncate">{e.name}</span>
@@ -349,7 +349,7 @@ function EditPanel({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+          className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-overlay-weak hover:text-foreground"
         >
           <X className="size-3.5" />
         </button>
@@ -369,7 +369,7 @@ function EditPanel({
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#ef6a61]/30 bg-[#ef6a61]/[0.08] px-3 text-[0.74rem] font-medium text-[#ef6a61] transition-colors hover:bg-[#ef6a61]/[0.14]"
+        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-feed-danger/30 bg-feed-danger/[0.08] px-3 text-[0.74rem] font-medium text-feed-danger transition-colors hover:bg-feed-danger/[0.14]"
       >
         <Trash2 className="size-3.5" />
         Remove slot

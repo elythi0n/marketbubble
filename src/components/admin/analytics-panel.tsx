@@ -129,7 +129,7 @@ export function AnalyticsPanel({
   if (!enabled) {
     return (
       <p className="text-[0.78rem] text-muted-foreground">
-        Requires the database — set <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[0.7rem]">DATABASE_PATH</code> to
+        Requires the database — set <code className="rounded bg-overlay-weak px-1 py-0.5 text-[0.7rem]">DATABASE_PATH</code> to
         record viewer history and chat stats across restarts.
       </p>
     );
@@ -150,13 +150,13 @@ export function AnalyticsPanel({
             }}
             className={cn(
               "rounded-md px-2 py-1 text-[0.7rem] font-semibold transition-colors",
-              rangeMs === r.ms ? "bg-white/[0.1] text-foreground" : "text-muted-foreground hover:text-foreground",
+              rangeMs === r.ms ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {r.label}
           </button>
         ))}
-        <span className="mx-1 h-4 w-px bg-white/[0.08]" />
+        <span className="mx-1 h-4 w-px bg-overlay-medium" />
         <button
           type="button"
           aria-label="Earlier window"
@@ -207,10 +207,10 @@ export function AnalyticsPanel({
                   x2={W - PAD.right}
                   y1={y(yMax * f)}
                   y2={y(yMax * f)}
-                  stroke="rgba(255,255,255,0.07)"
+                  stroke="var(--hairline)"
                   strokeDasharray={f === 0 ? undefined : "3 4"}
                 />
-                <text x={PAD.left - 6} y={y(yMax * f) + 3} textAnchor="end" fontSize="10" fill="rgba(255,255,255,0.45)">
+                <text x={PAD.left - 6} y={y(yMax * f) + 3} textAnchor="end" fontSize="10" fill="var(--muted-foreground)">
                   {Math.round(yMax * f).toLocaleString()}
                 </text>
               </g>
@@ -223,7 +223,7 @@ export function AnalyticsPanel({
                 y={H - 8}
                 textAnchor={i === 0 ? "start" : i === 2 ? "end" : "middle"}
                 fontSize="10"
-                fill="rgba(255,255,255,0.45)"
+                fill="var(--muted-foreground)"
               >
                 {formatTick(ts, rangeMs)}
               </text>
@@ -262,11 +262,11 @@ export function AnalyticsPanel({
                   x2={x(hover)}
                   y1={PAD.top}
                   y2={H - PAD.bottom}
-                  stroke="rgba(255,255,255,0.3)"
+                  stroke="var(--hairline-strong)"
                   strokeDasharray="3 3"
                 />
                 {hoverRows.map((r) => (
-                  <circle key={r.metric} cx={x(hover)} cy={y(r.value)} r="3.4" fill={r.color} stroke="#161619" strokeWidth="1.6" />
+                  <circle key={r.metric} cx={x(hover)} cy={y(r.value)} r="3.4" fill={r.color} stroke="var(--sidebar)" strokeWidth="1.6" />
                 ))}
               </g>
             ) : null}
@@ -275,7 +275,7 @@ export function AnalyticsPanel({
           {/* Hover readout — flips sides past the chart midpoint */}
           {hover !== null && hoverRows.length > 0 ? (
             <div
-              className="pointer-events-none absolute top-2 z-10 min-w-36 rounded-lg border border-white/[0.1] bg-[#1b1b1f]/95 px-2.5 py-2 shadow-[0_12px_32px_-10px_rgba(0,0,0,0.8)] backdrop-blur-sm"
+              className="pointer-events-none absolute top-2 z-10 min-w-36 rounded-lg border border-hairline bg-card/95 px-2.5 py-2 shadow-[var(--shadow-popover)] backdrop-blur-sm"
               style={{
                 left: `${(x(hover) / W) * 100}%`,
                 transform: x(hover) > W * 0.62 ? "translateX(calc(-100% - 12px))" : "translateX(12px)",

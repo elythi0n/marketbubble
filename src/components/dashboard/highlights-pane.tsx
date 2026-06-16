@@ -33,11 +33,11 @@ function jumpToHighlight(h: Highlight) {
 function HighlightCard({ h, nowMs }: { h: Highlight; nowMs: number }) {
   const canJump = !!h.anchorMsgId;
   return (
-    <div className="border-b border-white/[0.05] px-3 py-3 last:border-b-0">
+    <div className="border-b border-hairline px-3 py-3 last:border-b-0">
       {/* Spike stats row */}
       <div className="mb-2 flex items-center gap-2">
-        <Flame className="size-3.5 flex-none text-[#ef6a61]" />
-        <span className="font-mono text-[0.78rem] font-bold text-[#ef6a61]">
+        <Flame className="size-3.5 flex-none text-feed-danger" />
+        <span className="font-mono text-[0.78rem] font-bold text-feed-danger">
           {h.ratio.toFixed(1)}×
         </span>
         <span className="text-[0.72rem] text-muted-foreground">
@@ -73,7 +73,7 @@ function HighlightCard({ h, nowMs }: { h: Highlight; nowMs: number }) {
         <button
           type="button"
           onClick={() => jumpToHighlight(h)}
-          className="text-[0.66rem] font-medium text-[#a8a8f8] transition-opacity hover:opacity-80"
+          className="text-[0.66rem] font-medium text-accent-violet transition-opacity hover:opacity-80"
         >
           Jump to chat →
         </button>
@@ -99,7 +99,7 @@ export function HighlightsPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-hairline px-3">
         <Flame className="size-4 text-muted-foreground" />
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-foreground">
           Highlights
@@ -113,7 +113,7 @@ export function HighlightsPane() {
               type="button"
               title="Clear all highlights"
               onClick={clearHighlights}
-              className="ml-auto flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+              className="ml-auto flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
             >
               <Trash2 className="size-3.5" />
             </button>

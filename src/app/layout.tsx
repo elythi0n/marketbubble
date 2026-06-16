@@ -9,6 +9,7 @@ import { Preloader } from "@/components/preloader";
 import { NewsDrawerProvider } from "@/lib/markets/news-drawer-context";
 import { StockDrawerProvider } from "@/lib/markets/stock-drawer-context";
 import { getSiteUrl, siteDescription, siteName } from "@/lib/site";
+import { ThemeProvider, ThemeScript } from "@/lib/theme/theme-context";
 
 /** Body / UI typeface for the whole app (nav, chat, controls). */
 const sans = Schibsted_Grotesk({
@@ -59,7 +60,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#141416",
+  // Match the address-bar tint to whichever palette the visitor lands in.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f1ede2" },
+    { media: "(prefers-color-scheme: dark)", color: "#141416" },
+  ],
   width: "device-width",
   initialScale: 1,
   // Draw under the notch/home bar; the app handles env(safe-area-inset-*) itself.
@@ -95,18 +100,22 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${sans.variable} ${geistMono.variable} ${walburn.variable}`}
+      suppressHydrationWarning
+      className={`${sans.variable} ${geistMono.variable} ${walburn.variable}`}
     >
       <body className="h-full font-sans antialiased">
+        <ThemeScript />
         <JsonLd />
-        <Preloader />
-        <NewsDrawerProvider>
-          <NewsDrawer />
-          <StockDrawerProvider>
-            <StockDrawer />
-            {children}
-          </StockDrawerProvider>
-        </NewsDrawerProvider>
+        <ThemeProvider>
+          <Preloader />
+          <NewsDrawerProvider>
+            <NewsDrawer />
+            <StockDrawerProvider>
+              <StockDrawer />
+              {children}
+            </StockDrawerProvider>
+          </NewsDrawerProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

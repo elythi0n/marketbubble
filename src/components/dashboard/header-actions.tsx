@@ -110,9 +110,9 @@ export function HeaderActions({ containerApi, group }: IDockviewHeaderActionsPro
         {open ? (
           <>
             <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} aria-hidden />
-            <div className="absolute right-0 top-full z-[100] mt-1.5 w-52 rounded-lg border border-white/12 bg-[#1b1b1f] p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+            <div className="absolute right-0 top-full z-[100] mt-1.5 w-52 rounded-lg border border-hairline-strong bg-card p-1 shadow-[var(--shadow-popover)]">
               {sections.map((section, i) => (
-                <div key={section.label} className={i > 0 ? "mt-1 border-t border-white/[0.06] pt-1" : undefined}>
+                <div key={section.label} className={i > 0 ? "mt-1 border-t border-hairline pt-1" : undefined}>
                   <p className="px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     {section.label}
                   </p>
@@ -123,12 +123,12 @@ export function HeaderActions({ containerApi, group }: IDockviewHeaderActionsPro
                         key={item.id}
                         type="button"
                         onClick={() => add(item.id, item.title)}
-                        className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.82rem] text-foreground/90 transition-colors hover:bg-white/[0.07] hover:text-foreground"
+                        className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.82rem] text-foreground/90 transition-colors hover:bg-overlay-medium hover:text-foreground"
                       >
                         <item.icon className="size-3.5 flex-none text-muted-foreground" />
                         <span className="min-w-0 flex-1 truncate">{item.title}</span>
                         {opened ? (
-                          <span className="size-1 flex-none rounded-full bg-[#46c45a]" title="Already open" aria-label="Already open" />
+                          <span className="size-1 flex-none rounded-full bg-feed-ok" title="Already open" aria-label="Already open" />
                         ) : null}
                       </button>
                     );

@@ -13,6 +13,7 @@ import { DEMO_ENABLED } from "@/lib/demo-mode-context";
 import { DEMO_STREAMERS } from "@/lib/streamers/demo";
 import { MOCK_STREAMERS, type Streamer } from "@/lib/streamers/mock";
 import { useStreamers } from "@/lib/streamers/use-streamers";
+import { usePinDark } from "@/lib/theme/use-pin-dark";
 
 /**
  * Zero-install OBS overlay: a bare chat feed with no chrome, meant for a browser source.
@@ -25,6 +26,7 @@ import { useStreamers } from "@/lib/streamers/use-streamers";
  *   demo=1              use the demo roster (busy channels) instead of the show roster
  */
 function Overlay() {
+  usePinDark();
   const params = useSearchParams();
   const channelId = params.get("channel");
   const scale = Math.min(2.5, Math.max(0.8, Number(params.get("scale")) || 1.2));

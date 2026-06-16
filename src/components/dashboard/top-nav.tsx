@@ -10,6 +10,7 @@ import { walburn } from "@/lib/fonts";
 import { useStageMode } from "@/lib/stage-mode-context";
 import { NAV_SECTIONS } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MarketBubbleLogo } from "./market-bubble-logo";
 
@@ -20,7 +21,7 @@ export function TopNav() {
   const demoOn = useFlag("demo");
 
   return (
-    <header className="relative z-30 grid h-14 flex-none grid-cols-[1fr_auto_1fr] items-center border-b border-white/[0.07] bg-[#141416] px-4">
+    <header className="relative z-30 grid h-14 flex-none grid-cols-[1fr_auto_1fr] items-center border-b border-hairline bg-background px-4">
       {/* Left: brand lettermark with a tagline tooltip */}
       <div className="group relative w-fit">
         <Link
@@ -32,7 +33,7 @@ export function TopNav() {
         </Link>
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-1 top-full z-40 mt-1.5 -translate-y-1 whitespace-nowrap rounded-md border border-white/10 bg-[#1b1b1f] px-2.5 py-1.5 text-[0.74rem] font-medium text-foreground opacity-0 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.8)] transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100"
+          className="pointer-events-none absolute left-1 top-full z-40 mt-1.5 -translate-y-1 whitespace-nowrap rounded-md border border-hairline bg-card px-2.5 py-1.5 text-[0.74rem] font-medium text-foreground opacity-0 shadow-[var(--shadow-popover)] transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100"
         >
           Invest in yourself
         </span>
@@ -50,8 +51,8 @@ export function TopNav() {
               className={cn(
                 "rounded-md px-3.5 py-1.5 transition-colors",
                 active
-                  ? "bg-white/[0.07] text-foreground"
-                  : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
+                  ? "bg-overlay-medium text-foreground"
+                  : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground",
               )}
             >
               <span className={cn(walburn.className, "text-sm uppercase tracking-[0.06em]")}>
@@ -68,7 +69,7 @@ export function TopNav() {
       <div className="flex items-center justify-self-end gap-2.5">
         {/* Live / Demo segmented control (hidden when demo is disabled for this build) */}
         {DEMO_ENABLED && demoOn && pathname === "/" ? (
-        <div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.02] p-0.5">
+        <div className="flex items-center gap-0.5 rounded-md border border-hairline bg-overlay-weak p-0.5">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -78,10 +79,10 @@ export function TopNav() {
                   aria-pressed={!isDemo}
                   className={cn(
                     "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
-                    !isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground",
+                    !isDemo ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <Radio className={cn("size-3", !isDemo && "text-[#46c45a]")} />
+                  <Radio className={cn("size-3", !isDemo && "text-feed-ok")} />
                   Live
                 </button>
               }
@@ -97,7 +98,7 @@ export function TopNav() {
                   aria-pressed={isDemo}
                   className={cn(
                     "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[0.7rem] font-medium transition-colors",
-                    isDemo ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground",
+                    isDemo ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <Clapperboard className="size-3" />
@@ -109,6 +110,8 @@ export function TopNav() {
           </Tooltip>
         </div>
         ) : null}
+
+        <ThemeToggle />
 
         {/* Stage: broadcast overlay (OBS-ready) — icon-only, before Polymarket */}
         {pathname === "/" ? (
@@ -140,7 +143,7 @@ export function TopNav() {
           <img
             src="/polymarket.svg"
             alt="Polymarket"
-            className="h-5 w-auto opacity-80 invert transition-opacity hover:opacity-100"
+            className="h-5 w-auto opacity-80 transition-opacity hover:opacity-100 dark:invert"
           />
         </a>
       </div>

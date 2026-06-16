@@ -15,7 +15,7 @@ interface Mover {
 function Column({ title, rows, up }: { title: string; rows: Mover[]; up: boolean }) {
   return (
     <div className="min-w-0 flex-1">
-      <h3 className={`mb-1.5 px-3 pt-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+      <h3 className={`mb-1.5 px-3 pt-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] ${up ? "text-feed-ok" : "text-feed-danger"}`}>
         {title}
       </h3>
       <ul>
@@ -30,11 +30,11 @@ function Column({ title, rows, up }: { title: string; rows: Mover[]; up: boolean
               // would be inconsistent across surfaces, so we keep behavior unified here.
               onClick={() => setChartSymbol(`BINANCE:${m.symbol}USDT`)}
               title={`View ${m.symbol}/USDT on the chart`}
-              className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-overlay-weak"
             >
               <span className="min-w-0 flex-1 truncate font-mono text-[0.78rem] font-semibold text-foreground">{m.symbol}</span>
               <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">${formatPrice(m.price)}</span>
-              <span className={`w-16 text-right font-mono text-[0.72rem] font-medium tabular-nums ${up ? "text-[#46c45a]" : "text-[#ef6a61]"}`}>
+              <span className={`w-16 text-right font-mono text-[0.72rem] font-medium tabular-nums ${up ? "text-feed-ok" : "text-feed-danger"}`}>
                 {m.changePct > 0 ? "+" : ""}
                 {m.changePct.toFixed(1)}%
               </span>
@@ -67,11 +67,11 @@ export function MoversWidget() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Movers</span>
         <span className="ml-auto text-[0.62rem] text-muted-foreground/80">24h</span>
       </header>
-      <div className="flex flex-1 divide-x divide-white/[0.06] overflow-y-auto mb-scroll">
+      <div className="flex flex-1 divide-x divide-hairline overflow-y-auto mb-scroll">
         <Column title="Gainers" rows={data.gainers} up />
         <Column title="Losers" rows={data.losers} up={false} />
       </div>

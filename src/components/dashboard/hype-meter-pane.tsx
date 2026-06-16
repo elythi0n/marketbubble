@@ -16,7 +16,9 @@ const LEADERBOARD_WINDOW_MS = 3 * 60_000;
 const SPIKE_RATIO = 2.5; // last minute vs the window baseline
 const SPIKE_MIN_MPM = 30; // never call a spike on a near-dead chat
 
-const ACCENT = "#a8a8f8";
+// Sparkline color is `currentColor`, set to --accent-violet via a `text-accent-violet` class
+// on the <svg>. That lets the line and gradient flip with the theme without a re-render.
+const ACCENT = "currentColor";
 
 /** Filler words that would otherwise dominate any keyword leaderboard. */
 const STOP_WORDS = new Set([
@@ -44,7 +46,7 @@ function Sparkline({
     <svg
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="none"
-      className={cn("h-16 w-full", onSelectBucket && "cursor-pointer")}
+      className={cn("h-16 w-full text-accent-violet", onSelectBucket && "cursor-pointer")}
       role={onSelectBucket ? "button" : undefined}
       aria-label={onSelectBucket ? "Jump chat to a moment on the timeline" : undefined}
       onClick={
@@ -75,7 +77,7 @@ function Sparkline({
           <polygon
             key={idx}
             points={`${x.toFixed(1)},${H - 1} ${(x - 3.5).toFixed(1)},${H - 7} ${(x + 3.5).toFixed(1)},${H - 7}`}
-            fill="#ef6a61"
+            fill="var(--feed-danger)"
             opacity="0.75"
             vectorEffect="non-scaling-stroke"
           />
@@ -192,11 +194,11 @@ export function HypeMeterPane() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-11 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-11 flex-none items-center gap-2 border-b border-hairline px-3">
         <Activity className="size-4 text-muted-foreground" />
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-foreground">Hype Meter</span>
         <span className="ml-auto flex items-baseline gap-1">
-          <span className={cn("font-mono text-[1.05rem] font-bold tabular-nums leading-none", spikeRatio ? "text-[#ef6a61]" : "text-foreground")}>
+          <span className={cn("font-mono text-[1.05rem] font-bold tabular-nums leading-none", spikeRatio ? "text-feed-danger" : "text-foreground")}>
             {mpm}
           </span>
           <span className="text-[0.62rem] text-muted-foreground">msg/min</span>
@@ -212,8 +214,8 @@ export function HypeMeterPane() {
       ) : (
         <div className="flex-1 overflow-y-auto px-3 py-3 mb-scroll">
           {spikeRatio ? (
-            <div className="mb-3 flex items-center gap-2 rounded-lg border border-[#ef6a61]/25 bg-[#ef6a61]/[0.08] px-3 py-2">
-              <Flame className="size-4 flex-none text-[#ef6a61]" />
+            <div className="mb-3 flex items-center gap-2 rounded-lg border border-feed-danger/25 bg-feed-danger/[0.08] px-3 py-2">
+              <Flame className="size-4 flex-none text-feed-danger" />
               <span className="text-[0.78rem] font-medium text-foreground">
                 Chat is erupting — <b className="font-mono tabular-nums">{spikeRatio.toFixed(1)}×</b> the usual pace
               </span>
@@ -234,7 +236,7 @@ export function HypeMeterPane() {
               </h4>
               <ul className="flex flex-wrap gap-1.5">
                 {topEmotes.map(([code, e]) => (
-                  <li key={code} className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1" title={code}>
+                  <li key={code} className="flex items-center gap-1.5 rounded-lg bg-overlay-weak px-2 py-1" title={code}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={e.url} alt={code} className="size-5" />
                     <span className="font-mono text-[0.68rem] tabular-nums text-muted-foreground">{e.count}</span>
@@ -255,7 +257,7 @@ export function HypeMeterPane() {
                   return (
                     <li key={word} className="relative flex items-center gap-2 overflow-hidden rounded-md px-2 py-1">
                       <span
-                        className="absolute inset-y-0 left-0 bg-white/[0.05]"
+                        className="absolute inset-y-0 left-0 bg-overlay-weak"
                         style={{ width: `${(count / max) * 100}%` }}
                         aria-hidden
                       />

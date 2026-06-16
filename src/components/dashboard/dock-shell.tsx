@@ -34,6 +34,26 @@ const STORAGE_KEY = "mb-dock-layout-v2";
 
 const REQUIRED_PANELS = ["stream", "chat", "gifts"] as const;
 
+// Title labels for each panel id, used when a layout is built from a `?panel=<id>` URL param
+// (the showcase route mounts a single panel for clean screenshots).
+const SHOWCASE_TITLES: Record<string, string> = {
+  stream: "Stream",
+  chat: "Chat",
+  gifts: "Gifts",
+  markets: "Markets",
+  news: "Market News",
+  predictions: "Predictions",
+  mentions: "X Mentions",
+  hyperliquid: "Hyperliquid",
+  hype: "Hype Meter",
+  trends: "Tickers in Chat",
+  chatters: "Chat Roster",
+  highlights: "Highlights",
+  settings: "Settings",
+  assistant: "Assistant",
+  inbox: "Mention Inbox",
+};
+
 const components: Record<string, React.FC<IDockviewPanelProps>> = {
   stream: () => <StreamPane />,
   chat: () => <ChatPane />,
@@ -122,6 +142,14 @@ export function DockShell() {
   const onReady = useCallback((event: DockviewReadyEvent) => {
     const { api } = event;
     setDockApi(api);
+
+    // Showcase mode: ?panel=<id> mounts exactly one panel with no persistence. Used by the
+    // screenshot capture script to grab each panel in isolation (single tab strip + body).
+    const showcaseId = new URLSearchParams(window.location.search).get("panel");
+    if (showcaseId && SHOWCASE_TITLES[showcaseId]) {
+      api.addPanel({ id: showcaseId, component: showcaseId, title: SHOWCASE_TITLES[showcaseId] });
+      return;
+    }
 
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {

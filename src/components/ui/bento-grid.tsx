@@ -33,9 +33,9 @@ export function BentoCard({ className, name, description, Icon, iconNode, eyebro
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-[1.35rem] border border-white/12 bg-gradient-to-b from-white/[0.055] to-white/[0.03]",
-        "p-5 shadow-[0_14px_46px_-24px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all duration-300",
-        "hover:-translate-y-0.5 hover:border-blue-200/25 hover:from-white/[0.08] hover:to-white/[0.05] hover:shadow-[0_22px_58px_-26px_rgba(91,140,255,0.45)]",
+        "group relative overflow-hidden rounded-[1.35rem] border border-hairline-strong bg-gradient-to-b from-overlay-weak to-overlay-weak/60",
+        "p-5 shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300",
+        "hover:-translate-y-0.5 hover:border-blue-200/25 hover:from-overlay-medium hover:to-overlay-weak hover:shadow-[0_22px_58px_-26px_rgba(91,140,255,0.45)]",
         className,
       )}
     >
@@ -53,7 +53,7 @@ export function BentoCard({ className, name, description, Icon, iconNode, eyebro
         {eyebrow ? <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/58">{eyebrow}</p> : null}
 
         {iconNode ? (
-          <div className="mt-auto inline-flex size-[3.35rem] items-center justify-center rounded-2xl border border-white/12 bg-white/[0.05] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-all duration-300 group-hover:border-white/20 group-hover:bg-white/[0.08]">
+          <div className="mt-auto inline-flex size-[3.35rem] items-center justify-center rounded-2xl border border-hairline-strong bg-overlay-weak shadow-[var(--shadow-popover)] transition-all duration-300 group-hover:border-hairline-strong group-hover:bg-overlay-medium">
             {iconNode}
           </div>
         ) : Icon ? (
@@ -62,7 +62,7 @@ export function BentoCard({ className, name, description, Icon, iconNode, eyebro
           </div>
         ) : null}
 
-        <h3 className="mt-4 text-xl font-semibold leading-tight text-white sm:text-[1.42rem]">{name}</h3>
+        <h3 className="mt-4 text-xl font-semibold leading-tight text-foreground sm:text-[1.42rem]">{name}</h3>
         <p className="mt-2 max-w-[28ch] text-sm leading-relaxed text-blue-50/78 sm:text-[0.98rem]">{description}</p>
       </div>
     </article>

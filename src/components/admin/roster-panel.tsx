@@ -98,7 +98,7 @@ export function RosterPanel() {
             const set = (field: keyof RosterDraftRow, value: string | boolean) =>
               setRosterDraft((cur) => (cur ? cur.map((row, j) => (j === i ? { ...row, [field]: value } : row)) : cur));
             return (
-              <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-white/[0.06] bg-white/[0.015] p-2 sm:grid-cols-[1.2fr_1fr_1fr_1fr_2rem_2rem] sm:border-0 sm:bg-transparent sm:p-0">
+              <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-hairline bg-overlay-weak p-2 sm:grid-cols-[1.2fr_1fr_1fr_1fr_2rem_2rem] sm:border-0 sm:bg-transparent sm:p-0">
                 <input type="text" value={d.name} onChange={(e) => set("name", e.target.value)} placeholder="Name" aria-label={`Streamer ${i + 1} name`} className={cn(INPUT, "py-1.5 text-[0.78rem]")} />
                 <input type="text" value={d.twitch} onChange={(e) => set("twitch", e.target.value)} placeholder="twitch login" aria-label={`Streamer ${i + 1} Twitch`} className={cn(INPUT, "py-1.5 font-mono text-[0.74rem]")} />
                 <input type="text" value={d.kick} onChange={(e) => set("kick", e.target.value)} placeholder="kick slug" aria-label={`Streamer ${i + 1} Kick`} className={cn(INPUT, "py-1.5 font-mono text-[0.74rem]")} />
@@ -112,8 +112,8 @@ export function RosterPanel() {
                   className={cn(
                     "inline-flex size-8 items-center justify-center rounded-lg transition-colors",
                     d.pinned
-                      ? "bg-[#d8b25a]/[0.12] text-[#d8b25a] hover:bg-[#d8b25a]/[0.18]"
-                      : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground",
+                      ? "bg-feed-warn/[0.12] text-feed-warn hover:bg-feed-warn/[0.18]"
+                      : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground",
                   )}
                 >
                   <Pin className={cn("size-3.5", d.pinned && "fill-current")} />
@@ -122,14 +122,14 @@ export function RosterPanel() {
                   type="button"
                   onClick={() => setRosterDraft((cur) => (cur ? cur.filter((_, j) => j !== i) : cur))}
                   aria-label={`Remove ${d.name || `streamer ${i + 1}`}`}
-                  className="inline-flex size-8 items-center justify-center justify-self-end rounded-lg text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-[#ef6a61] sm:justify-self-auto"
+                  className="inline-flex size-8 items-center justify-center justify-self-end rounded-lg text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-feed-danger sm:justify-self-auto"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
               </div>
             );
           })}
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.05] pt-3">
+          <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
             {rosterDraft.length < 12 ? (
               <button type="button" onClick={() => setRosterDraft((cur) => [...(cur ?? []), { name: "", twitch: "", kick: "", x: "", pinned: false, schedule: null }])} className={QUIET_BTN}>
                 <Plus className="size-3.5" />

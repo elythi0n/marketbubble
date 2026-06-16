@@ -126,8 +126,8 @@ function WatchRow({
       }}
       onDragEnd={onDragEnd}
       title={`View ${displayLabel(symbol)} on the chart`}
-      className={`group flex cursor-pointer items-center gap-2 border-b border-white/[0.04] px-2 py-2 transition-colors hover:bg-white/[0.03] ${
-        isHover ? "bg-white/[0.06]" : ""
+      className={`group flex cursor-pointer items-center gap-2 border-b border-hairline px-2 py-2 transition-colors hover:bg-overlay-weak ${
+        isHover ? "bg-overlay-medium" : ""
       }`}
     >
       <span
@@ -145,14 +145,18 @@ function WatchRow({
         className="rounded px-1.5 py-0.5 font-mono text-[0.84rem] tabular-nums text-foreground transition-colors duration-300"
         style={{
           backgroundColor:
-            flash === "up" ? "rgba(70,196,90,0.22)" : flash === "down" ? "rgba(239,106,97,0.22)" : "transparent",
+            flash === "up"
+              ? "color-mix(in srgb, var(--feed-ok) 22%, transparent)"
+              : flash === "down"
+                ? "color-mix(in srgb, var(--feed-danger) 22%, transparent)"
+                : "transparent",
         }}
       >
         {ticker ? `$${formatPrice(ticker.price)}` : "—"}
       </span>
       <span
         className={`w-14 text-right font-mono text-[0.72rem] font-medium tabular-nums ${
-          ticker ? (up ? "text-[#46c45a]" : "text-[#ef6a61]") : "text-muted-foreground"
+          ticker ? (up ? "text-feed-ok" : "text-feed-danger") : "text-muted-foreground"
         }`}
       >
         {ticker ? `${up ? "+" : ""}${ticker.changePct.toFixed(2)}%` : "—"}
@@ -165,7 +169,7 @@ function WatchRow({
         }}
         title="Remove"
         aria-label={`Remove ${displayLabel(symbol)}`}
-        className="flex-none rounded text-muted-foreground/40 opacity-0 transition-all hover:text-[#ef6a61] group-hover:opacity-100"
+        className="flex-none rounded text-muted-foreground/40 opacity-0 transition-all hover:text-feed-danger group-hover:opacity-100"
       >
         <X className="size-3.5" />
       </button>
@@ -278,10 +282,10 @@ export function LiveWatchlist() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
-      <header className="flex h-9 flex-none items-center gap-2 border-b border-white/[0.07] px-3">
+      <header className="flex h-9 flex-none items-center gap-2 border-b border-hairline px-3">
         <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Watchlist</span>
         <span className="ml-auto flex items-center gap-1.5 text-[0.62rem] text-muted-foreground">
-          <span className={`size-1.5 rounded-full ${anyLive ? "bg-[#46c45a]" : "bg-muted-foreground"}`} />
+          <span className={`size-1.5 rounded-full ${anyLive ? "bg-feed-ok" : "bg-muted-foreground"}`} />
           {anyLive ? "live" : "connecting"}
         </span>
         <button
@@ -293,14 +297,14 @@ export function LiveWatchlist() {
           title={adding ? "Close" : "Add symbol"}
           aria-label={adding ? "Close add input" : "Add symbol"}
           aria-expanded={adding}
-          className="flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground"
+          className="flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
         >
           <Plus className={`size-3.5 transition-transform ${adding ? "rotate-45" : ""}`} />
         </button>
       </header>
 
       {adding ? (
-        <div className="flex-none border-b border-white/[0.06] bg-white/[0.02] p-2">
+        <div className="flex-none border-b border-hairline bg-overlay-weak p-2">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -322,7 +326,7 @@ export function LiveWatchlist() {
                 }
               }}
               placeholder="e.g. NVDA, BTC, BTCUSDT"
-              className="min-w-0 flex-1 rounded border border-white/[0.08] bg-black/30 px-2 py-1 font-mono text-[0.78rem] uppercase text-foreground outline-none placeholder:text-muted-foreground/50 placeholder:normal-case focus:border-white/[0.18]"
+              className="min-w-0 flex-1 rounded border border-hairline bg-overlay-weak px-2 py-1 font-mono text-[0.78rem] uppercase text-foreground outline-none placeholder:text-muted-foreground/50 placeholder:normal-case focus:border-hairline-strong"
               maxLength={16}
               spellCheck={false}
               autoCapitalize="characters"
@@ -330,12 +334,12 @@ export function LiveWatchlist() {
             />
             <button
               type="submit"
-              className="rounded bg-white/[0.08] px-2 py-1 text-[0.74rem] font-medium text-foreground transition-colors hover:bg-white/[0.14]"
+              className="rounded bg-overlay-medium px-2 py-1 text-[0.74rem] font-medium text-foreground transition-colors hover:bg-overlay-strong"
             >
               Add
             </button>
           </form>
-          {addError ? <p className="mt-1.5 text-[0.66rem] text-[#ef6a61]">{addError}</p> : null}
+          {addError ? <p className="mt-1.5 text-[0.66rem] text-feed-danger">{addError}</p> : null}
         </div>
       ) : null}
 
@@ -345,7 +349,7 @@ export function LiveWatchlist() {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="rounded border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[0.74rem] text-foreground transition-colors hover:bg-white/[0.08]"
+            className="rounded border border-hairline bg-overlay-weak px-3 py-1.5 text-[0.74rem] text-foreground transition-colors hover:bg-overlay-medium"
           >
             Add a symbol
           </button>

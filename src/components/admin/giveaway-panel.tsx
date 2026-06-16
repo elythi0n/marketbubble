@@ -192,14 +192,14 @@ export function GiveawayPanel() {
       <Card title="Giveaway" hint="Pick a random viewer from the saved chatters" icon={Gift}>
         <p className="text-[0.78rem] text-muted-foreground">
           Requires the database — chatters are saved durably only when{" "}
-          <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[0.7rem]">DATABASE_PATH</code> is set.
+          <code className="rounded bg-overlay-weak px-1 py-0.5 text-[0.7rem]">DATABASE_PATH</code> is set.
         </p>
       </Card>
     );
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
       <Card
         title="Draw setup"
         hint={demo ? "Demo mode — rolling against a mock chatter pool" : "Who can win, and how long the roll runs"}
@@ -239,7 +239,7 @@ export function GiveawayPanel() {
           </label>
           <div className="flex flex-col gap-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Roll duration
-            <div className="flex items-center gap-0.5 self-start rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
+            <div className="flex items-center gap-0.5 self-start rounded-lg border border-hairline bg-overlay-weak p-0.5">
               {DURATIONS.map((d) => (
                 <button
                   key={d}
@@ -248,7 +248,7 @@ export function GiveawayPanel() {
                   aria-pressed={durationSec === d}
                   className={cn(
                     "rounded-md px-2.5 py-1 text-[0.7rem] font-medium normal-case tracking-normal transition-colors",
-                    durationSec === d ? "bg-white/[0.1] text-foreground" : "text-muted-foreground hover:text-foreground",
+                    durationSec === d ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {d}s
@@ -257,7 +257,7 @@ export function GiveawayPanel() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 border-t border-white/[0.05] pt-3">
+          <div className="flex items-center gap-2 border-t border-hairline pt-3">
             <button type="button" onClick={() => void start()} disabled={busy || rolling || eligible === 0} className={SOLID_BTN}>
               <Dices className="size-3.5" />
               {giveaway && !rolling ? "Roll again" : "Start roll"}
@@ -266,7 +266,7 @@ export function GiveawayPanel() {
               {eligible === null ? "…" : `${eligible.toLocaleString()} eligible`}
             </span>
           </div>
-          {err ? <p className="text-[0.72rem] text-[#ef6a61]">{err}</p> : null}
+          {err ? <p className="text-[0.72rem] text-feed-danger">{err}</p> : null}
           <p className="text-[0.64rem] text-muted-foreground/70">
             Entries come from every chatter the relay and X bridge have saved — chat counts accumulate even
             while streams are offline. One ticket per name and platform, drawn uniformly.
@@ -285,7 +285,7 @@ export function GiveawayPanel() {
         {giveaway ? (
           <div className="flex flex-1 flex-col">
             <GiveawayReel giveaway={giveaway} className="flex-1 text-[1.05rem]" />
-            <div className="mt-3 flex items-center gap-2 border-t border-white/[0.05] pt-3">
+            <div className="mt-3 flex items-center gap-2 border-t border-hairline pt-3">
               {!rolling ? (
                 <span className="flex items-center gap-1.5 text-[0.78rem] text-foreground/90">
                   <PlatformGlyph platform={giveaway.winnerPlatform as Streamer["platforms"][number]} className="size-3.5" />

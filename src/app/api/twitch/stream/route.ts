@@ -16,31 +16,21 @@ const GQL_URL = "https://gql.twitch.tv/gql";
 const GQL_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
 async function fetchViaGQL(login: string): Promise<StreamStatusPayload | null> {
+  // Inline query rather than a persisted-query hash: Twitch rotates the hashes periodically and a
+  // stale hash silently degrades every channel to "offline" (PersistedQueryNotFound).
+  const query = `query($login:String!){user(login:$login){stream{viewersCount title previewImageURL}lastBroadcast{title}}}`;
   try {
-    const body = [
-      {
-        operationName: "StreamMetadata",
-        variables: { channelLogin: login },
-        extensions: {
-          persistedQuery: {
-            version: 1,
-            sha256Hash: "059c4653b788f5bdb2f5a2d2a24b0ddc3831a15079001a3d927556a96fb0517f",
-          },
-        },
-      },
-    ];
-
     const res = await fetch(GQL_URL, {
       method: "POST",
       headers: { "Client-ID": GQL_CLIENT_ID, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ query, variables: { login } }),
       next: { revalidate: 30 },
     });
 
     if (!res.ok) return null;
 
-    const data = await res.json() as [{ data?: { user?: { stream?: { viewersCount: number; title?: string; previewImageURL?: string } | null; lastBroadcast?: { title?: string } } } }];
-    const user = data[0]?.data?.user;
+    const data = await res.json() as { data?: { user?: { stream?: { viewersCount: number; title?: string; previewImageURL?: string } | null; lastBroadcast?: { title?: string } } } };
+    const user = data?.data?.user;
     if (!user) return null;
 
     const stream = user.stream;
@@ -49,9 +39,10 @@ async function fetchViaGQL(login: string): Promise<StreamStatusPayload | null> {
       live,
       viewerCount: stream?.viewersCount ?? 0,
       title: stream?.title ?? user.lastBroadcast?.title ?? "",
-      // GQL omits a preview, but Twitch serves a public live thumbnail at a predictable URL.
+      // GQL returns a {width}x{height} placeholder URL; substitute, with a predictable fallback.
       thumbnail: live
-        ? stream?.previewImageURL ?? `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-440x248.jpg`
+        ? stream?.previewImageURL?.replace("{width}", "320").replace("{height}", "180")
+          ?? `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-320x180.jpg`
         : undefined,
     };
   } catch {

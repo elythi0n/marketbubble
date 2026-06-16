@@ -29,7 +29,7 @@ function TooltipContent({
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(
-            "max-w-[16rem] rounded-md border border-white/10 bg-[#1b1b1f] px-2 py-1 text-xs font-medium text-foreground shadow-[0_8px_24px_rgba(0,0,0,0.5)]",
+            "max-w-[16rem] rounded-md border border-hairline bg-popover px-2 py-1 text-xs font-medium text-foreground shadow-[var(--shadow-popover)]",
             "origin-[var(--transform-origin)] transition-[transform,opacity] data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
             className,
           )}

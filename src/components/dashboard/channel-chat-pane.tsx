@@ -82,22 +82,22 @@ export function ChannelChatPane({ streamerId, platform }: ChannelChatParams) {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-card">
       <TooltipProvider>
-        <header className="flex h-11 flex-none items-center gap-2.5 border-b border-white/[0.07] px-3">
+        <header className="flex h-11 flex-none items-center gap-2.5 border-b border-hairline px-3">
           <StreamerAvatar streamer={streamer} size={24} showLive={false} />
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[0.82rem] font-semibold text-foreground">{streamer.name}</span>
             {platform ? (
-              <span className="flex flex-none items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="flex flex-none items-center gap-1 rounded-md border border-hairline bg-overlay-weak px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground">
                 <PlatformGlyph platform={platform} className="size-3" />
                 {PLATFORM_LABEL[platform]}
               </span>
             ) : null}
             {streamer.live ? (
-              <span className="size-1.5 flex-none rounded-full bg-[#46c45a]" title="Live" />
+              <span className="size-1.5 flex-none rounded-full bg-feed-ok" title="Live" />
             ) : null}
           </div>
 
-          <span className="ml-auto flex flex-none items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+          <span className="ml-auto flex flex-none items-center gap-2 rounded-lg bg-overlay-weak px-2.5 py-1.5">
             {Object.entries(statuses).map(([id, status]) => {
               const p = id.split(":")[0] as Platform;
               const connected = status === "open";
@@ -121,8 +121,8 @@ export function ChannelChatPane({ streamerId, platform }: ChannelChatParams) {
       </TooltipProvider>
 
       {focusAuthor ? (
-        <div className="flex flex-none items-center gap-2 border-b border-white/[0.07] bg-[#aab3c0]/[0.07] px-3 py-1.5">
-          <AtSign className="size-3.5 flex-none text-[#aab3c0]" />
+        <div className="flex flex-none items-center gap-2 border-b border-hairline bg-feed-link/[0.07] px-3 py-1.5">
+          <AtSign className="size-3.5 flex-none text-feed-link" />
           <span className="min-w-0 truncate text-[0.74rem] text-foreground/90">
             Focused on <b className="font-semibold">{focusAuthor}</b>
           </span>
@@ -130,7 +130,7 @@ export function ChannelChatPane({ streamerId, platform }: ChannelChatParams) {
             type="button"
             onClick={() => setFocusAuthor(null)}
             aria-label="Clear author focus"
-            className="ml-auto flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            className="ml-auto flex size-5 flex-none items-center justify-center rounded text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
           >
             <X className="size-3.5" />
           </button>
