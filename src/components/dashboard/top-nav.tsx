@@ -10,6 +10,7 @@ import { walburn } from "@/lib/fonts";
 import { useStageMode } from "@/lib/stage-mode-context";
 import { NAV_SECTIONS } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MarketBubbleLogo } from "./market-bubble-logo";
 
@@ -32,7 +33,7 @@ export function TopNav() {
         </Link>
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-1 top-full z-40 mt-1.5 -translate-y-1 whitespace-nowrap rounded-md border border-hairline bg-card px-2.5 py-1.5 text-[0.74rem] font-medium text-foreground opacity-0 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.8)] transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100"
+          className="pointer-events-none absolute left-1 top-full z-40 mt-1.5 -translate-y-1 whitespace-nowrap rounded-md border border-hairline bg-card px-2.5 py-1.5 text-[0.74rem] font-medium text-foreground opacity-0 shadow-[var(--shadow-popover)] transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100"
         >
           Invest in yourself
         </span>
@@ -109,6 +110,8 @@ export function TopNav() {
           </Tooltip>
         </div>
         ) : null}
+
+        <ThemeToggle />
 
         {/* Stage: broadcast overlay (OBS-ready) — icon-only, before Polymarket */}
         {pathname === "/" ? (

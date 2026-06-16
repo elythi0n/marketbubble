@@ -28,11 +28,12 @@ function ClipCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
         ) : (
           <ClipSourceIcon platform={platform} className="size-8 opacity-[0.08]" />
         )}
-        <span className="absolute flex size-9 items-center justify-center rounded-full border border-hairline-strong bg-black/40 opacity-0 transition-opacity group-active:opacity-100">
-          <Play className="size-3.5 translate-x-px fill-foreground text-foreground" />
+        {/* Overlays a clip thumbnail (video frame) — fixed white-on-black, theme-independent. */}
+        <span className="absolute flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/40 opacity-0 transition-opacity group-active:opacity-100">
+          <Play className="size-3.5 translate-x-px fill-white text-white" />
         </span>
         {duration ? (
-          <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.58rem] tabular-nums text-foreground/90">
+          <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.58rem] tabular-nums text-white/90">
             {duration}
           </span>
         ) : null}

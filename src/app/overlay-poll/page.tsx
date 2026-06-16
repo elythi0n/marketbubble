@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Lock, Trophy } from "lucide-react";
 
 import { useControl } from "@/lib/control/client";
+import { usePinDark } from "@/lib/theme/use-pin-dark";
 
 function remaining(endsAt: number, now: number): string {
   const s = Math.max(0, Math.ceil((endsAt - now) / 1000));
@@ -21,6 +22,7 @@ function remaining(endsAt: number, now: number): string {
  *   scale=<0.7–2>       size multiplier (default 1)
  */
 function PollOverlay() {
+  usePinDark();
   const params = useSearchParams();
   const bg = params.get("bg") ?? "dark";
   const scale = Math.min(2, Math.max(0.7, Number(params.get("scale")) || 1));
@@ -53,7 +55,7 @@ function PollOverlay() {
       style={{ background: bg === "transparent" ? "transparent" : "var(--background)", fontSize: `${scale}rem` }}
     >
       {poll ? (
-        <div className="w-full max-w-[34em] rounded-2xl border border-hairline-strong bg-sidebar/95 p-[1.1em] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)]">
+        <div className="w-full max-w-[34em] rounded-2xl border border-hairline-strong bg-sidebar/95 p-[1.1em] shadow-[var(--shadow-modal)]">
           <div className="flex items-center gap-[0.6em]">
             <p className="min-w-0 flex-1 text-[1.15em] font-bold leading-snug text-foreground">{poll.question}</p>
             {locked ? (

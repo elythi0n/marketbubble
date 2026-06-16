@@ -8,6 +8,7 @@ import { Clapperboard, Copy, MessagesSquare, MonitorPlay, PanelLeftClose, PanelL
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
+import { SpotifyIcon, TikTokIcon, TwitchIcon, XIcon } from "@/components/social-icons";
 import { ContextMenu, type MenuEntry } from "@/components/ui/context-menu";
 import { hasDock, openChannelChat } from "@/lib/dock-api";
 import { PLATFORM_LABEL } from "@/lib/feed/types";
@@ -30,12 +31,12 @@ function statusText(s: Streamer): string {
 }
 
 const SOCIALS = [
-  { name: "Twitch", icon: "/social/twitch.svg", href: "https://www.twitch.tv/fazebanks" },
-  { name: "X", icon: "/social/x-light.svg", href: "https://x.com/marketbubble" },
-  { name: "TikTok", icon: "/social/tiktok-light.svg", href: "https://www.tiktok.com/@marketbubble" },
+  { name: "Twitch", Icon: TwitchIcon, href: "https://www.twitch.tv/fazebanks" },
+  { name: "X", Icon: XIcon, href: "https://x.com/marketbubble" },
+  { name: "TikTok", Icon: TikTokIcon, href: "https://www.tiktok.com/@marketbubble" },
   {
     name: "Spotify",
-    icon: "/social/spotify.svg",
+    Icon: SpotifyIcon,
     href: "https://open.spotify.com/show/00yWnJPE80LSBglGwCrjZI?si=c83ecda867e94be1",
   },
 ];
@@ -62,19 +63,21 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
             Starting
           </span>
         ) : (
-          <span className="absolute left-2 top-2 rounded bg-black/45 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-muted-foreground">
+          <span className="absolute left-2 top-2 rounded bg-overlay-strong px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-muted-foreground">
             Offline
           </span>
         )}
         {streamer.live && hasVideo(streamer) ? (
-          <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[0.8rem] font-semibold tabular-nums text-foreground">
+          <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[0.8rem] font-semibold tabular-nums text-white">
             <span className="size-1.5 rounded-full bg-feed-danger" />
             {formatViewers(streamer.viewers)}
           </span>
         ) : null}
         {hover && streamer.live ? (
+          // Hover play overlays a live thumbnail (always a dark video frame), so the pill stays
+          // fixed white/black regardless of theme.
           <span className="absolute flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/35 opacity-0 transition-opacity group-hover:opacity-100">
-            <Play className="size-3.5 translate-x-px fill-foreground text-foreground" />
+            <Play className="size-3.5 translate-x-px fill-white text-white" />
           </span>
         ) : null}
       </div>
@@ -134,9 +137,9 @@ function ChannelCard({
         // Pinned keeps its golden frame even while selected — being the active channel
         // shouldn't hide that the operator pinned it.
         streamer.pinned && active
-          ? "border-feed-warn/60 bg-feed-warn/[0.07] shadow-[0_0_18px_-8px_rgba(216,178,90,0.55)]"
+          ? "border-feed-warn/60 bg-feed-warn/[0.07] shadow-[var(--shadow-glow-warn)]"
           : streamer.pinned
-            ? "border-feed-warn/40 bg-feed-warn/[0.04] shadow-[0_0_16px_-8px_rgba(216,178,90,0.45)] hover:bg-feed-warn/[0.08]"
+            ? "border-feed-warn/40 bg-feed-warn/[0.04] shadow-[var(--shadow-glow-warn)] hover:bg-feed-warn/[0.08]"
             : active
               ? "border-hairline-strong bg-overlay-weak"
               : "border-transparent hover:bg-overlay-weak",
@@ -196,7 +199,7 @@ function CollapsedStreamerButton({
       {rect
         ? createPortal(
             <div
-              className="pointer-events-none fixed z-[120] w-[248px] overflow-hidden rounded-lg border border-hairline-strong bg-popover shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+              className="pointer-events-none fixed z-[120] w-[248px] overflow-hidden rounded-lg border border-hairline-strong bg-popover shadow-[var(--shadow-card)]"
               style={{
                 left: rect.right + 10,
                 top: Math.min(rect.top - 6, window.innerHeight - 210),
@@ -345,14 +348,9 @@ export function Sidebar() {
               rel="noreferrer noopener"
               title={s.name}
               aria-label={s.name}
-              className="group flex items-center justify-center rounded-md p-2 transition-colors hover:bg-overlay-weak"
+              className="group flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={s.icon}
-                alt={s.name}
-                className="size-[18px] opacity-65 transition-opacity duration-150 group-hover:opacity-100"
-              />
+              <s.Icon className="size-[18px]" />
             </motion.a>
           ))}
         </div>

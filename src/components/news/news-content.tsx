@@ -62,7 +62,7 @@ function HeadlineText({ text }: { text: string }) {
     <>
       {parts.map((part, i) =>
         /^\$[A-Z]{1,6}$/.test(part)
-          ? <span key={i} className="text-[#a8a8f8]">{part}</span>
+          ? <span key={i} className="text-accent-violet">{part}</span>
           : part
       )}
     </>
@@ -108,8 +108,8 @@ function FearGreedBadge({ value, classification }: FearGreed) {
 // ─── article meta row (breaking + category) ───────────────────────────────────
 
 const CAT_LABEL: Record<string, string> = { crypto: "Crypto", markets: "Markets" };
-const CAT_DOT: Record<string, string> = { crypto: "bg-[#a8a8f8]", markets: "bg-feed-ok" };
-const CAT_TEXT: Record<string, string> = { crypto: "text-[#a8a8f8]", markets: "text-feed-ok" };
+const CAT_DOT: Record<string, string> = { crypto: "bg-accent-violet", markets: "bg-feed-ok" };
+const CAT_TEXT: Record<string, string> = { crypto: "text-accent-violet", markets: "text-feed-ok" };
 
 function ArticleMeta({ category, publishedAt }: { category: string; publishedAt: string }) {
   const breaking = isBreaking(publishedAt);
@@ -342,12 +342,13 @@ function ClipGridCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
           <ClipSourceIcon platform={clip.platform} className="size-7 opacity-[0.08]" />
         )}
         <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="flex size-9 items-center justify-center rounded-full border border-hairline-strong bg-black/50 backdrop-blur-sm">
-            <Play className="size-3.5 translate-x-px fill-foreground text-foreground" />
+          {/* Play + duration overlay a clip thumbnail — fixed white-on-black, theme-independent. */}
+          <span className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/50 backdrop-blur-sm">
+            <Play className="size-3.5 translate-x-px fill-white text-white" />
           </span>
         </span>
         {clip.duration ? (
-          <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.58rem] tabular-nums text-foreground/90">
+          <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.58rem] tabular-nums text-white/90">
             {clip.duration}
           </span>
         ) : null}
@@ -557,7 +558,7 @@ export function NewsContent() {
           onClick={acceptPending}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-hairline bg-overlay-weak py-2.5 text-[0.75rem] font-medium text-foreground/80 transition-colors hover:bg-overlay-medium hover:text-foreground"
         >
-          <RefreshCw className="size-3.5 text-[#a8a8f8]" />
+          <RefreshCw className="size-3.5 text-accent-violet" />
           {newCount} new {newCount === 1 ? "story" : "stories"} — click to load
         </button>
       ) : null}

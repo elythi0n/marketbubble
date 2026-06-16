@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { TopNav } from "@/components/dashboard/top-nav";
+import { MobileThemeChip } from "@/components/theme-toggle";
 import { useIsMobile } from "@/lib/use-is-mobile";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,8 @@ export function PageShell({ children, glow = false }: { children: ReactNode; glo
         </main>
         {isMobile ? <BottomNav /> : null}
       </div>
+      {/* Floating theme toggle for mobile — visible on every page-shell route. */}
+      {isMobile ? <MobileThemeChip /> : null}
     </div>
   );
 }

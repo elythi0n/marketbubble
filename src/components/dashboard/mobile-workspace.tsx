@@ -96,7 +96,8 @@ function TheaterView({ channel }: { channel: Streamer }) {
         type="button"
         onClick={() => setChatOpen((v) => !v)}
         aria-label={chatOpen ? "Hide chat overlay" : "Show chat overlay"}
-        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-2 z-30 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-foreground backdrop-blur-sm transition-colors active:bg-black/75"
+        // Sits over the dark video player → fixed light glyph + dark backdrop, theme-independent.
+        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-2 z-30 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur-sm transition-colors active:bg-black/75"
       >
         {chatOpen ? <MessageSquareOff className="size-4" /> : <MessageSquare className="size-4" />}
       </button>

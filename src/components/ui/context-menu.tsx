@@ -68,7 +68,7 @@ export function ContextMenu({ x, y, entries, onClose }: Props) {
           e.preventDefault();
           e.stopPropagation();
         }}
-        className="fixed z-[151] w-56 rounded-lg border border-hairline-strong bg-popover p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]"
+        className="fixed z-[151] w-56 rounded-lg border border-hairline-strong bg-popover p-1 shadow-[var(--shadow-popover)]"
       >
         {entries.map((entry, i) => {
           if (entry.type === "separator") {

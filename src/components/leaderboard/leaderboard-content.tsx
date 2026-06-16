@@ -209,7 +209,7 @@ function Podium({ rows, compact = false }: { rows: PodiumRow[]; compact?: boolea
             transition={{ type: "spring", stiffness: 320, damping: 22 }}
             className={cn(
               "group relative flex min-w-0 flex-col items-center overflow-hidden rounded-2xl border text-center",
-              "shadow-[0_18px_46px_-26px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.05)]",
+              "shadow-[var(--shadow-card)]",
               tint.border,
               compact
                 ? first
@@ -429,7 +429,7 @@ export function LeaderboardContent() {
         )}
 
         {tab === "chatters" && chattersFetched && chatters.length === 0 ? (
-          <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[var(--shadow-card)]">
             <div className="flex flex-col items-center gap-2.5 py-14 text-center">
               <MessageSquare className="size-8 text-muted-foreground/25" />
               <p className="text-[0.95rem] font-medium text-muted-foreground">No chatters yet</p>
@@ -439,7 +439,7 @@ export function LeaderboardContent() {
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]">
+          <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[var(--shadow-card)]">
             <table className="w-full border-collapse">
               {tab === "traders" ? (
                 <>

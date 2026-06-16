@@ -32,7 +32,7 @@ export function StreamerSheet({ open, onClose }: { open: boolean; onClose: () =>
       {open ? (
         <>
           <motion.div
-            className="fixed inset-0 z-50 bg-black/60"
+            className="fixed inset-0 z-50 bg-scrim"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

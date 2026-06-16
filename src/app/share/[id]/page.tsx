@@ -37,7 +37,7 @@ export default async function SharePage({ params }: Params) {
       <img
         src={`/api/share-card/${id}`}
         alt={`${siteName} highlight`}
-        className="max-h-[80dvh] w-auto rounded-2xl border border-hairline shadow-[0_32px_90px_-20px_rgba(0,0,0,0.9)]"
+        className="max-h-[80dvh] w-auto rounded-2xl border border-hairline shadow-[var(--shadow-modal)]"
       />
       <Link
         href="/"

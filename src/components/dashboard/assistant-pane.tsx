@@ -191,7 +191,7 @@ function ToolCard({ name, args, result }: { name: string; args: string; result: 
       {open && result !== null ? (
         <div className="border-t border-hairline px-2.5 py-2">
           <p className="mb-1 text-[0.56rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Output</p>
-          <pre className="max-h-44 overflow-auto rounded bg-black/30 p-2 font-mono text-[0.64rem] leading-relaxed text-foreground/80 mb-scroll">{tryPretty(result)}</pre>
+          <pre className="max-h-44 overflow-auto rounded bg-overlay-medium p-2 font-mono text-[0.64rem] leading-relaxed text-foreground/80 mb-scroll">{tryPretty(result)}</pre>
         </div>
       ) : null}
     </div>
@@ -694,7 +694,7 @@ export function AssistantPane() {
               {modelOpen ? (
                 <>
                   <div className="fixed inset-0 z-[90]" onClick={() => setModelOpen(false)} aria-hidden />
-                  <div className="absolute bottom-full left-0 z-[100] mb-1.5 w-56 rounded-lg border border-hairline-strong bg-card shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+                  <div className="absolute bottom-full left-0 z-[100] mb-1.5 w-56 rounded-lg border border-hairline-strong bg-card shadow-[var(--shadow-popover)]">
                     {/* Search bar — stays fixed at the top */}
                     <div className="flex items-center gap-1.5 border-b border-hairline px-2 py-1.5">
                       <Search className="size-3 flex-none text-muted-foreground/60" />

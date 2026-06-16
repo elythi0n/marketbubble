@@ -174,7 +174,7 @@ export function Select<T extends string>({
         <ul
           role="listbox"
           aria-label={ariaLabel}
-          className="absolute inset-x-0 top-[calc(100%+4px)] z-30 flex flex-col gap-0.5 rounded-lg border border-hairline bg-card/95 p-1 shadow-[0_18px_46px_-12px_rgba(0,0,0,0.85)] backdrop-blur-sm"
+          className="absolute inset-x-0 top-[calc(100%+4px)] z-30 flex flex-col gap-0.5 rounded-lg border border-hairline bg-card/95 p-1 shadow-[var(--shadow-popover)] backdrop-blur-sm"
         >
           {options.map((o) => {
             const active = o.value === value;

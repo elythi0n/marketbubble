@@ -106,7 +106,7 @@ function ChannelFilter({
       {open ? (
         <>
           <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute left-0 top-full z-[100] mt-1.5 w-56 rounded-lg border border-hairline-strong bg-card p-1 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.85)]">
+          <div className="absolute left-0 top-full z-[100] mt-1.5 w-56 rounded-lg border border-hairline-strong bg-card p-1 shadow-[var(--shadow-popover)]">
             <p className="px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Channels in feed</p>
             {liveStreamers.map((s) => {
               const shown = !hidden.has(s.id);
@@ -353,7 +353,7 @@ export function ChatPane() {
                   aria-label={readHelper ? "Turn off read helper" : "Turn on read helper"}
                   className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 transition-colors ${
                     readHelper
-                      ? "bg-[#a8a8f8]/12 text-[#a8a8f8] hover:bg-[#a8a8f8]/18"
+                      ? "bg-accent-violet/12 text-accent-violet hover:bg-accent-violet/18"
                       : "text-muted-foreground hover:bg-overlay-weak hover:text-foreground"
                   }`}
                 >

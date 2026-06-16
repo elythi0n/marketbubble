@@ -39,11 +39,12 @@ function ClipCard({ clip, onClick }: { clip: Clip; onClick: () => void }) {
         ) : (
           <ClipSourceIcon platform={platform} className="size-9 opacity-[0.08]" />
         )}
+        {/* Play + duration overlay a video frame — fixed white-on-black, theme-independent. */}
         <span className="absolute flex size-10 items-center justify-center rounded-full border border-white/15 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-          <Play className="size-4 translate-x-px fill-foreground text-foreground" />
+          <Play className="size-4 translate-x-px fill-white text-white" />
         </span>
         {duration ? (
-          <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.62rem] tabular-nums text-foreground/90">
+          <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.62rem] tabular-nums text-white/90">
             {duration}
           </span>
         ) : null}

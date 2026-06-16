@@ -199,7 +199,7 @@ export function GiveawayPanel() {
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
       <Card
         title="Draw setup"
         hint={demo ? "Demo mode — rolling against a mock chatter pool" : "Who can win, and how long the roll runs"}

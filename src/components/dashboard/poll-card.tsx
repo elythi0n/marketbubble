@@ -81,7 +81,7 @@ export function PollCard({ variant = "banner" }: { variant?: "banner" | "stage" 
             Final
           </span>
         ) : poll.endsAt ? (
-          <span className="flex-none rounded-md border border-hairline bg-black/30 px-2 py-0.5 font-mono text-[0.7rem] tabular-nums text-foreground/90">
+          <span className="flex-none rounded-md border border-hairline bg-overlay-medium px-2 py-0.5 font-mono text-[0.7rem] tabular-nums text-foreground/90">
             {remaining(poll.endsAt, now)}
           </span>
         ) : null}

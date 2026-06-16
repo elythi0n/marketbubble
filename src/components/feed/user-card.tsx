@@ -130,7 +130,7 @@ function UserCardBody({
       aria-label={`${target.author} — chatter card`}
       style={pos}
       onClick={(e) => e.stopPropagation()}
-      className="fixed z-[151] flex w-[19rem] flex-col rounded-xl border border-hairline-strong bg-card shadow-[0_24px_60px_-18px_rgba(0,0,0,0.9)]"
+      className="fixed z-[151] flex w-[19rem] flex-col rounded-xl border border-hairline-strong bg-card shadow-[var(--shadow-card)]"
     >
       <header className="flex items-center gap-2.5 border-b border-hairline px-3 py-2.5">
         <span

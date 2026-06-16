@@ -104,7 +104,7 @@ export function EngagePanel() {
   const pollTotal = poll ? poll.options.reduce((n, o) => n + o.votes + o.chatVotes, 0) : 0;
 
   return (
-    <div className="grid gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
       <Card
         title="Poll"
         hint="Click-votes on the site + chat votes via the relay, one tally"

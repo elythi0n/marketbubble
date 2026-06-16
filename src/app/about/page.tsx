@@ -1,7 +1,9 @@
+import type { ComponentType } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageShell } from "@/components/page/page-shell";
+import { TwitchIcon, XIcon } from "@/components/social-icons";
 
 export const metadata: Metadata = {
   title: "About",
@@ -18,7 +20,7 @@ interface Host {
   avatar: string;
   role: string;
   about: string;
-  links: { label: string; href: string; icon: string }[];
+  links: { label: string; href: string; Icon: ComponentType<{ className?: string }> }[];
 }
 
 const HOSTS: Host[] = [
@@ -30,8 +32,8 @@ const HOSTS: Host[] = [
     about:
       "One of the internet's most followed creators, with an audience in the tens of millions built on knowing where attention goes next. Banks runs the show live on Twitch and Kick, with the X broadcast going at the same time.",
     links: [
-      { label: "Twitch", href: "https://www.twitch.tv/fazebanks", icon: "/social/twitch.svg" },
-      { label: "X", href: "https://x.com/FaZeBanks", icon: "/social/x-light.svg" },
+      { label: "Twitch", href: "https://www.twitch.tv/fazebanks", Icon: TwitchIcon },
+      { label: "X", href: "https://x.com/FaZeBanks", Icon: XIcon },
     ],
   },
   {
@@ -41,7 +43,7 @@ const HOSTS: Host[] = [
     role: "Host · X",
     about:
       "Known as Ansem, one of the most followed traders on crypto Twitter. \"I love markets and I love the internet. I've made nearly all of my money being early to trends and predicting them before they happen.\" That's the show.",
-    links: [{ label: "X", href: "https://x.com/blknoiz06", icon: "/social/x-light.svg" }],
+    links: [{ label: "X", href: "https://x.com/blknoiz06", Icon: XIcon }],
   },
 ];
 
@@ -120,7 +122,7 @@ export default function AboutPage() {
             {HOSTS.map((host) => (
               <article
                 key={host.name}
-                className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-card shadow-[0_16px_40px_-28px_rgba(0,0,0,0.8)]"
+                className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-card shadow-[var(--shadow-card)]"
               >
                 <div className="flex items-center gap-4 border-b border-hairline bg-overlay-weak px-5 py-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,8 +148,7 @@ export default function AboutPage() {
                       rel="noreferrer noopener"
                       className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={l.icon} alt="" className="size-3 opacity-70" />
+                      <l.Icon className="size-3" />
                       {l.label}
                     </a>
                   ))}

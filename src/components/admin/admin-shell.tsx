@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { MarketBubbleLogo } from "@/components/dashboard/market-bubble-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { AdminStatusPayload } from "@/app/api/admin/status/route";
 import { MOCK_STREAMERS, type Streamer } from "@/lib/streamers/mock";
 import { useStreamers } from "@/lib/streamers/use-streamers";
@@ -178,15 +179,42 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <div className="marketing-shell-root">
         <div className="pointer-events-none fixed inset-0 z-0 marketing-ambient-base" aria-hidden />
         <div className="relative z-10 flex h-dvh flex-col overflow-hidden">
-          <header className="relative flex h-14 flex-none items-center gap-3 border-b border-hairline bg-background px-4">
-            <MarketBubbleLogo className="size-9 text-foreground" />
-            <div className="leading-tight">
-              <p className="text-sm font-semibold text-foreground">Admin</p>
-              <p className="text-[0.62rem] uppercase tracking-[0.16em] text-muted-foreground">Control room</p>
+          {/* Two-row header on mobile so the brand, nav, and actions each get a clean line; one row
+              on sm+ where there's space. Padding is tighter on mobile to give the nav more room. */}
+          <header className="relative flex flex-none flex-col gap-2 border-b border-hairline bg-background px-3 py-2 sm:h-14 sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-0">
+            <div className="flex items-center gap-3">
+              <MarketBubbleLogo className="size-8 flex-none text-foreground sm:size-9" />
+              <div className="leading-tight">
+                <p className="text-sm font-semibold text-foreground">Admin</p>
+                <p className="whitespace-nowrap text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">Control room</p>
+              </div>
+              {/* Actions move to the right of the brand on mobile (top row); jump to the far right on sm+. */}
+              <div className="ml-auto flex items-center gap-1 sm:hidden">
+                <ThemeToggle className="size-8" />
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  aria-label="Refresh"
+                  className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
+                >
+                  <RefreshCw className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKey(null);
+                    setStatus(null);
+                  }}
+                  aria-label="Log out"
+                  title="Forget key and leave"
+                  className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              </div>
             </div>
-            {/* Centered on wide screens; falls back to inline (scrollable) when space is tight. */}
             <nav
-              className="mb-scroll ml-3 flex min-w-0 items-center gap-1 overflow-x-auto lg:absolute lg:left-1/2 lg:top-1/2 lg:ml-0 lg:-translate-x-1/2 lg:-translate-y-1/2"
+              className="mb-scroll -mx-1 flex min-w-0 items-center gap-1 overflow-x-auto px-1 sm:ml-3 lg:absolute lg:left-1/2 lg:top-1/2 lg:ml-0 lg:-translate-x-1/2 lg:-translate-y-1/2"
               aria-label="Admin sections"
             >
               {NAV.map((n) => {
@@ -197,17 +225,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     href={n.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "inline-flex flex-none items-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-medium transition-colors",
+                      "inline-flex flex-none items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[0.74rem] font-medium transition-colors sm:px-3 sm:text-[0.78rem]",
                       active ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <n.icon className={cn("size-3.5", active ? "text-foreground" : "text-muted-foreground/80")} />
-                    <span className="hidden sm:inline">{n.label}</span>
+                    <span>{n.label}</span>
                   </Link>
                 );
               })}
             </nav>
-            <div className="ml-auto flex items-center gap-1.5">
+            {/* Actions on sm+ — far right of the row. Hidden on mobile (already shown in top row). */}
+            <div className="ml-auto hidden items-center gap-1.5 sm:flex">
+              <ThemeToggle className="size-8" />
               <button
                 type="button"
                 onClick={() => void refresh()}
@@ -233,7 +263,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="mb-scroll flex-1 overflow-y-auto">
-            <div className="mx-auto flex max-w-5xl flex-col gap-4 px-5 py-5">{children}</div>
+            <div className="mx-auto flex max-w-5xl flex-col gap-4 px-3 py-4 sm:px-5 sm:py-5">{children}</div>
           </main>
         </div>
       </div>

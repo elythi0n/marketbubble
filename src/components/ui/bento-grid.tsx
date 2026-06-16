@@ -34,7 +34,7 @@ export function BentoCard({ className, name, description, Icon, iconNode, eyebro
     <article
       className={cn(
         "group relative overflow-hidden rounded-[1.35rem] border border-hairline-strong bg-gradient-to-b from-overlay-weak to-overlay-weak/60",
-        "p-5 shadow-[0_14px_46px_-24px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-all duration-300",
+        "p-5 shadow-[var(--shadow-card)] backdrop-blur-sm transition-all duration-300",
         "hover:-translate-y-0.5 hover:border-blue-200/25 hover:from-overlay-medium hover:to-overlay-weak hover:shadow-[0_22px_58px_-26px_rgba(91,140,255,0.45)]",
         className,
       )}
@@ -53,7 +53,7 @@ export function BentoCard({ className, name, description, Icon, iconNode, eyebro
         {eyebrow ? <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/58">{eyebrow}</p> : null}
 
         {iconNode ? (
-          <div className="mt-auto inline-flex size-[3.35rem] items-center justify-center rounded-2xl border border-hairline-strong bg-overlay-weak shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-all duration-300 group-hover:border-hairline-strong group-hover:bg-overlay-medium">
+          <div className="mt-auto inline-flex size-[3.35rem] items-center justify-center rounded-2xl border border-hairline-strong bg-overlay-weak shadow-[var(--shadow-popover)] transition-all duration-300 group-hover:border-hairline-strong group-hover:bg-overlay-medium">
             {iconNode}
           </div>
         ) : Icon ? (

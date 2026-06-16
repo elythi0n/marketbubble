@@ -73,7 +73,7 @@ function HighlightCard({ h, nowMs }: { h: Highlight; nowMs: number }) {
         <button
           type="button"
           onClick={() => jumpToHighlight(h)}
-          className="text-[0.66rem] font-medium text-[#a8a8f8] transition-opacity hover:opacity-80"
+          className="text-[0.66rem] font-medium text-accent-violet transition-opacity hover:opacity-80"
         >
           Jump to chat →
         </button>

@@ -275,7 +275,7 @@ export function AnalyticsPanel({
           {/* Hover readout — flips sides past the chart midpoint */}
           {hover !== null && hoverRows.length > 0 ? (
             <div
-              className="pointer-events-none absolute top-2 z-10 min-w-36 rounded-lg border border-hairline bg-card/95 px-2.5 py-2 shadow-[0_12px_32px_-10px_rgba(0,0,0,0.8)] backdrop-blur-sm"
+              className="pointer-events-none absolute top-2 z-10 min-w-36 rounded-lg border border-hairline bg-card/95 px-2.5 py-2 shadow-[var(--shadow-popover)] backdrop-blur-sm"
               style={{
                 left: `${(x(hover) / W) * 100}%`,
                 transform: x(hover) > W * 0.62 ? "translateX(calc(-100% - 12px))" : "translateX(12px)",

@@ -13,7 +13,7 @@ export function HealthPanel() {
   const live = streamers.filter((s) => s.live);
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card
         title="Show status"
         hint="Roster live state, straight from the platform APIs"

@@ -103,7 +103,7 @@ function Popover({ state, children, onClose }: { state: PopoverState; children: 
         role="dialog"
         style={pos}
         onClick={(e) => e.stopPropagation()}
-        className="fixed z-[151] w-60 rounded-xl border border-hairline-strong bg-card p-2.5 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.9)]"
+        className="fixed z-[151] w-60 rounded-xl border border-hairline-strong bg-card p-2.5 shadow-[var(--shadow-card)]"
       >
         {children}
       </div>

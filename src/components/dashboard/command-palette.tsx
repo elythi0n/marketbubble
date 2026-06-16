@@ -303,7 +303,7 @@ export function CommandPalette() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15, ease: EASE }}
-          className="fixed inset-0 z-[140] bg-black/45 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[140] bg-scrim backdrop-blur-[2px]"
           onClick={() => setOpen(false)}
         >
           <motion.div
@@ -312,7 +312,7 @@ export function CommandPalette() {
             exit={{ opacity: 0, scale: 0.985, y: -8 }}
             transition={{ duration: 0.18, ease: EASE }}
             onClick={(e) => e.stopPropagation()}
-            className="mx-auto mt-[18vh] flex w-[min(560px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-hairline-strong bg-card shadow-[0_24px_70px_-12px_rgba(0,0,0,0.9)]"
+            className="mx-auto mt-[18vh] flex w-[min(560px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-hairline-strong bg-card shadow-[var(--shadow-modal)]"
           >
             <div className="flex flex-none items-center gap-2.5 border-b border-hairline px-3.5 py-3">
               <Search className="size-4 flex-none text-muted-foreground/70" />

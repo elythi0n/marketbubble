@@ -51,6 +51,7 @@
   --color-overlay-medium: var(--overlay-medium);
   --color-overlay-strong: var(--overlay-strong);
   --color-accent-strong: var(--accent-strong);
+  --color-accent-violet: var(--accent-violet);
   --color-feed-ok: var(--feed-ok);
   --color-feed-warn: var(--feed-warn);
   --color-feed-danger: var(--feed-danger);
@@ -59,6 +60,13 @@
   --color-plat-twitch: var(--plat-twitch);
   --color-plat-kick: var(--plat-kick);
   --color-plat-x: var(--plat-x);
+  /*
+   * Shadow tokens. Each theme picks its own RGB base and alpha so drop shadows feel native to the
+   * palette — soft ink-tinted lifts on the paper light, deep blacks on graphite. Used in components
+   * via `shadow-[var(--shadow-popover)]` style arbitrary values. The scrim token is the modal
+   * backdrop fill (e.g. command palette, dialog overlay) and the cursor token is the lit caret.
+   */
+  --color-scrim: var(--scrim);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -132,6 +140,16 @@
   --feed-warn: #b7893c;
   --feed-danger: #a43228;
   --feed-text-2: #6f6a5d;
+  /* Markets / crypto accent — soft violet on dark, a deeper violet-ink on paper so it still reads
+     as the same hue without fading into the background. */
+  --accent-violet: #5b5dc6;
+  /* Drop shadows: ink-tinted on paper (less harsh than pure black), scaled with weight class. */
+  --shadow-popover: 0 12px 30px -12px rgb(26 26 26 / 0.22);
+  --shadow-card: 0 12px 40px -16px rgb(26 26 26 / 0.20);
+  --shadow-modal: 0 24px 70px -20px rgb(26 26 26 / 0.28);
+  --shadow-glow-warn: 0 0 18px -8px rgb(183 137 60 / 0.55);
+  /* Modal backdrop scrim — ink-on-paper at lower alpha (a true black/60 looks oppressive here). */
+  --scrim: rgb(26 26 26 / 0.32);
   /* Ambient marketing layers. Light keeps a clean paper wash (grain dropped — it reads as dirt on
      a pale ground); dark layers in tiled noise (see the `.dark` override below). */
   --ambient-gradient: linear-gradient(160deg, #f4f0e6, #efeadd 55%, #e9e3d3);
@@ -199,6 +217,15 @@
   --feed-warn: #d8a13a;
   --feed-danger: #ef6a61;
   --feed-text-2: #8b8b93;
+  /* Markets / crypto accent — soft lavender on the graphite. */
+  --accent-violet: #a8a8f8;
+  /* Drop shadows: deep blacks on graphite, the existing tuning. */
+  --shadow-popover: 0 12px 30px -12px rgb(0 0 0 / 0.8);
+  --shadow-card: 0 12px 40px -16px rgb(0 0 0 / 0.55);
+  --shadow-modal: 0 24px 70px -20px rgb(0 0 0 / 0.9);
+  --shadow-glow-warn: 0 0 18px -8px rgb(216 161 58 / 0.55);
+  /* Modal backdrop scrim — true black against the graphite floor. */
+  --scrim: rgb(0 0 0 / 0.6);
   /* Ambient marketing layers. */
   --ambient-gradient: linear-gradient(160deg, #161618, #131315 55%, #101012);
   --glow-1: radial-gradient(circle, rgb(120 142 188 / 0.32), transparent 70%);

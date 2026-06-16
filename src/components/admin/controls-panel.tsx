@@ -90,10 +90,10 @@ function ClipRadarCard() {
           </div>
 
           <ul className="flex flex-col gap-2 border-t border-hairline pt-3 text-[0.76rem]">
-            <li className="flex items-center gap-2.5">
+            <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <StatusDot ok={st.relayConfigured ? st.relayOk : null} />
               <span className="flex-1 text-foreground/90">Relay velocity</span>
-              <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">
+              <span className="break-all font-mono text-[0.7rem] tabular-nums text-muted-foreground">
                 {!st.relayConfigured
                   ? "RELAY_URL not set"
                   : !cfg.enabled
@@ -103,10 +103,10 @@ function ClipRadarCard() {
                       : "unreachable"}
               </span>
             </li>
-            <li className="flex items-center gap-2.5">
+            <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <StatusDot ok={st.clipTokenConfigured ? true : null} />
               <span className="flex-1 text-foreground/90">Twitch clipping</span>
-              <span className="font-mono text-[0.7rem] text-muted-foreground">
+              <span className="break-all font-mono text-[0.7rem] text-muted-foreground">
                 {st.clipTokenConfigured ? "token configured" : "moments only (set TWITCH_CLIP_TOKEN)"}
               </span>
             </li>
@@ -120,7 +120,7 @@ function ClipRadarCard() {
             ) : null}
           </ul>
 
-          <div className="grid gap-2 border-t border-hairline pt-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 border-t border-hairline pt-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Sensitivity
               <Select
@@ -272,7 +272,7 @@ export function ControlsPanel() {
   };
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card title="Live feature flags" hint="Pushed to every open dashboard instantly" icon={ToggleRight}>
         <ul className="flex flex-col divide-y divide-hairline">
           {[

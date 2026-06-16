@@ -38,7 +38,7 @@ export function HoverCard({
               className="pointer-events-none fixed z-[120] -translate-x-1/2 -translate-y-full pb-2"
               style={{ left: pos.x, top: pos.y }}
             >
-              <div className="w-56 rounded-lg border border-hairline-strong bg-card p-3 shadow-[0_18px_46px_-18px_rgba(0,0,0,0.8)]">
+              <div className="w-56 rounded-lg border border-hairline-strong bg-card p-3 shadow-[var(--shadow-popover)]">
                 {content}
               </div>
             </div>,

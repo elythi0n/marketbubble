@@ -16,7 +16,9 @@ const LEADERBOARD_WINDOW_MS = 3 * 60_000;
 const SPIKE_RATIO = 2.5; // last minute vs the window baseline
 const SPIKE_MIN_MPM = 30; // never call a spike on a near-dead chat
 
-const ACCENT = "#a8a8f8";
+// Sparkline color is `currentColor`, set to --accent-violet via a `text-accent-violet` class
+// on the <svg>. That lets the line and gradient flip with the theme without a re-render.
+const ACCENT = "currentColor";
 
 /** Filler words that would otherwise dominate any keyword leaderboard. */
 const STOP_WORDS = new Set([
@@ -44,7 +46,7 @@ function Sparkline({
     <svg
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="none"
-      className={cn("h-16 w-full", onSelectBucket && "cursor-pointer")}
+      className={cn("h-16 w-full text-accent-violet", onSelectBucket && "cursor-pointer")}
       role={onSelectBucket ? "button" : undefined}
       aria-label={onSelectBucket ? "Jump chat to a moment on the timeline" : undefined}
       onClick={

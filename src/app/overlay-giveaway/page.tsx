@@ -6,6 +6,7 @@ import { Gift } from "lucide-react";
 
 import { GiveawayReel } from "@/components/giveaway/giveaway-reel";
 import { useControl } from "@/lib/control/client";
+import { usePinDark } from "@/lib/theme/use-pin-dark";
 
 /**
  * OBS giveaway overlay: invisible until a roll starts, then the same deterministic reel the
@@ -16,6 +17,7 @@ import { useControl } from "@/lib/control/client";
  *   scale=<0.7–2>       size multiplier (default 1)
  */
 function GiveawayOverlay() {
+  usePinDark();
   const params = useSearchParams();
   const bg = params.get("bg") ?? "dark";
   const scale = Math.min(2, Math.max(0.7, Number(params.get("scale")) || 1));
@@ -48,7 +50,7 @@ function GiveawayOverlay() {
       style={{ background: bg === "transparent" ? "transparent" : "var(--background)", fontSize: `${scale}rem` }}
     >
       {giveaway ? (
-        <div className="w-full max-w-[26em] rounded-2xl border border-hairline-strong bg-sidebar/95 p-[1.1em] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)]">
+        <div className="w-full max-w-[26em] rounded-2xl border border-hairline-strong bg-sidebar/95 p-[1.1em] shadow-[var(--shadow-modal)]">
           <p className="flex items-center justify-center gap-[0.5em] text-[0.66em] font-bold uppercase tracking-[0.22em] text-muted-foreground">
             <Gift style={{ width: "1.3em", height: "1.3em" }} />
             Giveaway

@@ -473,7 +473,7 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Share highlight"
@@ -481,7 +481,7 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex w-full max-w-xl flex-col gap-3 rounded-2xl border border-hairline bg-sidebar p-4 shadow-[0_32px_90px_-20px_rgba(0,0,0,0.95)]">
+      <div className="flex w-full max-w-xl flex-col gap-3 rounded-2xl border border-hairline bg-sidebar p-4 shadow-[var(--shadow-modal)]">
         <div className="flex items-center gap-2">
           <h2 className="text-[0.9rem] font-semibold text-foreground">Share highlight</h2>
           <button
