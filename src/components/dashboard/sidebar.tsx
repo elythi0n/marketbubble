@@ -25,7 +25,7 @@ function formatViewers(n: number): string {
 }
 
 function statusText(s: Streamer): string {
-  if (s.live) return hasVideo(s) ? `${formatViewers(s.viewers)} watching` : "Live thread";
+  if (s.live) return `${formatViewers(s.viewers)} watching`;
   if (s.schedule && isStarting(s.schedule, new Date())) return "Show is starting…";
   return s.schedule?.label ?? "Offline";
 }
@@ -67,13 +67,13 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
             Offline
           </span>
         )}
-        {streamer.live && hasVideo(streamer) ? (
+        {streamer.live ? (
           <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-[0.8rem] font-semibold tabular-nums text-white">
             <span className="size-1.5 rounded-full bg-feed-danger" />
             {formatViewers(streamer.viewers)}
           </span>
         ) : null}
-        {hover && streamer.live ? (
+        {hover && streamer.live && hasVideo(streamer) ? (
           // Hover play overlays a live thumbnail (always a dark video frame), so the pill stays
           // fixed white/black regardless of theme.
           <span className="absolute flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/35 opacity-0 transition-opacity group-hover:opacity-100">

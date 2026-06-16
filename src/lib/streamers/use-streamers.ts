@@ -48,6 +48,37 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
 
   // Poll live status for a single streamer — both Twitch and Kick.
   async function pollOne(s: Streamer): Promise<[string, MergedStatus] | null> {
+    // X-only (no Twitch/Kick) channels: ask the server bridge for live status + occupancy so they
+    // show real viewer counts like everyone else. When the bridge isn't watching this handle
+    // (e.g. demo without X_BROADCAST_SOURCES), fall back to the statically configured status so
+    // demo X accounts still read as live.
+    if (!s.platforms.includes("twitch") && !s.platforms.includes("kick")) {
+      const xHandle = s.handles.x;
+      if (xHandle) {
+        try {
+          const r = await fetch(`/api/x/stream?handle=${encodeURIComponent(xHandle)}`, { cache: "no-store" });
+          if (r.ok) {
+            const d = (await r.json()) as { tracked?: boolean; live?: boolean; viewers?: number; title?: string };
+            // When the bridge is watching this handle, it owns the truth — including flipping the
+            // channel offline once the broadcast ends (no stale "Live").
+            if (d.tracked) {
+              if (d.live) {
+                const viewers = d.viewers ?? s.viewers;
+                return [s.id, { live: true, viewers, title: d.title || s.title, livePlatform: "x", livePlatforms: ["x"], viewersByPlatform: { x: viewers } }];
+              }
+              return [s.id, { live: false, viewers: 0, title: s.title }];
+            }
+          }
+        } catch {
+          /* bridge unreachable — fall through to the static config */
+        }
+      }
+      // Not tracked by the bridge (e.g. demo without X_BROADCAST_SOURCES): honor the static config.
+      return [s.id, s.live
+        ? { live: true, viewers: s.viewers, title: s.title, livePlatform: "x", livePlatforms: ["x"], viewersByPlatform: { x: s.viewers } }
+        : { live: false, viewers: 0, title: s.title }];
+    }
+
     let twitchLive = false;
     let kickLive = false;
     let twitchViewers = 0;

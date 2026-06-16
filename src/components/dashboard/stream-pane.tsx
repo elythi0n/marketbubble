@@ -172,6 +172,29 @@ export function StreamEmbed({ channel, platform: platformProp }: { channel: Stre
     setHost(window.location.hostname);
   }, []);
 
+  // X broadcasts have no embeddable player — chat flows into the feed, but there's no inline video.
+  // Show a "live thread" panel with a link out instead of falling through to the Twitch embed.
+  if (platform === "x" || !hasVideo(channel)) {
+    const xHandle = getHandle(channel, "x");
+    return (
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+        <PlatformGlyph platform="x" className="size-10 opacity-70" />
+        <p className="max-w-sm text-sm text-muted-foreground">
+          {channel.name} is live on X. There&apos;s no embeddable player — the broadcast chat appears in the feed.
+        </p>
+        <a
+          href={`https://x.com/${xHandle}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-1.5 rounded-md border border-hairline-strong bg-overlay-weak px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-overlay-medium"
+        >
+          <ExternalLink className="size-3.5" />
+          Watch {channel.name} on X
+        </a>
+      </div>
+    );
+  }
+
   if (platform === "kick") {
     const kickHandle = getHandle(channel, "kick");
     return (

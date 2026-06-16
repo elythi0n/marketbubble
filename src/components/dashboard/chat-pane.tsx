@@ -59,20 +59,20 @@ function formatCount(n: number): string {
 
 /** Per-channel visibility for the merged feed: a dropdown of live channels with checkboxes. */
 function ChannelFilter({
-  liveStreamers,
+  channels,
   hiddenIds,
   onToggle,
   onShowAll,
 }: {
-  liveStreamers: Streamer[];
+  channels: Streamer[];
   hiddenIds: readonly string[];
   onToggle: (id: string) => void;
   onShowAll: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const hidden = new Set(hiddenIds);
-  const visibleCount = liveStreamers.filter((s) => !hidden.has(s.id)).length;
-  const filtering = visibleCount < liveStreamers.length;
+  const visibleCount = channels.filter((s) => !hidden.has(s.id)).length;
+  const filtering = visibleCount < channels.length;
 
   return (
     <div className="relative flex items-center">
@@ -94,7 +94,7 @@ function ChannelFilter({
               <ListFilter className="size-4" />
               {filtering ? (
                 <span className="font-mono text-[0.64rem] tabular-nums leading-none">
-                  {visibleCount}/{liveStreamers.length}
+                  {visibleCount}/{channels.length}
                 </span>
               ) : null}
             </button>
@@ -108,7 +108,7 @@ function ChannelFilter({
           <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} aria-hidden />
           <div className="absolute left-0 top-full z-[100] mt-1.5 w-56 rounded-lg border border-hairline-strong bg-card p-1 shadow-[var(--shadow-popover)]">
             <p className="px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Channels in feed</p>
-            {liveStreamers.map((s) => {
+            {channels.map((s) => {
               const shown = !hidden.has(s.id);
               return (
                 <button
@@ -127,10 +127,10 @@ function ChannelFilter({
                   >
                     {shown ? <Check className="size-3" strokeWidth={3} /> : null}
                   </span>
-                  <PlatformGlyph platform={primaryPlatform(s)} className="size-3.5 flex-none" />
-                  <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                  <PlatformGlyph platform={primaryPlatform(s)} className={cn("size-3.5 flex-none", !s.live && "opacity-50")} />
+                  <span className={cn("min-w-0 flex-1 truncate", !s.live && "text-muted-foreground")}>{s.name}</span>
                   <span className="flex-none font-mono text-[0.64rem] tabular-nums text-muted-foreground">
-                    {formatCount(s.viewers)}
+                    {s.live ? formatCount(s.viewers) : "offline"}
                   </span>
                 </button>
               );
@@ -195,7 +195,12 @@ export function ChatPane() {
   const toggleChannel = (id: string) =>
     saveHidden(hiddenIds.includes(id) ? hiddenIds.filter((x) => x !== id) : [...hiddenIds, id]);
 
-  const liveStreamers = streamers.filter((s) => s.live);
+  // Merge mode connects every roster channel — offline ones too — because people keep chatting
+  // when a streamer is offline. So the filter lists all channels (live first), not just live ones.
+  const feedChannels = useMemo(
+    () => [...streamers].sort((a, b) => Number(b.live) - Number(a.live)),
+    [streamers],
+  );
 
   // Messages carry the platform handle as `channel`; map handles back to roster entries.
   const handleToStreamer = useMemo(() => {
@@ -397,10 +402,10 @@ export function ChatPane() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Per-channel visibility, only meaningful when merging more than one live channel. */}
-          {mergeAll && liveStreamers.length > 1 ? (
+          {/* Per-channel visibility, only meaningful when merging more than one channel. */}
+          {mergeAll && feedChannels.length > 1 ? (
             <ChannelFilter
-              liveStreamers={liveStreamers}
+              channels={feedChannels}
               hiddenIds={hiddenIds}
               onToggle={toggleChannel}
               onShowAll={() => saveHidden([])}

@@ -19,12 +19,14 @@ import {
   Activity,
   BarChart3,
   Bot,
+  ChevronRight,
   Clapperboard,
   Component,
   Gift,
   Layers,
   LayoutDashboard,
   MessageSquare,
+  Menu,
   ShieldCheck,
   Sliders,
   Sparkles,
@@ -166,12 +168,12 @@ function PaletteSwatches({ name, swatches }: { name: string; swatches: { name: s
 
 function FeatureCard({ title, description, icon: Icon }: (typeof FEATURES)[number]) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-hairline bg-card/80 px-5 py-6 text-center shadow-[var(--shadow-card)]">
-      <div className="flex size-11 items-center justify-center rounded-full border border-hairline-strong bg-overlay-weak">
+    <div className="flex flex-col items-center rounded-2xl border border-hairline bg-card/80 px-4 py-5 text-center shadow-[var(--shadow-card)] sm:px-5 sm:py-6">
+      <div className="flex size-10 items-center justify-center rounded-full border border-hairline-strong bg-overlay-weak sm:size-11">
         <Icon className="size-5 text-foreground" />
       </div>
-      <h3 className={cn(walburn.className, "mt-3.5 text-xl uppercase tracking-[0.04em] text-foreground")}>{title}</h3>
-      <p className="mt-1.5 text-[0.78rem] leading-relaxed text-muted-foreground">{description}</p>
+      <h3 className={cn(walburn.className, "mt-3 text-lg uppercase tracking-[0.04em] text-foreground sm:mt-3.5 sm:text-xl")}>{title}</h3>
+      <p className="mt-1.5 text-[0.74rem] leading-relaxed text-muted-foreground sm:text-[0.78rem]">{description}</p>
     </div>
   );
 }
@@ -414,6 +416,155 @@ function ShowcaseNav({ activeSection, activeItem }: { activeSection: string; act
   );
 }
 
+/**
+ * Mobile / tablet navigation (below xl, where the fixed left rail is hidden). A floating "you are
+ * here" pill at the bottom opens a bottom sheet listing every section; sections with sub-rows
+ * expand inline. Tapping a row smooth-scrolls to it (reusing scrollToHash) and closes the sheet.
+ * Bottom-anchored so it's thumb-reachable, and it mirrors the desktop rail's active-state tracking.
+ */
+function ShowcaseMobileNav({ activeSection, activeItem }: { activeSection: string; activeItem: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(activeSection);
+
+  // Opening the sheet expands whichever section you're currently scrolled into.
+  useEffect(() => {
+    if (open) setExpanded(activeSection);
+  }, [open, activeSection]);
+
+  const current = SECTIONS.find((s) => s.id === activeSection) ?? SECTIONS[0];
+  const CurrentIcon = current.icon;
+  // Close first, then scroll on the next frame so the smooth-scroll runs after the sheet unmounts.
+  const go = (hash: string) => {
+    setOpen(false);
+    requestAnimationFrame(() => scrollToHash(hash));
+  };
+
+  return (
+    <div className="xl:hidden">
+      {/* Floating trigger: shows the current section, opens the sheet. */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Open showcase menu"
+        aria-expanded={open}
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-hairline-strong bg-card/90 px-4 py-2.5 text-[0.8rem] font-medium text-foreground shadow-[var(--shadow-modal)] backdrop-blur-md"
+      >
+        <CurrentIcon className="size-4 flex-none text-foreground" />
+        <span className="font-mono text-[0.64rem] tabular-nums text-muted-foreground">{current.code}</span>
+        <span className="truncate">{current.label}</span>
+        <Menu className="size-4 flex-none text-muted-foreground" />
+      </button>
+
+      <AnimatePresence>
+        {open ? (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-40 bg-scrim/90 backdrop-blur-sm"
+              aria-hidden
+            />
+            <motion.div
+              key="sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              role="dialog"
+              aria-label="Showcase navigation"
+              className="fixed inset-x-0 bottom-0 z-40 max-h-[80dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t border-hairline-strong bg-card pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[var(--shadow-modal)]"
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-hairline bg-card px-4 py-3">
+                <span className={cn(walburn.className, "text-lg uppercase tracking-[0.04em] text-foreground")}>Jump to</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close menu"
+                  className="inline-flex size-8 items-center justify-center rounded-full border border-hairline text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              <div className="px-2 py-2">
+                {SECTIONS.map((s) => {
+                  const active = s.id === activeSection;
+                  const isExpanded = expanded === s.id;
+                  const Icon = s.icon;
+                  return (
+                    <div key={s.id} className="flex flex-col">
+                      <div className={cn("flex items-center rounded-lg transition-colors", active && "bg-overlay-weak")}>
+                        <button
+                          type="button"
+                          onClick={() => go(s.id)}
+                          className={cn(
+                            "flex flex-1 items-center gap-3 px-3 py-3 text-left",
+                            active ? "text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          <Icon className={cn("size-4 flex-none", active ? "text-foreground" : "text-muted-foreground/60")} />
+                          <span className="font-mono text-[0.68rem] tabular-nums text-muted-foreground/60">{s.code}</span>
+                          <span className="text-[0.92rem] font-medium">{s.label}</span>
+                        </button>
+                        {s.items.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setExpanded(isExpanded ? null : s.id)}
+                            aria-label={isExpanded ? `Collapse ${s.label}` : `Expand ${s.label}`}
+                            aria-expanded={isExpanded}
+                            className="flex size-11 flex-none items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            <ChevronRight className={cn("size-4 transition-transform duration-200", isExpanded && "rotate-90")} />
+                          </button>
+                        ) : null}
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {isExpanded && s.items.length > 0 ? (
+                          <motion.ul
+                            key="items"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                            className="ml-[2.15rem] overflow-hidden border-l border-hairline pl-2.5"
+                          >
+                            {s.items.map((item) => {
+                              const itemActive = activeItem === item.slug;
+                              return (
+                                <li key={item.slug}>
+                                  <button
+                                    type="button"
+                                    onClick={() => go(item.slug)}
+                                    className={cn(
+                                      "block w-full py-2 pl-1.5 text-left text-[0.84rem] transition-colors",
+                                      itemActive ? "text-foreground" : "text-muted-foreground/70 hover:text-foreground",
+                                    )}
+                                  >
+                                    {item.title}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </motion.ul>
+                        ) : null}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function Lightbox({ image, onClose }: { image: LightboxImage | null; onClose: () => void }) {
   useEffect(() => {
     if (!image) return;
@@ -582,7 +733,7 @@ export default function ShowcasePage() {
               <h2 className={cn(walburn.className, "mt-1 text-5xl uppercase leading-none tracking-[0.02em] text-foreground sm:text-6xl")}>What it does</h2>
             </div>
           </header>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
           </div>
         </section>
@@ -614,8 +765,14 @@ export default function ShowcasePage() {
 
       <div className="relative z-10">{mainContent}</div>
       {/* Nav is fixed-positioned (vertically centered), so it overlays the content without
-          changing its layout. Hidden entirely in capture mode. */}
-      {captureMode ? null : <ShowcaseNav activeSection={activeSection} activeItem={activeItem} />}
+          changing its layout. Hidden entirely in capture mode. The desktop rail shows from xl up;
+          below that, a bottom-sheet menu takes over so the page is navigable on mobile/tablet. */}
+      {captureMode ? null : (
+        <>
+          <ShowcaseNav activeSection={activeSection} activeItem={activeItem} />
+          <ShowcaseMobileNav activeSection={activeSection} activeItem={activeItem} />
+        </>
+      )}
 
       {!captureMode ? <Lightbox image={lightbox} onClose={() => setLightbox(null)} /> : null}
     </div>
