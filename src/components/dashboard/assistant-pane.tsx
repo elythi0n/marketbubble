@@ -433,7 +433,7 @@ export function AssistantPane() {
             { icon: BarChart3, text: "Live market data and the biggest movers" },
             { icon: TrendingUp, text: "Polymarket prediction markets" },
             { icon: MonitorPlay, text: "Who's live: Banks, Blknoiz06 and the roster" },
-            { icon: Tv, text: "The MarketBubble show, schedule and hosts" },
+            { icon: Tv, text: "The Market Bubble show, schedule and hosts" },
           ].map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-center gap-2">
               <Icon className="size-3.5 flex-none text-muted-foreground/70" />

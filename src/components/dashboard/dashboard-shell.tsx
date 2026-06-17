@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import { Clapperboard, X } from "lucide-react";
+import { ArrowUpRight, Clapperboard, X } from "lucide-react";
 
 import type { FeedMessage } from "@/lib/feed/types";
 import type { Streamer } from "@/lib/streamers/mock";
@@ -25,6 +25,8 @@ import { ChannelProvider, useChannel } from "@/lib/streamers/channel-context";
 import { useIsMobile, usePhoneLandscape } from "@/lib/use-is-mobile";
 import { HighlightsBridge } from "./highlights-bridge";
 import { StageOverlay } from "./stage-overlay";
+import { TheaterOverlay } from "./theater-overlay";
+import { TVOverlay } from "./tv-overlay";
 import { AnnouncementBanner } from "./announcement-banner";
 import { MobileThemeChip } from "@/components/theme-toggle";
 import { BottomNav } from "./bottom-nav";
@@ -137,7 +139,7 @@ function FeedBridge({ children }: { children: ReactNode }) {
  * When the roster polls back fully offline, nudge first-time visitors toward Demo mode so the
  * dashboard never reads as dead. Session-dismissed; never shown while someone is live.
  */
-function DemoNudge() {
+function DemoNudge({ showcaseEnabled }: { showcaseEnabled: boolean }) {
   const { isDemo, toggle } = useDemoMode();
   const { streamers, polled } = useChannel();
   const demoOn = useFlag("demo");
@@ -179,16 +181,30 @@ function DemoNudge() {
             <p className="text-[0.8rem] font-medium text-foreground">Nobody&apos;s live right now</p>
             <p className="text-[0.68rem] text-muted-foreground">See the dashboard in action with busy demo channels</p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              dismiss();
-              toggle();
-            }}
-            className="ml-1 inline-flex h-7 flex-none items-center rounded-lg bg-foreground px-2.5 text-[0.72rem] font-semibold text-background transition-opacity hover:opacity-90"
-          >
-            Try Demo
-          </button>
+          {/* Stack the CTAs vertically on narrow screens so the pill doesn't overflow. */}
+          <div className="ml-1 flex flex-none flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                dismiss();
+                toggle();
+              }}
+              className="inline-flex h-7 w-full items-center justify-center rounded-lg bg-foreground px-2.5 text-[0.72rem] font-semibold text-background transition-opacity hover:opacity-90 sm:w-auto"
+            >
+              Try Demo
+            </button>
+            {showcaseEnabled ? (
+              <a
+                href="/showcase"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-beam-button group inline-flex h-7 w-full items-center justify-center gap-1 rounded-lg bg-feed-warn/10 px-2.5 text-[0.72rem] font-semibold text-feed-warn transition-colors hover:bg-feed-warn/15 sm:w-auto"
+              >
+                <span>Showcase</span>
+                <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-[1px] group-hover:translate-x-[1px]" />
+              </a>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={dismiss}
@@ -249,7 +265,7 @@ function LiveNotificationsBridge() {
     for (const s of streamers) {
       if (!s.live || prev.has(s.id)) continue;
       const n = new Notification(`${s.name} is live`, {
-        body: s.title || "Streaming now — watch on MarketBubble",
+        body: s.title || "Streaming now — watch on Market Bubble",
         icon: "/web-app-manifest-192x192.png",
         tag: `mb-live-${s.id}`,
       });
@@ -313,7 +329,8 @@ function MobileShell({ sheetOpen, setSheetOpen }: { sheetOpen: boolean; setSheet
           <AnnouncementBanner />
           <PollCard />
           <StatBand />
-          <Marquee />
+          {/* Marquee deliberately omitted on mobile — too crowded; markets live on the dedicated
+              /markets route. Desktop still mounts it below in the wide-screen branch. */}
         </>
       ) : null}
       <MobileWorkspace theater={theater} />
@@ -324,7 +341,9 @@ function MobileShell({ sheetOpen, setSheetOpen }: { sheetOpen: boolean; setSheet
           <MobileBottomNav onOpenChannels={() => setSheetOpen(true)} />
         </>
       ) : null}
-      <StreamerSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      {/* StreamerSheet is mounted in DashboardShell (a sibling of MobileShell) so its `z-50` is
+          evaluated in the same stacking context as the DemoNudge — otherwise this container's
+          `relative z-10` would trap the sheet's z-index below the nudge. */}
       {/* Floating theme toggle — hidden in landscape "theater" view, which would otherwise
           overlap the stream player's top edge. */}
       {!theater ? <MobileThemeChip /> : null}
@@ -339,7 +358,7 @@ const DockShell = dynamic(() => import("./dock-shell").then((m) => m.DockShell),
   loading: () => <div className="h-full w-full" />,
 });
 
-export function DashboardShell() {
+export function DashboardShell({ showcaseEnabled }: { showcaseEnabled: boolean }) {
   const isMobile = useIsMobile();
   // A rotated phone is wider than the mobile breakpoint; without this it would mount the desktop dockview.
   const phoneLandscape = usePhoneLandscape();
@@ -384,12 +403,20 @@ export function DashboardShell() {
                   </div>
                 </div>
               )}
-              {/* Broadcast overlay; sits above the running dashboard, nothing remounts. */}
+              {/* View-mode overlays sit above the running dashboard; only one is open at a time and
+                  the dock keeps its single player suppressed while any of them are active. */}
               <StageOverlay />
+              <TheaterOverlay />
+              <TVOverlay />
               {/* Ctrl/Cmd+K — invisible until summoned (desktop only). */}
               <CommandPalette />
               {/* Offline-roster nudge toward Demo mode. */}
-              <DemoNudge />
+              <DemoNudge showcaseEnabled={showcaseEnabled} />
+              {/* Channel sheet (mobile only). Mounted at the outer level so its z-50 isn't trapped
+                  beneath the DemoNudge by MobileShell's `relative z-10` stacking context. */}
+              {mobile ? (
+                <StreamerSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+              ) : null}
             </StageModeProvider>
           </FeedBridge>
         </ChannelProvider>

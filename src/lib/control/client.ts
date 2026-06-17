@@ -10,7 +10,7 @@ import type { ControlState } from "@/lib/server/control";
  * a connection. EventSource reconnects on its own and the server replays current state on
  * connect, so consumers can treat `useControl()` as always-current.
  */
-const EMPTY: ControlState = { announcement: null, flags: {}, poll: null, roster: null, filters: [], giveaway: null };
+const EMPTY: ControlState = { announcement: null, flags: {}, poll: null, roster: null, filters: [], giveaway: null, xBroadcastOverrides: {} };
 
 let state: ControlState = EMPTY;
 let started = false;

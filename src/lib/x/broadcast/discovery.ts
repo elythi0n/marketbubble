@@ -29,8 +29,8 @@ const TIMELINE_FEATURES = {
 
 export interface ResolvedBroadcast {
   id: string;
-  /** How we found it, for logging. */
-  via: "link" | "handle";
+  /** How we found it, for logging. `manual` is set by the manager when an admin override pins the id. */
+  via: "link" | "handle" | "manual";
   /** The configured handle (when known), used to label the source channel. */
   handle?: string;
 }

@@ -286,17 +286,19 @@ export function StageOverlay() {
 
   const showVideo = channel?.live && hasVideo(channel);
 
+  // No outer AnimatePresence on purpose — its exit fade would keep the StreamEmbed iframe
+  // mounted while a sibling overlay (Theater/TV) mounted its own, producing ~300ms of double
+  // audio on every cross-mode switch. Conditional render unmounts in lockstep with `isStage`.
+  // The inner motion.div children keep their own enter animations.
+  if (!(isStage && channel && !isMobile)) return null;
   return (
-    <AnimatePresence>
-      {isStage && channel && !isMobile ? (
-        <motion.div
-          key="stage"
-          className={`marketing-ambient-base fixed inset-0 z-[100] flex flex-col gap-3 overflow-hidden p-4 ${cursorHidden ? "mb-cursor-hidden" : ""}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.45, ease: EASE }}
-        >
+    <motion.div
+      key="stage"
+      className={`marketing-ambient-base fixed inset-0 z-[100] flex flex-col gap-3 overflow-hidden p-4 ${cursorHidden ? "mb-cursor-hidden" : ""}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.45, ease: EASE }}
+    >
           {/* Top bar: identity left · MarketBubble × Polymarket lockup centered · exit right. */}
           <motion.div
             className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-3"
@@ -410,10 +412,8 @@ export function StageOverlay() {
             transition={{ duration: 0.45, ease: EASE }}
             className="flex-none overflow-hidden rounded-xl border border-hairline"
           >
-            <Marquee large />
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+        <Marquee large />
+      </motion.div>
+    </motion.div>
   );
 }

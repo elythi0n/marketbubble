@@ -5,10 +5,13 @@ import Link from "next/link";
 import { PageShell } from "@/components/page/page-shell";
 import { TwitchIcon, XIcon } from "@/components/social-icons";
 
+// Per-page `openGraph`/`twitter` overrides intentionally dropped — Next 15 wholesale-replaces
+// those blocks, which would wipe the layout's card type, handles and image. Title/description
+// at the top level auto-fill the OG and Twitter equivalents.
 export const metadata: Metadata = {
   title: "About",
   description:
-    "MarketBubble is a live show about speculation, attention and culture, hosted by Banks and Blknoiz06, with a dashboard that unifies Twitch, Kick and X chat alongside live market data.",
+    "Market Bubble is a live show about speculation, attention and culture, hosted by Banks and Ansem (Blknoiz06). The dashboard unifies Twitch, Kick and X chat alongside live market data.",
   alternates: { canonical: "/about" },
 };
 
@@ -77,7 +80,7 @@ export default function AboutPage() {
         <header className="text-center">
           <p className="text-[0.64rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">About the show</p>
           <h1 className="font-brand-wordmark mt-3 text-5xl uppercase tracking-[0.01em] text-foreground sm:text-6xl">
-            MarketBubble
+            Market Bubble
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
             A live show about investing in yourself. Every week Banks and Ansem sit at the corner of speculation,

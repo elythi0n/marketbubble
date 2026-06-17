@@ -499,6 +499,62 @@
       animation: none;
     }
   }
+
+  /*
+   * Border-beam button: a soft accent-violet arc travels slowly around the rounded border. The
+   * conic gradient is masked to a 1px ring via the `content-box xor full-box` technique so it works
+   * with any border-radius. `@property` registers --mb-beam-angle as an <angle> so the browser can
+   * actually interpolate between keyframes (without it, the angle would tick discretely).
+   */
+  .mb-beam-button {
+    position: relative;
+    isolation: isolate;
+  }
+  .mb-beam-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--mb-beam-angle),
+      transparent 0deg,
+      color-mix(in oklab, var(--feed-warn) 40%, transparent) 40deg,
+      var(--feed-warn) 70deg,
+      color-mix(in oklab, var(--feed-warn) 40%, transparent) 100deg,
+      transparent 140deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    animation: mb-beam-rotate 6s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .mb-beam-button > * {
+    position: relative;
+    z-index: 2;
+  }
+  @keyframes mb-beam-rotate {
+    to {
+      --mb-beam-angle: 360deg;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mb-beam-button::before {
+      animation: none;
+      background: color-mix(in oklab, var(--feed-warn) 55%, transparent);
+    }
+  }
+}
+
+@property --mb-beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
 
 /* Stage full screen: hide the idle cursor everywhere inside the overlay (iframes excepted —
@@ -549,8 +605,13 @@
   background-color: var(--overlay-weak);
 }
 
-/* Custom DockTab content (icon + title + optional close for added panels). */
-.mb-dock .mb-dock-tab {
+/*
+ * Custom DockTab content (icon + title + optional close for added panels). NOT scoped under
+ * `.mb-dock` — popped-out groups render in a separate `dv-popout-window` document where the
+ * `.mb-dock` class isn't present, so these layout rules need to apply globally to keep the
+ * icon and label inline (otherwise the children fall back to block flow and stack vertically).
+ */
+.mb-dock-tab {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -567,10 +628,10 @@
   opacity: 0.6;
   transition: opacity 0.12s ease;
 }
-.mb-dock .dv-tab.dv-active-tab .mb-dock-tab-icon {
+.dv-tab.dv-active-tab .mb-dock-tab-icon {
   opacity: 1;
 }
-.mb-dock .mb-dock-tab .mb-dock-tab-close {
+.mb-dock-tab .mb-dock-tab-close {
   margin-left: 3px;
 }
 /* New-activity dot on background tabs. */
@@ -582,7 +643,7 @@
   background: var(--feed-ok);
   box-shadow: 0 0 6px color-mix(in srgb, var(--feed-ok) 50%, transparent);
 }
-.mb-dock .mb-dock-tab-close {
+.mb-dock-tab-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -596,7 +657,7 @@
     color 0.12s ease,
     opacity 0.12s ease;
 }
-.mb-dock .mb-dock-tab-close:hover {
+.mb-dock-tab-close:hover {
   background: var(--overlay-strong);
   color: var(--foreground);
   opacity: 1;

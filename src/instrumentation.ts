@@ -17,6 +17,12 @@ export async function register() {
 
   const roster = loadRoster();
 
+  // Drop any persisted X broadcast pins for sources no longer in the roster — otherwise an
+  // operator removing a streamer leaves an unreachable ghost entry in the KV store forever.
+  const { pruneOrphanXBroadcastOverrides } = await import("@/lib/server/control");
+  const orphans = pruneOrphanXBroadcastOverrides();
+  if (orphans > 0) console.log(`[x-bridge] pruned ${orphans} orphan broadcast override(s)`);
+
   // Analytics sampler — only when persistence is enabled (viewer history + durable leaderboard).
   const { hasDatabase } = await import("@/lib/server/db");
   if (hasDatabase()) {
@@ -45,6 +51,15 @@ export async function register() {
     sources.push(src);
   }
   if (sources.length === 0) return;
+
+  // Multi-process gate. In a single-process deploy (today's default) this stays on automatically.
+  // Operators scaling to N Next.js workers MUST pin the bridge to exactly one worker with
+  // X_BRIDGE_ENABLED=0 on the others — otherwise N workers × X traffic, with N IPs sharing the
+  // same rate-limit budget.
+  if (process.env.X_BRIDGE_ENABLED === "0") {
+    console.log("[x-bridge] disabled via X_BRIDGE_ENABLED=0");
+    return;
+  }
 
   // Guard against a second bridge on dev hot-reloads.
   const g = globalThis as typeof globalThis & { __xBroadcastBridge?: () => void };

@@ -520,8 +520,8 @@ export function NewsContent() {
       {/* ── Masthead ─────────────────────────────────────────────────────── */}
       <header className="pb-0">
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <h1 className={cn(walburn.className, "text-5xl uppercase leading-none tracking-[0.02em] text-foreground sm:text-6xl lg:text-7xl")}>
-            MarketBubble
+          <h1 className={cn(walburn.className, "text-4xl uppercase leading-none tracking-[0.02em] text-foreground sm:text-5xl lg:text-6xl")}>
+            Market Bubble
           </h1>
           <div className="flex flex-col items-start gap-1.5 sm:items-end sm:pb-1">
             <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground/70">
@@ -633,7 +633,7 @@ export function NewsContent() {
       <footer className="mt-10 border-t border-hairline pt-5">
         <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
           <span className={cn(walburn.className, "text-sm uppercase tracking-[0.08em] text-muted-foreground/50")}>
-            MarketBubble News
+            Market Bubble News
           </span>
           <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/45">
             CoinDesk · CoinTelegraph · Decrypt · Yahoo Finance · Refreshed every 5 min

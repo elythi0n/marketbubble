@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 import { MOCK_STREAMERS, type Streamer } from "./mock";
+import { normalizeXSource } from "./x-source";
 
 /**
  * Server-only: load the configured roster, in priority order.
@@ -48,10 +49,6 @@ export function rosterXBroadcastSources(roster: Streamer[] = loadRoster()): stri
   return out;
 }
 
-/** Normalize an X source to a dedup key: broadcast id from a link, else lowercased handle. */
-export function normalizeXSource(src: string): string {
-  const s = src.trim();
-  const link = /broadcasts\/([A-Za-z0-9]+)/i.exec(s);
-  if (link) return link[1];
-  return s.replace(/^@/, "").toLowerCase();
-}
+// Re-export so existing import sites don't have to chase the move (single definition still
+// lives in ./x-source — that's the one to edit).
+export { normalizeXSource };

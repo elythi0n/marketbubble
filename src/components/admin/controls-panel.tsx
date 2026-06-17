@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Check, Clapperboard, ExternalLink, Filter, Plus, Scissors, ToggleRight, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Clapperboard, ExternalLink, Filter, Plus, Radio, Scissors, ToggleRight, Trash2 } from "lucide-react";
 
 import type { ClipRadarPayload } from "@/app/api/admin/clip-radar/route";
 import { useControl } from "@/lib/control/client";
+import { normalizeXSource, parseBroadcastId } from "@/lib/streamers/x-source";
 import { cn } from "@/lib/utils";
 import { Card } from "./card";
 import { useAdmin } from "./admin-shell";
@@ -167,6 +168,159 @@ function ClipRadarCard() {
           <p className="text-[0.64rem] text-muted-foreground/70">
             Twitch cuts clips from footage before the trigger, so detected moments are still inside the clip.
             Moments land under Analytics for review — keep, re-trim via the edit link, or dismiss.
+          </p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * X broadcast override panel. The X bridge auto-discovers each configured handle's current live
+ * broadcast (link → syndication → GraphQL), but discovery has more failure modes than a hard-coded
+ * id: rate limits, rotated query IDs, syndication outages. This card is the operator safety valve
+ * — paste a `x.com/i/broadcasts/<id>` URL (or the bare id) and the bridge connects to it directly,
+ * bypassing discovery entirely until the override is cleared. Foolproof:
+ *   - Inline validation (accepts URL or bare id; rejects anything else with a visible "INVALID" tag)
+ *   - Save is disabled when the field is unchanged or invalid
+ *   - Auto/Manual badge shows the current mode at a glance
+ *   - Clear button restores auto-discovery
+ *   - State persists across restarts (via the control plane's KV store)
+ */
+function XBroadcastOverrideCard() {
+  const { call, busy, setBusy, streamers } = useAdmin();
+  const { xBroadcastOverrides } = useControl();
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+
+  // Flatten every X source configured on any streamer (deduped). Env-only sources (X_BROADCAST_SOURCES)
+  // aren't visible here on purpose — env is the operator config that drives the bridge in the first
+  // place, and we don't want to expose it as editable in a UI without persistence rules.
+  const sources = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Array<{ source: string; key: string; label: string; streamer: string }> = [];
+    for (const s of streamers) {
+      for (const src of s.xBroadcasts ?? []) {
+        const key = normalizeXSource(src);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push({ source: src.trim(), key, label: src.trim().replace(/^@/, "@"), streamer: s.name });
+      }
+    }
+    return out;
+  }, [streamers]);
+
+  const save = async (source: string, key: string, link: string | null) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await call("/api/admin/x-broadcast-override", {
+        method: "POST",
+        body: JSON.stringify({ source, link }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(j.error || `HTTP ${res.status}`);
+        return;
+      }
+      // Drop the local draft for this row so the next render reflects the published value.
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card
+      title="X broadcast override"
+      hint="Manual fallback when X auto-discovery is misbehaving"
+      icon={Radio}
+      status={Object.keys(xBroadcastOverrides).length > 0 ? <LiveChip label={`${Object.keys(xBroadcastOverrides).length} pinned`} /> : undefined}
+      className="lg:col-span-2"
+    >
+      {sources.length === 0 ? (
+        <p className="text-[0.76rem] text-muted-foreground">
+          No X sources configured on any streamer. Add an entry to <span className="font-mono">xBroadcasts</span> in the roster to manage it here.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {sources.map(({ source, key, label, streamer }) => {
+            const pinned = xBroadcastOverrides[key];
+            const draft = drafts[key];
+            const draftValue = draft !== undefined ? draft : pinned ? `https://x.com/i/broadcasts/${pinned}` : "";
+            const parsed = draftValue.trim() === "" ? "" : parseBroadcastId(draftValue);
+            const isInvalid = draftValue.trim() !== "" && !parsed;
+            const hasChange = draft !== undefined && parsed !== (pinned ?? "");
+            return (
+              <div key={key} className="flex flex-col gap-2 rounded-lg border border-hairline bg-overlay-weak p-2.5 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={cn(
+                      "inline-flex h-5 items-center rounded-md border px-1.5 text-[0.58rem] font-bold uppercase tracking-[0.12em]",
+                      pinned
+                        ? "border-feed-warn/40 bg-feed-warn/10 text-feed-warn"
+                        : "border-hairline-strong bg-overlay-medium text-muted-foreground",
+                    )}
+                  >
+                    {pinned ? "Manual" : "Auto"}
+                  </span>
+                  <div className="min-w-0 leading-tight">
+                    <p className="truncate text-[0.8rem] font-medium text-foreground">{label}</p>
+                    <p className="mt-0.5 truncate text-[0.62rem] text-muted-foreground">
+                      {streamer}
+                      {pinned ? <> · pinned to <span className="font-mono">{pinned}</span></> : null}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-1 items-center gap-2 sm:justify-end">
+                  <input
+                    type="text"
+                    value={draftValue}
+                    onChange={(e) => setDrafts((p) => ({ ...p, [key]: e.target.value }))}
+                    placeholder="https://x.com/i/broadcasts/<id> or bare id"
+                    aria-label={`Pin broadcast for ${label}`}
+                    className={cn(INPUT, "min-w-0 flex-1 py-1.5 font-mono text-[0.72rem]", isInvalid && "border-feed-danger/60")}
+                  />
+                  {isInvalid ? (
+                    <span className="text-[0.58rem] font-bold uppercase tracking-[0.12em] text-feed-danger">Invalid</span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void save(source, key, draftValue.trim() || null)}
+                    disabled={busy || isInvalid || !hasChange}
+                    className={SOLID_BTN}
+                    title={hasChange ? "Pin this broadcast" : "No change"}
+                  >
+                    <Check className="size-3.5" />
+                    Save
+                  </button>
+                  {pinned ? (
+                    <button
+                      type="button"
+                      onClick={() => void save(source, key, null)}
+                      disabled={busy}
+                      className={QUIET_BTN}
+                      title="Clear override and resume auto-discovery"
+                    >
+                      <Trash2 className="size-3.5" />
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+          {error ? (
+            <p className="text-[0.7rem] font-medium text-feed-danger">{error}</p>
+          ) : null}
+          <p className="border-t border-hairline pt-2.5 text-[0.64rem] text-muted-foreground/80">
+            X access happens once from this server — viewers never poll X directly. When a pin is set,
+            the bridge skips auto-discovery for that source and reads the pinned broadcast until you
+            clear it. State persists across restarts when <span className="font-mono">DATABASE_PATH</span> is set.
           </p>
         </div>
       )}
@@ -399,6 +553,8 @@ export function ControlsPanel() {
           </div>
         )}
       </Card>
+
+      <XBroadcastOverrideCard />
 
       <Card title="Maintenance" hint="Housekeeping between sessions" icon={Trash2}>
         <div className="flex items-center gap-3">

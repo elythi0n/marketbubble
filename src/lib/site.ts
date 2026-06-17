@@ -1,8 +1,11 @@
-/** Public site name for metadata, JSON-LD, and UI. */
-export const siteName = "MarketBubble";
+/** Public site name for metadata, JSON-LD, browser tabs, and social previews. */
+export const siteName = "Market Bubble";
+
+/** X / Twitter handle for the brand, used in Twitter Card `site` and `creator`. No leading @. */
+export const siteTwitterHandle = "MarketBubble";
 
 export const siteDescription =
-  "Kick, Twitch, and X chat unified into one live feed, beside the stream and the markets. The elite streaming dashboard.";
+  "A live show about speculation, attention and culture. Hosted by Banks and Ansem — Thursdays at 1PM PT, simulcast to Twitch, Kick and X.";
 
 /** Primary navigation sections for the dashboard top bar. */
 export const NAV_SECTIONS = [

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink, MonitorPlay, Play } from "lucide-react";
+import { Eye, ExternalLink, MonitorPlay, Play } from "lucide-react";
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
 import type { Platform } from "@/lib/feed/types";
@@ -11,7 +11,7 @@ import { useStockDrawer } from "@/lib/markets/stock-drawer-context";
 import { useTickers } from "@/lib/markets/tickers-context";
 import { formatChange, formatPrice } from "@/lib/markets/types";
 import { useChannel } from "@/lib/streamers/channel-context";
-import { useStageMode } from "@/lib/stage-mode-context";
+import { useViewMode } from "@/lib/stage-mode-context";
 import type { Clip } from "@/lib/streamers/clips";
 import { getHandle, hasVideo, primaryPlatform, type Streamer } from "@/lib/streamers/mock";
 import { formatCountdown, isStarting, nextOccurrence } from "@/lib/streamers/schedule";
@@ -252,7 +252,8 @@ export function StreamEmbed({ channel, platform: platformProp }: { channel: Stre
  */
 export function StreamPane() {
   const { selectedId, streamers } = useChannel();
-  const { isStage } = useStageMode();
+  const { active: viewMode } = useViewMode();
+  const inOverlay = viewMode !== null;
   const channel: Streamer = streamers.find((s) => s.id === selectedId) ?? streamers[0];
   const offline = !channel.live;
   const target = channel.schedule ? nextOccurrence(channel.schedule, new Date()) : null;
@@ -275,8 +276,8 @@ export function StreamPane() {
         </div>
       ) : null}
 
-      {/* Top identity bar */}
-      <div className="relative z-10 flex items-center gap-3 p-3">
+      {/* Top identity bar — hidden on mobile (the badges below float over the player instead). */}
+      <div className="relative z-10 hidden items-center gap-3 p-3 md:flex">
         <StreamerAvatar streamer={channel} size={36} showLive={false} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -324,13 +325,30 @@ export function StreamPane() {
         )}
       </div>
 
+      {/* Mobile-only floating badges over the player. Tiny, translucent, top-right — doesn't fight
+          the platform player's own UI. Hidden on offline, in-overlay (the embed isn't there), and
+          on desktop (the full identity bar above shows the same info). */}
+      {!offline && !inOverlay && hasVideo(channel) ? (
+        <div className="pointer-events-none absolute right-3 top-3 z-20 flex items-center gap-1.5 md:hidden">
+          <span className="flex items-center gap-1 rounded-md bg-background/70 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-feed-ok backdrop-blur-md">
+            <span className="size-1.5 rounded-full bg-feed-ok" />
+            Live
+          </span>
+          <span className="flex items-center gap-1 rounded-md bg-background/70 px-1.5 py-0.5 text-[0.66rem] font-medium tabular-nums text-foreground/90 backdrop-blur-md">
+            <Eye className="size-3" />
+            {formatCount(channel.viewers)}
+          </span>
+        </div>
+      ) : null}
+
       {offline ? (
         <OfflinePanel channel={channel} target={target} />
-      ) : isStage ? (
-        /* The single player moves to the Stage overlay while it's open (avoids a second audio source). */
+      ) : inOverlay ? (
+        /* The single player moves to the active overlay (Stage/Theater/TV) while it's open — avoids
+           mounting two embeds, which would otherwise double-up audio. */
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <MonitorPlay className="size-8 text-muted-foreground/70" />
-          <p className="text-sm text-muted-foreground">Playing in Stage</p>
+          <p className="text-sm text-muted-foreground">Playing in {viewMode === "stage" ? "Stage" : viewMode === "theater" ? "Theater" : "TV"}</p>
         </div>
       ) : (
         /* Embedded platform player for the selected channel; real streams in both demo and live. */

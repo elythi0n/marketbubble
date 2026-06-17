@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clapperboard, MonitorPlay, Radio } from "lucide-react";
+import { Check, Clapperboard, Film, MonitorPlay, Radio, Tv, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { useFlag } from "@/lib/control/client";
 import { DEMO_ENABLED, useDemoMode } from "@/lib/demo-mode-context";
 import { walburn } from "@/lib/fonts";
-import { useStageMode } from "@/lib/stage-mode-context";
+import { useViewMode, type ViewMode } from "@/lib/stage-mode-context";
 import { NAV_SECTIONS } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,7 +18,6 @@ import { MarketBubbleLogo } from "./market-bubble-logo";
 export function TopNav() {
   const pathname = usePathname();
   const { isDemo, toggle } = useDemoMode();
-  const { setStage } = useStageMode();
   const demoOn = useFlag("demo");
 
   return (
@@ -26,7 +26,7 @@ export function TopNav() {
       <div className="group relative w-fit">
         <Link
           href="/"
-          aria-label="MarketBubble home"
+          aria-label="Market Bubble home"
           className="flex w-fit items-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <MarketBubbleLogo className="h-10 w-10 text-foreground transition-opacity group-hover:opacity-85" />
@@ -113,24 +113,9 @@ export function TopNav() {
 
         <ThemeToggle />
 
-        {/* Stage: broadcast overlay (OBS-ready) — icon-only, before Polymarket */}
-        {pathname === "/" ? (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <button
-                  type="button"
-                  onClick={() => setStage(true)}
-                  aria-label="Open Stage"
-                  className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <MonitorPlay className="size-5" />
-                </button>
-              }
-            />
-            <TooltipContent>Open the broadcast overlay (chat, ticker, identity over the stream)</TooltipContent>
-          </Tooltip>
-        ) : null}
+        {/* View-mode button — icon swaps with the user's last-chosen mode. Click toggles that mode
+            on/off; hover reveals a small menu to switch between Stage / Theater / TV. */}
+        {pathname === "/" ? <ViewModeButton /> : null}
 
         <a
           href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"
@@ -149,5 +134,93 @@ export function TopNav() {
       </div>
       </TooltipProvider>
     </header>
+  );
+}
+
+/**
+ * View-mode toggle: a plain icon button whose icon mirrors the user's last-chosen mode. Clicking
+ * toggles that mode on/off (matching the Stage button's original behavior). Hovering opens a small
+ * dropdown to pick a different mode — the choice persists, so next time the button represents the
+ * new mode. Hover is intentional (200ms open / 150ms close-grace) so a brush-by doesn't trigger it
+ * and the cursor can travel from button to menu without it vanishing.
+ */
+const VIEW_MODES: ReadonlyArray<{ id: ViewMode; label: string; icon: LucideIcon; hint: string }> = [
+  { id: "stage", label: "Stage", icon: MonitorPlay, hint: "Broadcast overlay (OBS-ready)" },
+  { id: "theater", label: "Theater", icon: Film, hint: "Stream-dominant — player + chat sidebar" },
+  { id: "tv", label: "TV", icon: Tv, hint: "Lean-back — fullscreen player, minimal chrome" },
+];
+
+function ViewModeButton() {
+  const { active, selected, toggle, selectAndEnter } = useViewMode();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const openTimer = useRef<number | null>(null);
+  const closeTimer = useRef<number | null>(null);
+
+  const clearTimers = () => {
+    if (openTimer.current) { window.clearTimeout(openTimer.current); openTimer.current = null; }
+    if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
+  };
+  const scheduleOpen = () => { clearTimers(); openTimer.current = window.setTimeout(() => setMenuOpen(true), 180); };
+  const scheduleClose = () => { clearTimers(); closeTimer.current = window.setTimeout(() => setMenuOpen(false), 150); };
+  useEffect(() => () => clearTimers(), []);
+
+  const meta = VIEW_MODES.find((m) => m.id === selected) ?? VIEW_MODES[0];
+  const Icon = meta.icon;
+  const isActiveSelected = active === selected;
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={scheduleOpen}
+      onMouseLeave={scheduleClose}
+    >
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={isActiveSelected ? `Exit ${meta.label}` : `Open ${meta.label}`}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        className={cn(
+          "flex size-9 items-center justify-center rounded-md transition-colors",
+          isActiveSelected ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        <Icon className="size-5" />
+      </button>
+
+      {menuOpen ? (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-40 mt-1.5 min-w-[200px] rounded-lg border border-hairline bg-popover p-1 text-popover-foreground shadow-[var(--shadow-popover)]"
+        >
+          {VIEW_MODES.map((m) => {
+            const IconRow = m.icon;
+            const isSelected = m.id === selected;
+            const isActive = m.id === active;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isSelected}
+                onClick={() => { selectAndEnter(m.id); setMenuOpen(false); }}
+                className="group flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.78rem] transition-colors hover:bg-overlay-weak"
+              >
+                <IconRow className="size-4 flex-none text-muted-foreground group-hover:text-foreground" />
+                <span className="flex-1 leading-tight">
+                  <span className="block font-medium text-foreground">{m.label}</span>
+                  <span className="block text-[0.66rem] text-muted-foreground">{m.hint}</span>
+                </span>
+                {isActive ? (
+                  <span className="flex-none text-[0.55rem] font-bold uppercase tracking-[0.14em] text-feed-ok">On</span>
+                ) : isSelected ? (
+                  <Check className="size-3.5 flex-none text-muted-foreground" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }

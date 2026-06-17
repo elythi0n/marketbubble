@@ -9,6 +9,9 @@
  * a Twitch/Kick "live elsewhere" signal could later be plugged in here to throttle discovery further.
  */
 
+import { getXBroadcastOverride, subscribeControl } from "@/lib/server/control";
+import { normalizeXSource } from "@/lib/streamers/x-source";
+
 import { pushMessages, type XChatMessage } from "../chat-buffer";
 import { resolveBroadcast } from "./discovery";
 import { XBroadcastReader, type BroadcastChatMessage } from "./reader";
@@ -53,12 +56,9 @@ function statusStore(): Map<string, XSourceStatus> {
   return (g.__xSourceStatus ??= new Map());
 }
 
-/** Normalize a source to its lookup key: broadcast id from a link, else the bare lowercased handle. */
-function normHandle(src: string): string {
-  const link = /broadcasts\/([A-Za-z0-9]+)/i.exec(src);
-  if (link) return link[1].toLowerCase();
-  return src.trim().replace(/^@/, "").toLowerCase();
-}
+// Single source of truth lives in lib/streamers/x-source.ts. Keep this alias so the call sites
+// below read as "normalize as a handle" — semantically the same operation.
+const normHandle = normalizeXSource;
 
 /** Merge a status patch onto every (defined) key — the configured source plus the broadcaster handle. */
 function setSourceStatus(keys: (string | undefined)[], patch: Partial<XSourceStatus>): void {
@@ -85,18 +85,54 @@ function runSource(
   isStopped: () => boolean,
 ): () => void {
   let reader: XBroadcastReader | null = null;
+  let currentBroadcastId: string | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let cancelled = false;
+  const sourceKey = normHandle(source);
 
   const schedule = () => {
     if (cancelled || isStopped()) return;
     timer = setTimeout(tick, typeof pollMs === "function" ? pollMs() : pollMs);
   };
 
+  // Mid-stream override changes: when the admin pins/clears/repins this source, restart
+  // immediately rather than waiting for the current broadcast to end. The subscription is one
+  // shared SSE listener, cheap to register per source.
+  const unsubscribe = subscribeControl(() => {
+    if (cancelled || isStopped()) return;
+    const override = getXBroadcastOverride(sourceKey);
+    // (a) override set to a different id than we're currently reading → restart on the new id
+    // (b) override cleared while we were on an override → re-resolve via discovery
+    // (c) no override and not currently connected → nothing to do (the tick loop owns it)
+    if (override && override !== currentBroadcastId) {
+      log(`${source}: override changed to ${override} → restarting reader`);
+      restart();
+    } else if (!override && reader && currentBroadcastId) {
+      // Was on a pin; pin cleared. Let the current reader finish naturally? No — the operator
+      // explicitly cleared the pin, so re-resolve right now.
+      log(`${source}: override cleared → re-resolving via discovery`);
+      restart();
+    }
+  });
+
+  const restart = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (reader) { reader.stop(); reader = null; }
+    currentBroadcastId = null;
+    void tick();
+  };
+
   const tick = async () => {
     if (cancelled || isStopped()) return;
 
-    const resolved = await resolveBroadcast(source);
+    // Operator override (control plane). When set, skip discovery entirely and connect straight
+    // to the pinned broadcast — that's the whole point of the safety valve. When the pinned
+    // broadcast ends, this loop will tick again, see the override is still set, retry the same
+    // id (X returns state=ENDED and the reader exits clean) until the operator clears it.
+    const overrideId = getXBroadcastOverride(normHandle(source));
+    const resolved = overrideId
+      ? { id: overrideId, via: "manual" as const, handle: normHandle(source) }
+      : await resolveBroadcast(source);
     if (cancelled || isStopped()) return;
     if (!resolved) {
       // Nothing live for this source right now — mark it offline so the dashboard reflects it.
@@ -115,6 +151,7 @@ function runSource(
       log(`${source}: ${reason}`);
       reader?.stop();
       reader = null;
+      currentBroadcastId = null;
       schedule();
     };
 
@@ -136,6 +173,7 @@ function runSource(
       log,
     });
 
+    currentBroadcastId = resolved.id;
     log(`${source}: connecting to broadcast ${resolved.id} (via ${resolved.via})`);
     await reader.start();
   };
@@ -144,6 +182,7 @@ function runSource(
 
   return () => {
     cancelled = true;
+    unsubscribe();
     if (timer) clearTimeout(timer);
     reader?.stop();
     reader = null;

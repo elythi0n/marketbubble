@@ -8,7 +8,7 @@ import { StockDrawer } from "@/components/markets/stock-drawer";
 import { Preloader } from "@/components/preloader";
 import { NewsDrawerProvider } from "@/lib/markets/news-drawer-context";
 import { StockDrawerProvider } from "@/lib/markets/stock-drawer-context";
-import { getSiteUrl, siteDescription, siteName } from "@/lib/site";
+import { getSiteUrl, siteDescription, siteName, siteTwitterHandle } from "@/lib/site";
 import { ThemeProvider, ThemeScript } from "@/lib/theme/theme-context";
 
 /** Body / UI typeface for the whole app (nav, chat, controls). */
@@ -41,11 +41,15 @@ export const metadata: Metadata = {
     siteName,
     title: siteName,
     description: siteDescription,
+    // og:image comes from `src/app/opengraph-image.png` (Next file convention) — no need to repeat it here.
   },
   twitter: {
     card: "summary_large_image",
     title: siteName,
     description: siteDescription,
+    site: `@${siteTwitterHandle}`,
+    creator: `@${siteTwitterHandle}`,
+    // twitter:image comes from `src/app/twitter-image.png` (Next file convention).
   },
   robots: { index: true, follow: true },
   manifest: "/site.webmanifest",

@@ -17,6 +17,8 @@
  */
 
 import type { StreamSchedule } from "@/lib/streamers/schedule";
+import { loadRoster, rosterXBroadcastSources } from "@/lib/streamers/load";
+import { normalizeXSource, parseBroadcastId } from "@/lib/streamers/x-source";
 import { getDb } from "./db";
 
 export interface Announcement {
@@ -99,6 +101,13 @@ export interface ControlState {
   filters: GlobalFilter[];
   /** Active giveaway roll (or its result, until cleared); null = none. */
   giveaway: Giveaway | null;
+  /**
+   * Manual X broadcast pin per configured source (key = normalized source from
+   * normalizeXSource, value = broadcast id). When set, the X bridge skips discovery for
+   * that source and reads the pinned broadcast directly — the operator safety valve when
+   * auto-discovery fails or while testing.
+   */
+  xBroadcastOverrides: Record<string, string>;
 }
 
 const MAX_VOTERS = 100_000;
@@ -117,6 +126,7 @@ interface ControlStore {
   roster: RosterStreamer[] | null;
   globalFilters: GlobalFilter[];
   giveaway: Giveaway | null;
+  xBroadcastOverrides: Record<string, string>;
   voters: Map<string, string>; // voterKey → optionId (current poll only)
   lockTimer: ReturnType<typeof setTimeout> | null;
   relayPull: ReturnType<typeof setInterval> | null;
@@ -134,6 +144,7 @@ const store: ControlStore = ((globalThis as Record<string, unknown> & { __mbCont
   roster: null,
   globalFilters: [],
   giveaway: null,
+  xBroadcastOverrides: {},
   voters: new Map(),
   lockTimer: null,
   relayPull: null,
@@ -174,6 +185,7 @@ function hydrate(s: ControlStore): ControlStore {
     s.roster = read<RosterStreamer[] | null>("roster", null);
     s.globalFilters = read<GlobalFilter[]>("filters", []);
     s.giveaway = read<Giveaway | null>("giveaway", null);
+    s.xBroadcastOverrides = read<Record<string, string>>("x_broadcast_overrides", {});
 
     const pollId = read<string | null>("current_poll_id", null);
     if (pollId) {
@@ -233,6 +245,7 @@ function persistState() {
     up.run("roster", JSON.stringify(store.roster));
     up.run("filters", JSON.stringify(store.globalFilters));
     up.run("giveaway", JSON.stringify(store.giveaway));
+    up.run("x_broadcast_overrides", JSON.stringify(store.xBroadcastOverrides));
     up.run("current_poll_id", JSON.stringify(store.poll?.id ?? null));
 
     const p = store.poll;
@@ -270,6 +283,7 @@ export function getControlState(): ControlState {
     roster: store.roster,
     filters: store.globalFilters,
     giveaway: store.giveaway,
+    xBroadcastOverrides: { ...store.xBroadcastOverrides },
   };
 }
 
@@ -385,6 +399,73 @@ export function setRoster(
   if (cleaned.length === 0) throw new Error("roster needs at least one streamer with a handle");
   store.roster = cleaned;
   broadcast(true);
+}
+
+// ── X broadcast overrides ──────────────────────────────────────────────────────
+
+/** Cached set of configured-source keys. Recomputed on first call after a roster change. */
+let configuredSourceKeys: Set<string> | null = null;
+function knownSourceKeys(): Set<string> {
+  if (configuredSourceKeys) return configuredSourceKeys;
+  configuredSourceKeys = new Set(rosterXBroadcastSources(loadRoster()).map(normalizeXSource));
+  return configuredSourceKeys;
+}
+/** Call after the roster file changes (currently roster reload is process-level). */
+export function invalidateConfiguredXSources(): void {
+  configuredSourceKeys = null;
+}
+
+export type XOverrideError = "empty" | "unknown_source" | "invalid_link";
+
+/**
+ * Pin an X source to a specific broadcast id. Empty/null `linkOrId` clears the pin and lets the
+ * X bridge fall back to auto-discovery on the next tick. Strict by design:
+ *   - source must be one of the configured roster's X sources (no ghost keys in the KV store)
+ *   - link must yield a real broadcast id (URL or bare id)
+ *   - clear() on an absent key returns `unknown_source`, not silent success
+ *   - normalization uses the same helper the bridge uses, so pins land where the manager reads
+ */
+export function setXBroadcastOverride(source: string, linkOrId: string | null): XOverrideError | null {
+  const trimmedSource = source.trim();
+  if (!trimmedSource) return "empty";
+  const key = normalizeXSource(trimmedSource);
+  if (!key) return "empty";
+  if (!knownSourceKeys().has(key)) return "unknown_source";
+
+  if (linkOrId === null || linkOrId.trim() === "") {
+    if (!(key in store.xBroadcastOverrides)) return "unknown_source";
+    delete store.xBroadcastOverrides[key];
+    broadcast(true);
+    return null;
+  }
+  const id = parseBroadcastId(linkOrId);
+  if (!id) return "invalid_link";
+  if (store.xBroadcastOverrides[key] === id) return null; // unchanged — silent no-op
+  store.xBroadcastOverrides[key] = id;
+  broadcast(true);
+  return null;
+}
+
+/** Read the current pin for a configured source key, or undefined. Used by the X bridge. */
+export function getXBroadcastOverride(sourceKey: string): string | undefined {
+  return store.xBroadcastOverrides[normalizeXSource(sourceKey)];
+}
+
+/**
+ * Drop pins for keys that aren't in the current roster. Called at boot so stale entries from
+ * past rosters can't accumulate in the persisted store and pollute the SSE state forever.
+ */
+export function pruneOrphanXBroadcastOverrides(): number {
+  const valid = knownSourceKeys();
+  let removed = 0;
+  for (const key of Object.keys(store.xBroadcastOverrides)) {
+    if (!valid.has(key)) {
+      delete store.xBroadcastOverrides[key];
+      removed++;
+    }
+  }
+  if (removed > 0) broadcast(true);
+  return removed;
 }
 
 // ── Global chat filters ────────────────────────────────────────────────────────

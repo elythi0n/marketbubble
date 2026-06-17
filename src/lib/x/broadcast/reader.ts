@@ -84,6 +84,20 @@ const PUBLIC_ACCESS_CHAT = "https://proxsee.pscp.tv/api/v2/accessChatPublic";
 const MAX_BACKOFF_MS = 15_000;
 const SEEN_CAP = 4_000;
 
+/**
+ * Health-poll cadence. A chatty broadcast emits chat AND occupancy frames continuously, so we don't
+ * touch X's HTTP surface in steady state. After SILENCE_THRESHOLD_MS of no frames we run a single
+ * show.json check — at most one HTTP call per HEALTH_CHECK_MS while a broadcast is genuinely quiet.
+ * This catches the edge case where the broadcast ends but the socket stays open.
+ *
+ * Opt-in via X_BROADCAST_HEALTH_POLL=1 — when disabled (the default), end-detection falls back to
+ * socket close. The poll uses the same guest-token flow as discovery (no paid X API key), but it
+ * still costs outbound HTTP to X, so operators choose whether the belt-and-suspenders is worth it.
+ */
+const HEALTH_CHECK_MS = 30_000;
+const SILENCE_THRESHOLD_MS = 90_000;
+const HEALTH_POLL_ENABLED = process.env.X_BROADCAST_HEALTH_POLL === "1";
+
 export class XBroadcastReader {
   readonly broadcastId: string;
   private readonly hooks: ReaderHooks;
@@ -93,6 +107,8 @@ export class XBroadcastReader {
   private stopped = false;
   private backoff = 1_000;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private healthTimer: ReturnType<typeof setInterval> | null = null;
+  private lastFrameAt = 0;
   private readonly seen = new Set<string>();
   private broadcaster?: string;
 
@@ -110,6 +126,7 @@ export class XBroadcastReader {
   stop(): void {
     this.stopped = true;
     this.clearReconnect();
+    this.clearHealthCheck();
     this.closeSocket();
     this.setState("stopped");
   }
@@ -225,15 +242,19 @@ export class XBroadcastReader {
         payload: JSON.stringify({ kind: 1, body: JSON.stringify({ room: creds.roomId }) }),
       });
       this.setState("live");
+      this.lastFrameAt = Date.now();
+      this.startHealthCheck();
       this.log("chat connected");
     });
 
     socket.addEventListener("message", (ev) => {
+      this.lastFrameAt = Date.now();
       this.handleFrame(typeof ev.data === "string" ? ev.data : String(ev.data));
     });
 
     socket.addEventListener("close", () => {
       if (this.socket === socket) this.socket = null;
+      this.clearHealthCheck();
       if (!this.stopped) this.scheduleReconnect(true);
     });
 
@@ -295,6 +316,64 @@ export class XBroadcastReader {
         /* ignore */
       }
       this.socket = null;
+    }
+  }
+
+  // --- silence-triggered health check ----------------------------------------
+  // Only spends an HTTP call when the socket has gone quiet — chatty streams cost zero polls.
+
+  private startHealthCheck(): void {
+    this.clearHealthCheck();
+    if (!HEALTH_POLL_ENABLED) return; // opt-in via X_BROADCAST_HEALTH_POLL=1
+    this.healthTimer = setInterval(() => {
+      void this.runHealthCheck();
+    }, HEALTH_CHECK_MS);
+  }
+
+  private clearHealthCheck(): void {
+    if (this.healthTimer) {
+      clearInterval(this.healthTimer);
+      this.healthTimer = null;
+    }
+  }
+
+  /**
+   * Catches the edge case where X holds the WebSocket open after a broadcast ends but stops
+   * emitting frames. Skips outright when the socket has been emitting (chat or occupancy)
+   * in the last SILENCE_THRESHOLD_MS, so we never poll X during normal operation.
+   */
+  private async runHealthCheck(): Promise<void> {
+    if (this.stopped || !this.socket) return;
+    if (Date.now() - this.lastFrameAt < SILENCE_THRESHOLD_MS) return;
+
+    try {
+      const token = await guestToken();
+      const res = await fetch(
+        `https://api.x.com/1.1/broadcasts/show.json?ids=${this.broadcastId}`,
+        { headers: guestHeaders(token), signal: AbortSignal.timeout(10_000) },
+      );
+      if (!res.ok) return; // transient failure → try again next tick
+      const json = (await res.json()) as ShowResponse;
+      const b = json.broadcasts?.[this.broadcastId];
+      if (!b) return;
+      if (b.state && b.state !== "RUNNING") {
+        this.log(`silence + state=${b.state} → ended`);
+        this.clearHealthCheck();
+        this.closeSocket();
+        this.setState("ended");
+        return;
+      }
+      // Still RUNNING but quiet — refresh occupancy/title and bump the silence window so we
+      // don't poll again immediately if X keeps holding the socket open without frames.
+      const occupancy = Number.parseInt(b.total_watching ?? "", 10);
+      this.hooks.onMeta?.({
+        title: b.status || undefined,
+        broadcaster: this.broadcaster,
+        occupancy: Number.isFinite(occupancy) ? occupancy : undefined,
+      });
+      this.lastFrameAt = Date.now();
+    } catch {
+      /* network blip — pretend it didn't happen */
     }
   }
 
