@@ -80,130 +80,129 @@ const DASHBOARD_FEATURES = [
 export default function AboutPage() {
   return (
     <PageShell glow>
-      {/* Wrapping in `relative` so the `absolute` beams attach here (not to the viewport-sized
-          shell), keeping them inside the page's content column above any nav chrome. */}
+      {/* Positioning anchor for `BackgroundBeams` (absolute) — attaches to the page content
+          column, not the viewport-sized shell. */}
       <div className="relative">
-        {/* Subtle aurora beams hugging the top of the page; fade to transparent before mid-page.
-            `pointer-events-none` lives on the component so it never eats clicks. */}
-        <BackgroundBeams className="h-[70vh] opacity-60 [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]" />
+        {/* `h-[70svh]` caps to the *small* viewport on iOS Safari so the beam band doesn't
+            resize when the URL bar toggles; `h-[70vh]` is the fallback for engines without svh. */}
+        <BackgroundBeams className="h-[70vh] h-[70svh] opacity-60 mask-fade-down" />
 
         <div className="relative mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
-        {/* Hero */}
-        <header className="text-center">
-          <p className="text-[0.64rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">About the show</p>
-          <h1 className="font-brand-wordmark mt-3 text-5xl uppercase tracking-[0.01em] text-foreground sm:text-6xl">
-            Market Bubble
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            A live show about investing in yourself. Every week Banks and Ansem sit at the corner of speculation,
-            attention and culture: prediction markets, stocks, crypto, sports and whatever the internet is about to
-            care about, called live before it happens. Out of the group chats, onto the air, simulcast to Twitch,
-            Kick and X with every chat and every chart in one dashboard.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-            <span className="inline-flex items-center gap-2 rounded-lg border border-feed-ok/25 bg-feed-ok/[0.08] px-3 py-1.5 text-[0.78rem] font-semibold text-feed-ok">
-              <span className="size-1.5 rounded-full bg-feed-ok" />
-              {SCHEDULE}
-            </span>
-            <a
-              href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-overlay-weak px-3 py-1.5 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
-            >
-              Presented with
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/polymarket.svg" alt="Polymarket" className="h-4 w-auto dark:invert" />
-            </a>
-          </div>
-        </header>
-
-        {/* What the show is about */}
-        <section className="mt-12">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {THEMES.map((t) => (
-              <div key={t.title} className="rounded-xl border border-hairline bg-overlay-weak px-4 py-4 text-center">
-                <h3 className="font-brand-wordmark text-base uppercase tracking-[0.05em] text-foreground">{t.title}</h3>
-                <p className="mt-1.5 text-[0.78rem] leading-relaxed text-muted-foreground">{t.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Hosts */}
-        <section className="mt-14">
-          <h2 className="font-brand-wordmark text-center text-2xl uppercase tracking-[0.04em] text-foreground">The Hosts</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {HOSTS.map((host) => (
-              <article
-                key={host.name}
-                className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-card shadow-[var(--shadow-card)]"
+          {/* Hero */}
+          <header className="text-center">
+            <p className="text-[0.64rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">About the show</p>
+            <h1 className="font-brand-wordmark mt-3 text-5xl uppercase tracking-[0.01em] text-foreground sm:text-6xl">
+              Market Bubble
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+              A live show about investing in yourself. Every week Banks and Ansem sit at the corner of speculation,
+              attention and culture: prediction markets, stocks, crypto, sports and whatever the internet is about to
+              care about, called live before it happens. Out of the group chats, onto the air, simulcast to Twitch,
+              Kick and X with every chat and every chart in one dashboard.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-feed-ok/25 bg-feed-ok/[0.08] px-3 py-1.5 text-[0.78rem] font-semibold text-feed-ok">
+                <span className="size-1.5 rounded-full bg-feed-ok" />
+                {SCHEDULE}
+              </span>
+              <a
+                href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-overlay-weak px-3 py-1.5 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
               >
-                <div className="relative flex items-center gap-4 overflow-hidden border-b border-hairline bg-overlay-weak px-5 py-4">
-                  {/* Subtle dotted-glow that spans the full header width and fades down.
-                      Positioned siblings below need `relative` so they paint above this
-                      absolutely-positioned background. */}
-                  <DottedGlowBackground />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={host.avatar}
-                    alt={host.name}
-                    className="relative size-16 rounded-full border border-hairline object-cover"
-                  />
-                  <div className="relative min-w-0">
-                    <h3 className="text-lg font-semibold text-foreground">{host.name}</h3>
-                    <p className="text-[0.72rem] text-muted-foreground">
-                      {host.handle} · {host.role}
-                    </p>
+                Presented with
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/polymarket.svg" alt="Polymarket" className="h-4 w-auto dark:invert" />
+              </a>
+            </div>
+          </header>
+
+          {/* What the show is about */}
+          <section className="mt-12">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {THEMES.map((t) => (
+                <div key={t.title} className="rounded-xl border border-hairline bg-overlay-weak px-4 py-4 text-center">
+                  <h3 className="font-brand-wordmark text-base uppercase tracking-[0.05em] text-foreground">{t.title}</h3>
+                  <p className="mt-1.5 text-[0.78rem] leading-relaxed text-muted-foreground">{t.text}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Hosts */}
+          <section className="mt-14">
+            <h2 className="font-brand-wordmark text-center text-2xl uppercase tracking-[0.04em] text-foreground">The Hosts</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {HOSTS.map((host) => (
+                <article
+                  key={host.name}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-card shadow-[var(--shadow-card)]"
+                >
+                  <div className="relative flex items-center gap-4 overflow-hidden border-b border-hairline bg-overlay-weak px-5 py-4">
+                    {/* Sibling `<img>` and text wrapper below carry `relative` so they paint
+                        above this absolutely-positioned background. */}
+                    <DottedGlowBackground />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={host.avatar}
+                      alt={host.name}
+                      className="relative size-16 rounded-full border border-hairline object-cover"
+                    />
+                    <div className="relative min-w-0">
+                      <h3 className="text-lg font-semibold text-foreground">{host.name}</h3>
+                      <p className="text-[0.72rem] text-muted-foreground">
+                        {host.handle} · {host.role}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <p className="flex-1 px-5 py-4 text-sm leading-relaxed text-muted-foreground">{host.about}</p>
-                <div className="flex items-center gap-1.5 px-5 pb-4">
-                  {host.links.map((l) => (
-                    <a
-                      key={l.label}
-                      href={l.href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
-                    >
-                      <l.Icon className="size-3" />
-                      {l.label}
-                    </a>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                  <p className="flex-1 px-5 py-4 text-sm leading-relaxed text-muted-foreground">{host.about}</p>
+                  <div className="flex items-center gap-1.5 px-5 pb-4">
+                    {host.links.map((l) => (
+                      <a
+                        key={l.label}
+                        href={l.href}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-overlay-weak px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-medium hover:text-foreground"
+                      >
+                        <l.Icon className="size-3" />
+                        {l.label}
+                      </a>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
 
-        {/* The dashboard */}
-        <section className="mt-14">
-          <h2 className="font-brand-wordmark text-center text-2xl uppercase tracking-[0.04em] text-foreground">The Dashboard</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-muted-foreground">
-            The show runs on three platforms at once, so we built one place to watch all of it. This site is that
-            place: the stream, every chat and the markets the show talks about, live.
-          </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {DASHBOARD_FEATURES.map((f) => (
-              <div key={f.title} className="rounded-xl border border-hairline bg-overlay-weak px-4 py-3.5">
-                <h3 className="text-[0.85rem] font-semibold text-foreground">{f.title}</h3>
-                <p className="mt-1 text-[0.78rem] leading-relaxed text-muted-foreground">{f.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+          {/* The dashboard */}
+          <section className="mt-14">
+            <h2 className="font-brand-wordmark text-center text-2xl uppercase tracking-[0.04em] text-foreground">The Dashboard</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-muted-foreground">
+              The show runs on three platforms at once, so we built one place to watch all of it. This site is that
+              place: the stream, every chat and the markets the show talks about, live.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {DASHBOARD_FEATURES.map((f) => (
+                <div key={f.title} className="rounded-xl border border-hairline bg-overlay-weak px-4 py-3.5">
+                  <h3 className="text-[0.85rem] font-semibold text-foreground">{f.title}</h3>
+                  <p className="mt-1 text-[0.78rem] leading-relaxed text-muted-foreground">{f.text}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
-        {/* CTA */}
-        <div className="mt-14 text-center">
-          <Link
-            href="/"
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
-          >
-            Watch live
-          </Link>
-          <p className="mt-2.5 text-[0.7rem] text-muted-foreground/70">{SCHEDULE} · Twitch, Kick and X</p>
-        </div>
+          {/* CTA */}
+          <div className="mt-14 text-center">
+            <Link
+              href="/"
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+            >
+              Watch live
+            </Link>
+            <p className="mt-2.5 text-[0.7rem] text-muted-foreground/70">{SCHEDULE} · Twitch, Kick and X</p>
+          </div>
         </div>
       </div>
     </PageShell>
