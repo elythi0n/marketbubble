@@ -156,6 +156,16 @@
   --glow-1: radial-gradient(circle, rgb(183 137 60 / 0.22), transparent 70%);
   --glow-2: radial-gradient(circle, rgb(47 107 79 / 0.16), transparent 70%);
   --glow-3: radial-gradient(circle, rgb(183 137 60 / 0.14), transparent 70%);
+  /* Aurora-beam gradient stops (Aceternity Background Beams). Saturated indigo/violet on
+     light theme so beams read on the warm-paper floor; the dark override below uses neon. */
+  --beam-stop-a: #0891b2;
+  --beam-stop-b: #4338ca;
+  --beam-stop-c: #7c3aed;
+  /* Dotted-glow background (Aceternity Dotted Glow). Accent-violet ink for the stippled dots
+     and a very faint matching tint behind them, both kept low-alpha so the effect stays
+     subtle on the warm-paper floor. */
+  --dot-glow-dot: rgb(91 93 198 / 0.45);
+  --dot-glow-tint: rgb(91 93 198 / 0.07);
 }
 
 /*
@@ -231,6 +241,14 @@
   --glow-1: radial-gradient(circle, rgb(120 142 188 / 0.32), transparent 70%);
   --glow-2: radial-gradient(circle, rgb(156 150 184 / 0.26), transparent 70%);
   --glow-3: radial-gradient(circle, rgb(110 134 178 / 0.22), transparent 70%);
+  /* Neon stops for dark theme — bright cyan→purple→violet, classic Aceternity look. */
+  --beam-stop-a: #18ccfc;
+  --beam-stop-b: #6344f5;
+  --beam-stop-c: #ae48ff;
+  /* Dotted-glow stops on graphite: lavender ink, slightly higher alpha than light since the
+     contrast against the dark floor is weaker. */
+  --dot-glow-dot: rgb(168 168 248 / 0.32);
+  --dot-glow-tint: rgb(168 168 248 / 0.09);
 }
 
 @layer base {

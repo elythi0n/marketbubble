@@ -5,13 +5,11 @@ import type { ReactNode } from "react";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { TopNav } from "@/components/dashboard/top-nav";
 import { MobileThemeChip } from "@/components/theme-toggle";
-import { useIsMobile } from "@/lib/use-is-mobile";
-import { cn } from "@/lib/utils";
 
-/** Standalone page chrome: top nav (desktop) or bottom nav (mobile) over scrollable content. */
+// Nav swap is CSS-only (no `useIsMobile`) so the React tree stays a stable shape across
+// resize — a state-driven swap here breaks the React DevTools fiber tracker on every
+// breakpoint cross ("The children should not have changed if we pass in the same set").
 export function PageShell({ children, glow = false }: { children: ReactNode; glow?: boolean }) {
-  const isMobile = useIsMobile();
-
   return (
     <div className="marketing-shell-root">
       <div className="pointer-events-none fixed inset-0 z-0 marketing-ambient-base" aria-hidden />
@@ -23,16 +21,18 @@ export function PageShell({ children, glow = false }: { children: ReactNode; glo
         </div>
       ) : null}
       <div className="relative z-10 flex h-[100dvh] flex-col overflow-hidden">
-        {isMobile ? null : <TopNav />}
-        <main
-          className={cn("mb-scroll flex-1 overflow-y-auto", isMobile && "pb-[calc(3.5rem+env(safe-area-inset-bottom))]")}
-        >
+        <div className="hidden md:contents">
+          <TopNav />
+        </div>
+        <main className="mb-scroll flex-1 overflow-y-auto pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
           {children}
         </main>
-        {isMobile ? <BottomNav /> : null}
+        <div className="contents md:hidden">
+          <BottomNav />
+        </div>
       </div>
-      {/* Floating theme toggle for mobile — visible on every page-shell route. */}
-      {isMobile ? <MobileThemeChip /> : null}
+      {/* Floating theme toggle — self-gated with `sm:hidden`, safe to always render. */}
+      <MobileThemeChip />
     </div>
   );
 }
