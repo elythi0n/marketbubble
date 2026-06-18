@@ -420,13 +420,16 @@ export function LeaderboardContent() {
       </div>
 
       <div className="mt-6">
-        {tab === "traders" ? (
-          <Podium rows={traderPodium} compact={isMobile} />
-        ) : chattersFetched && chatters.length === 0 ? (
-          <EmptyChattersPodium compact={isMobile} />
-        ) : (
-          <Podium rows={chatterPodium} compact={isMobile} />
-        )}
+        {/* Podium is desktop/tablet only — on mobile the table alone reads cleaner. */}
+        <div className="hidden sm:block">
+          {tab === "traders" ? (
+            <Podium rows={traderPodium} compact={isMobile} />
+          ) : chattersFetched && chatters.length === 0 ? (
+            <EmptyChattersPodium compact={isMobile} />
+          ) : (
+            <Podium rows={chatterPodium} compact={isMobile} />
+          )}
+        </div>
 
         {tab === "chatters" && chattersFetched && chatters.length === 0 ? (
           <div className="overflow-hidden rounded-xl border border-hairline bg-card shadow-[var(--shadow-card)]">

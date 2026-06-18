@@ -14,6 +14,7 @@ import {
 } from "@/lib/settings/settings-context";
 import { useTheme, type ThemeChoice } from "@/lib/theme/theme-context";
 import { cn } from "@/lib/utils";
+import { ProviderIcon } from "./provider-icon";
 
 const TABS = [
   { id: "chat", label: "Chat" },
@@ -263,7 +264,8 @@ function AssistantTab() {
         {PROVIDERS.map((p) => {
           const active = managed.includes(p);
           return (
-            <li key={p} className="flex items-center gap-3 py-2">
+            <li key={p} className="flex items-center gap-2.5 py-2">
+              <ProviderIcon provider={p} className="size-5" />
               <span className="min-w-0 flex-1 text-[0.82rem] font-medium text-foreground">{PROVIDER_LABEL[p]}</span>
               {active ? (
                 <span

@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import {
   ArrowUp,
   BarChart3,
+  Brain,
   Check,
   ChevronDown,
   Hash,
   KeyRound,
   ListOrdered,
   Lock,
-  MessagesSquare,
   MonitorPlay,
   Plus,
   Search,
@@ -33,6 +33,8 @@ import { useTickers } from "@/lib/markets/tickers-context";
 import { useSettings } from "@/lib/settings/settings-context";
 import { useChannel } from "@/lib/streamers/channel-context";
 import { cn } from "@/lib/utils";
+import { DitherHero } from "./dither-hero";
+import { ProviderIcon } from "./provider-icon";
 
 const TOOL_META: Record<string, { icon: LucideIcon; label: string }> = {
   search_chat: { icon: Search, label: "Search chat" },
@@ -421,7 +423,9 @@ export function AssistantPane() {
 
   if (!settings.assistantOptIn) {
     return (
-      <Gate icon={Sparkles} title="AI Assistant · opt-in">
+      <div className="flex h-full flex-col items-center justify-center gap-3.5 overflow-y-auto bg-card px-6 py-8 text-center mb-scroll">
+        <DitherHero animate={settings.animations} className="w-28" />
+        <h3 className="font-mono text-xl font-semibold tracking-[-0.01em] text-foreground">The Assistant</h3>
         <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
           Chat is kept <b className="text-foreground/85">in memory only</b>, up to{" "}
           {settings.assistantArchiveSize.toLocaleString()} messages (adjustable in Settings). Nothing touches a disk or
@@ -444,13 +448,13 @@ export function AssistantPane() {
         <button
           type="button"
           onClick={() => update({ assistantOptIn: true })}
-          className="mt-1 inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak px-3.5 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
+          className="mb-beam-button mt-1 inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline-strong bg-overlay-weak px-3.5 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
         >
           <Sparkles className="size-3.5" />
-          Enable assistant
+          <span>Enable assistant</span>
         </button>
         <p className="text-[0.66rem] text-muted-foreground/70">Turn it off anytime in Settings → Assistant.</p>
-      </Gate>
+      </div>
     );
   }
 
@@ -472,8 +476,8 @@ export function AssistantPane() {
           reload. Requests go straight from your browser to the provider, never through our servers, so there are no rate
           limits: usage is between you and your provider.
         </p>
-        <form onSubmit={submitKey} className="flex w-full max-w-xs flex-col gap-2">
-          <div className="flex flex-wrap items-center justify-center gap-0.5 self-center rounded-lg border border-hairline bg-overlay-weak p-0.5">
+        <form onSubmit={submitKey} className="flex w-full max-w-sm flex-col gap-2">
+          <div className="flex w-full items-center gap-0.5 rounded-lg border border-hairline bg-overlay-weak p-0.5">
             {byokOptions.map((p) => (
               <button
                 key={p}
@@ -481,10 +485,11 @@ export function AssistantPane() {
                 onClick={() => setByokProvider(p)}
                 aria-pressed={active === p}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-[0.72rem] font-medium transition-colors",
+                  "inline-flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md px-1 py-1 text-[0.66rem] font-medium transition-colors",
                   active === p ? "bg-overlay-medium text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
+                <ProviderIcon provider={p} className="size-3.5" />
                 {PROVIDER_LABEL[p]}
               </button>
             ))}
@@ -576,10 +581,15 @@ export function AssistantPane() {
       {/* Feed */}
       <div className="flex-1 overflow-y-auto px-3 py-3 mb-scroll">
         {items.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-            <MessagesSquare className="size-7 text-muted-foreground/50" />
-            <p className="text-sm font-medium text-foreground/90">Ask about chat, channels or markets</p>
-            <div className="flex max-w-[280px] flex-wrap justify-center gap-1.5">
+          <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
+            <DitherHero animate={settings.animations} className="w-36 sm:w-40" />
+            <div className="flex flex-col items-center gap-1.5">
+              <h2 className="font-mono text-2xl font-semibold tracking-[-0.01em] text-foreground">The Assistant</h2>
+              <p className="max-w-[260px] text-[0.78rem] leading-relaxed text-muted-foreground">
+                Ask about chat, channels, or the markets — it can search the live feed and pull real data.
+              </p>
+            </div>
+            <div className="flex max-w-[300px] flex-wrap justify-center gap-1.5">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -608,7 +618,7 @@ export function AssistantPane() {
                 return (
                   <div key={i} className="flex gap-2.5">
                     <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full border border-hairline bg-overlay-weak">
-                      <Sparkles className="size-3 text-muted-foreground" />
+                      <Brain className="size-3 text-muted-foreground" />
                     </span>
                     <div className="min-w-0 flex-1 text-[0.82rem] leading-relaxed text-foreground/90">
                       <MarkdownLite text={t.text} />
@@ -638,9 +648,7 @@ export function AssistantPane() {
               if (!running || streamingText) return null;
               return (
                 <div className="flex items-center gap-2.5">
-                  <span className="mt-0.5 flex size-6 flex-none items-center justify-center rounded-full border border-hairline bg-overlay-weak">
-                    <Sparkles className="size-3 animate-pulse text-muted-foreground" />
-                  </span>
+                  <DitherHero animate={settings.animations} pxSize={1.5} className="w-6 flex-none" />
                   <span className="flex items-center gap-1.5 text-[0.74rem] text-muted-foreground">
                     Working
                     <span className="flex gap-0.5" aria-hidden>
@@ -686,8 +694,9 @@ export function AssistantPane() {
                 type="button"
                 onClick={() => { setModelOpen((v) => !v); setModelSearch(""); }}
                 aria-expanded={modelOpen}
-                className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[0.64rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
+                className="inline-flex h-6 items-center gap-1.5 rounded-md px-1.5 text-[0.64rem] font-medium text-muted-foreground transition-colors hover:bg-overlay-weak hover:text-foreground"
               >
+                <ProviderIcon provider={sel.provider} className="size-3.5" />
                 {modelLabel}
                 <ChevronDown className="size-3" />
               </button>
@@ -718,6 +727,7 @@ export function AssistantPane() {
                         return (
                           <div key={p}>
                             <p className="flex items-center gap-1.5 px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                              <ProviderIcon provider={p} className="size-3" />
                               {PROVIDER_LABEL[p]}
                               {managed.includes(p) ? (
                                 <span className="inline-flex items-center gap-0.5 rounded border border-hairline bg-overlay-weak px-1 py-px text-[0.52rem] normal-case tracking-normal">

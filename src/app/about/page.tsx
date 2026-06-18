@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageShell } from "@/components/page/page-shell";
-import { TwitchIcon, XIcon } from "@/components/social-icons";
+import { KickIcon, TwitchIcon, XIcon } from "@/components/social-icons";
 
 // Per-page `openGraph`/`twitter` overrides intentionally dropped — Next 15 wholesale-replaces
 // those blocks, which would wipe the layout's card type, handles and image. Title/description
@@ -43,10 +43,13 @@ const HOSTS: Host[] = [
     name: "Blknoiz06",
     handle: "@blknoiz06",
     avatar: "https://unavatar.io/twitter/blknoiz06",
-    role: "Host · X",
+    role: "Host · Kick & X",
     about:
       "Known as Ansem, one of the most followed traders on crypto Twitter. \"I love markets and I love the internet. I've made nearly all of my money being early to trends and predicting them before they happen.\" That's the show.",
-    links: [{ label: "X", href: "https://x.com/blknoiz06", Icon: XIcon }],
+    links: [
+      { label: "Kick", href: "https://kick.com/ansem", Icon: KickIcon },
+      { label: "X", href: "https://x.com/blknoiz06", Icon: XIcon },
+    ],
   },
 ];
 

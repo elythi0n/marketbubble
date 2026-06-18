@@ -28,6 +28,21 @@ export function TwitchIcon(props: SocialIconProps) {
   );
 }
 
+export function KickIcon({ className, title }: SocialIconProps) {
+  return (
+    <svg
+      viewBox="216 216 1107 1107"
+      fill="currentColor"
+      className={className}
+      role={title ? "img" : "presentation"}
+      aria-hidden={!title}
+    >
+      {title ? <title>{title}</title> : null}
+      <path d="M278.26 216.86H646.7v245.62h122.81V339.67h122.81V216.86h368.43v368.43h-122.81V708.1h-122.81v122.81h122.81v122.81h122.81v368.44H892.32v-122.81H769.51v-122.81H646.7v245.62H278.26z" />
+    </svg>
+  );
+}
+
 export function XIcon(props: SocialIconProps) {
   return (
     <svg {...commonProps(props)}>

@@ -20,8 +20,8 @@ import {
   MonitorPlay,
   Newspaper,
   Settings2,
+  Brain,
   SlidersHorizontal,
-  Sparkles,
   TrendingUp,
   Users,
   X,
@@ -52,7 +52,7 @@ const ICONS: Record<string, LucideIcon> = {
   chatters: Users,
   hyperliquid: Droplets,
   settings: Settings2,
-  assistant: Sparkles,
+  assistant: Brain,
   // markets page panels
   chart: CandlestickChart,
   watchlist: BookMarked,
