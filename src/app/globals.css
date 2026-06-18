@@ -161,12 +161,14 @@
   --beam-stop-a: #0891b2;
   --beam-stop-b: #4338ca;
   --beam-stop-c: #7c3aed;
-  /* Static rail — warm tan rather than ink, so the line sits in the same hue family as
-     the paper floor (`#e8e2d2`) and reads as a subtle warm shade rather than dark contrast.
-     Dark theme overrides below to a near-black inset. */
+  /* Static rail under the animated beams — warm tan rather than ink, so the line sits in
+     the same hue family as the paper floor (`#e8e2d2`) and reads as a subtle warm shade
+     rather than dark contrast. Dark theme overrides below to a near-black inset. */
   --beam-rail: color-mix(in srgb, #7a6638 22%, transparent);
-  /* Dotted-glow stops derive from `--accent-violet` so a brand-color tweak propagates here
-     too. The rgb() lines stay as fallbacks for engines that don't support `color-mix`. */
+  /* Dotted-glow background (Aceternity Dotted Glow). Stops derive from `--accent-violet`
+     so a brand-color tweak propagates here too; the rgb() lines stay as fallbacks for
+     engines that don't support `color-mix`. Kept low-alpha so the effect stays subtle on
+     the warm-paper floor. */
   --dot-glow-dot: rgb(91 93 198 / 0.45);
   --dot-glow-dot: color-mix(in srgb, var(--accent-violet) 45%, transparent);
   --dot-glow-tint: rgb(91 93 198 / 0.07);
@@ -250,8 +252,8 @@
   --beam-stop-a: #18ccfc;
   --beam-stop-b: #6344f5;
   --beam-stop-c: #ae48ff;
-  /* Slightly higher alpha than light since the contrast against the graphite floor is weaker.
-     Same `color-mix` pattern, rgb() fallback first. */
+  /* Dotted-glow stops on graphite: lavender ink, slightly higher alpha than light since the
+     contrast against the dark floor is weaker. Same `color-mix` pattern, rgb() fallback first. */
   --dot-glow-dot: rgb(168 168 248 / 0.32);
   --dot-glow-dot: color-mix(in srgb, var(--accent-violet) 32%, transparent);
   --dot-glow-tint: rgb(168 168 248 / 0.09);

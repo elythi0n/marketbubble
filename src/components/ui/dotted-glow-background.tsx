@@ -2,8 +2,10 @@
 
 import { cn } from "@/lib/utils";
 
-// Adapted from https://ui.aceternity.com/components/dotted-glow-background. Theme-driven
-// via `--dot-glow-dot` / `--dot-glow-tint` — see globals.css.
+// Adapted from https://ui.aceternity.com/components/dotted-glow-background. Two layers behind
+// the content: a soft color tint and a stippled dot grid, both masked to a radial falloff so
+// the area is lit at `glowAt` and fades to nothing on the far side. Theme-driven via
+// `--dot-glow-dot` / `--dot-glow-tint` — see globals.css.
 
 interface DottedGlowBackgroundProps {
   className?: string;

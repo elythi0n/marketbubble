@@ -6,9 +6,11 @@ import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { TopNav } from "@/components/dashboard/top-nav";
 import { MobileThemeChip } from "@/components/theme-toggle";
 
-// Nav swap is CSS-only here (TopNav and BottomNav are always rendered, toggled via `md:`)
-// so PageShell's React tree shape is stable across resize. Other surfaces in the app still
-// use `useIsMobile` for state-driven layout swaps where a CSS-only solution doesn't fit.
+// Nav swap here is CSS-only (TopNav and BottomNav both render, toggled via `md:`) so the React
+// tree shape stays stable across resize — a state-driven swap breaks the React DevTools fiber
+// tracker on every breakpoint cross ("The children should not have changed if we pass in the
+// same set"). Other surfaces in the app still use `useIsMobile` where a CSS-only solution
+// doesn't fit.
 export function PageShell({ children, glow = false }: { children: ReactNode; glow?: boolean }) {
   return (
     <div className="marketing-shell-root">
