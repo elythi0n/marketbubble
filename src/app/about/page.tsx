@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { PageShell } from "@/components/page/page-shell";
 import { KickIcon, TwitchIcon, XIcon } from "@/components/social-icons";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
 
 // Per-page `openGraph`/`twitter` overrides intentionally dropped — Next 15 wholesale-replaces
 // those blocks, which would wipe the layout's card type, handles and image. Title/description
@@ -78,7 +80,14 @@ const DASHBOARD_FEATURES = [
 export default function AboutPage() {
   return (
     <PageShell glow>
-      <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
+      {/* Wrapping in `relative` so the `absolute` beams attach here (not to the viewport-sized
+          shell), keeping them inside the page's content column above any nav chrome. */}
+      <div className="relative">
+        {/* Subtle aurora beams hugging the top of the page; fade to transparent before mid-page.
+            `pointer-events-none` lives on the component so it never eats clicks. */}
+        <BackgroundBeams className="h-[70vh] opacity-60 [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_100%)]" />
+
+        <div className="relative mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
         {/* Hero */}
         <header className="text-center">
           <p className="text-[0.64rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">About the show</p>
@@ -130,14 +139,18 @@ export default function AboutPage() {
                 key={host.name}
                 className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-card shadow-[var(--shadow-card)]"
               >
-                <div className="flex items-center gap-4 border-b border-hairline bg-overlay-weak px-5 py-4">
+                <div className="relative flex items-center gap-4 overflow-hidden border-b border-hairline bg-overlay-weak px-5 py-4">
+                  {/* Subtle dotted-glow that spans the full header width and fades down.
+                      Positioned siblings below need `relative` so they paint above this
+                      absolutely-positioned background. */}
+                  <DottedGlowBackground />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={host.avatar}
                     alt={host.name}
-                    className="size-16 rounded-full border border-hairline object-cover"
+                    className="relative size-16 rounded-full border border-hairline object-cover"
                   />
-                  <div className="min-w-0">
+                  <div className="relative min-w-0">
                     <h3 className="text-lg font-semibold text-foreground">{host.name}</h3>
                     <p className="text-[0.72rem] text-muted-foreground">
                       {host.handle} · {host.role}
@@ -190,6 +203,7 @@ export default function AboutPage() {
             Watch live
           </Link>
           <p className="mt-2.5 text-[0.7rem] text-muted-foreground/70">{SCHEDULE} · Twitch, Kick and X</p>
+        </div>
         </div>
       </div>
     </PageShell>

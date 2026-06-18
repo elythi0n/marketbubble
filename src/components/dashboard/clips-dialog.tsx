@@ -104,9 +104,10 @@ interface ClipsDialogProps {
   clips: Clip[];
   onClose: () => void;
   onSelect: (clip: Clip) => void;
+  headerLabel?: string;
 }
 
-export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps) {
+export function ClipsDialog({ clip, clips, onClose, onSelect, headerLabel = "Videos" }: ClipsDialogProps) {
   const [hostname, setHostname] = useState("localhost");
   useEffect(() => { setHostname(window.location.hostname); }, []);
 
@@ -213,9 +214,10 @@ export function ClipsDialog({ clip, clips, onClose, onSelect }: ClipsDialogProps
 
               {/* ── Right (bottom on mobile): scrollable clips list ── */}
               <div className="flex h-[30dvh] w-full flex-none flex-col md:h-auto md:w-[260px]">
-                <div className="flex flex-none items-center justify-between border-b border-hairline px-3 py-2.5">
+                {/* Header row — hidden on mobile (mobile uses the full-width Close bar below). */}
+                <div className="hidden flex-none items-center justify-between border-b border-hairline px-3 py-2.5 md:flex">
                   <span className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Videos
+                    {headerLabel}
                   </span>
                   <button
                     type="button"
