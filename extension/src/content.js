@@ -49,42 +49,16 @@
   }
 
   /**
-   * Extract the streamer handle from the current page URL or DOM.
-   * Handles both x.com/{handle}/live and x.com/i/broadcasts/... patterns.
+   * Capture every open X livestream — no handle whitelist.
+   *
+   * The manifest only injects this script on broadcast and "/live" pages, so "always authorized"
+   * means "any live X tab we're actually on". We dropped handle matching because broadcast URLs
+   * carry no handle and the page
+   * title can lead with a sponsor mention (e.g. "… Presented by @Polymarket"), both of which made
+   * matching unreliable and left the bridge stuck on "Waiting for stream".
    */
-  function getPageHandle() {
-    const url = window.location.href;
-
-    // Direct /live URL: x.com/handle/live
-    const liveMatch = url.match(/(?:x|twitter)\.com\/([^/?#]+)\/live/i);
-    if (liveMatch) return liveMatch[1].toLowerCase();
-
-    // Broadcast URL: try page title and meta tags
-    const metaTitle = document.querySelector('meta[property="og:title"]')?.getAttribute("content") ?? "";
-    const titleText = document.title ?? "";
-    for (const source of [metaTitle, titleText]) {
-      const m = source.match(/@([a-zA-Z0-9_]{1,50})/);
-      if (m) return m[1].toLowerCase();
-    }
-
-    // Last resort: look for a profile link anchor near the video header
-    const profileLink = document.querySelector(
-      '[data-testid="UserName"] a[href], [data-testid="UserAvatar"] a[href]'
-    );
-    if (profileLink) {
-      const m = profileLink.getAttribute("href")?.match(/\/([^/?#]+)$/);
-      if (m) return m[1].toLowerCase();
-    }
-
-    return null;
-  }
-
   function isAuthorizedStream() {
-    // Empty list → allow all (setup not complete or user wants open mode)
-    if (!streamers.length) return true;
-    const handle = getPageHandle();
-    if (!handle) return false;
-    return streamers.some((s) => (s.handle ?? "").toLowerCase() === handle);
+    return true;
   }
 
   // ─── Message queuing ─────────────────────────────────────────────────────────

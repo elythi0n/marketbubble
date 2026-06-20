@@ -8,7 +8,7 @@ import { Clapperboard, Copy, MessagesSquare, MonitorPlay, PanelLeftClose, PanelL
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
 
 import { PlatformGlyph } from "@/components/feed/platform-glyph";
-import { SpotifyIcon, TikTokIcon, TwitchIcon, XIcon } from "@/components/social-icons";
+import { SpotifyIcon, TikTokIcon, TwitchIcon, XIcon, YouTubeIcon } from "@/components/social-icons";
 import { ContextMenu, type MenuEntry } from "@/components/ui/context-menu";
 import { hasDock, openChannelChat } from "@/lib/dock-api";
 import { PLATFORM_LABEL } from "@/lib/feed/types";
@@ -16,7 +16,6 @@ import { useChannel } from "@/lib/streamers/channel-context";
 import { hasVideo, type Streamer } from "@/lib/streamers/mock";
 import { isStarting } from "@/lib/streamers/schedule";
 import { cn } from "@/lib/utils";
-import { MarketBubbleLogo } from "./market-bubble-logo";
 import { StreamerAvatar } from "./streamer-avatar";
 
 function formatViewers(n: number): string {
@@ -34,6 +33,7 @@ const SOCIALS = [
   { name: "Twitch", Icon: TwitchIcon, href: "https://www.twitch.tv/fazebanks" },
   { name: "X", Icon: XIcon, href: "https://x.com/marketbubble" },
   { name: "TikTok", Icon: TikTokIcon, href: "https://www.tiktok.com/@marketbubble" },
+  { name: "YouTube", Icon: YouTubeIcon, href: "https://www.youtube.com/@MarketBubble" },
   {
     name: "Spotify",
     Icon: SpotifyIcon,
@@ -50,7 +50,14 @@ function ChannelCardBody({ streamer, hover = true }: { streamer: Streamer; hover
           // eslint-disable-next-line @next/next/no-img-element
           <img src={streamer.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <MarketBubbleLogo className="size-12 text-foreground opacity-[0.08]" />
+          // Offline: the branded show banner. The container's `opacity-70` (applied while offline)
+          // dims it a touch so it reads as "inactive" without losing the branding.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/marketbubble-offline.png"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         )}
         {streamer.live ? (
           <span className="absolute left-2 top-2 flex items-center gap-1 rounded bg-feed-ok/18 px-1.5 py-0.5 text-[0.56rem] font-bold uppercase tracking-wide text-feed-ok">

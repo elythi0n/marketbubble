@@ -9,7 +9,7 @@ export const siteDescription =
 
 /** Primary navigation sections for the dashboard top bar. */
 export const NAV_SECTIONS = [
-  { label: "Stream", href: "/" },
+  { label: "Watch", href: "/watch" },
   { label: "Markets", href: "/markets" },
   { label: "News", href: "/news" },
   { label: "Leaderboard", href: "/leaderboard" },

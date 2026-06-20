@@ -30,7 +30,7 @@ interface KickLivestream {
 async function fetchViaApi(slug: string): Promise<KickStreamPayload | null> {
   const json = await kickApiJson<{ data: KickLivestream | null }>(
     `v2/channels/${encodeURIComponent(slug)}/livestream`,
-    30,
+    15,
   );
   if (!json) return null;
   const ls = json.data;
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   const viaApi = await fetchViaApi(slug);
   if (viaApi) {
     return NextResponse.json(viaApi, {
-      headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=15" },
+      headers: { "Cache-Control": "public, max-age=15, stale-while-revalidate=10" },
     });
   }
 
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         "Accept-Language": "en-US,en;q=0.9",
       },
       signal: AbortSignal.timeout(8000),
-      next: { revalidate: 30 },
+      next: { revalidate: 15 },
     });
 
     if (!res.ok) return NextResponse.json(UNKNOWN);
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     const thumbnail = (thumbObjMatch?.[1] ?? thumbStrMatch?.[1]) || undefined;
 
     return NextResponse.json({ live, viewerCount, title, thumbnail } satisfies KickStreamPayload, {
-      headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=15" },
+      headers: { "Cache-Control": "public, max-age=15, stale-while-revalidate=10" },
     });
   } catch {
     return NextResponse.json(UNKNOWN);

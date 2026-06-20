@@ -19,7 +19,7 @@ export async function register() {
 
   // Drop any persisted X broadcast pins for sources no longer in the roster — otherwise an
   // operator removing a streamer leaves an unreachable ghost entry in the KV store forever.
-  const { pruneOrphanXBroadcastOverrides } = await import("@/lib/server/control");
+  const { pruneOrphanXBroadcastOverrides, getControlState } = await import("@/lib/server/control");
   const orphans = pruneOrphanXBroadcastOverrides();
   if (orphans > 0) console.log(`[x-bridge] pruned ${orphans} orphan broadcast override(s)`);
 
@@ -29,7 +29,11 @@ export async function register() {
     const g2 = globalThis as typeof globalThis & { __mbStatsSampler?: () => void };
     if (!g2.__mbStatsSampler) {
       const { startStatsSampler } = await import("@/lib/server/stats");
-      g2.__mbStatsSampler = startStatsSampler(roster);
+      // Resolve the roster each pass: admin control-room override if set, else the (re-read) file
+      // roster — so runtime additions get into analytics without a restart.
+      g2.__mbStatsSampler = startStatsSampler(
+        () => (getControlState().roster as unknown as ReturnType<typeof loadRoster> | null) ?? loadRoster(),
+      );
     }
   }
 

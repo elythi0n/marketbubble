@@ -197,7 +197,7 @@ export default function AboutPage() {
         {/* CTA */}
         <div className="mt-14 text-center">
           <Link
-            href="/"
+            href="/watch"
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
           >
             Watch live

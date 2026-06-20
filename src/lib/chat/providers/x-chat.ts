@@ -26,21 +26,33 @@ function toFeedMessage(msg: XChatMessage): FeedMessage {
   };
 }
 
+/** How often to remind the server which X handles are on screen (keep its readers alive). */
+const WATCH_PING_MS = 12_000;
+
 /**
- * Polls /api/x/chat and emits new messages into the unified feed.
- * Companion to the MarketBubble Chat Bridge browser extension which pushes
- * X livestream chat to that endpoint.
+ * Polls /api/x/chat and emits new messages into the unified feed. Two server-side sources fill that
+ * buffer: the MarketBubble Chat Bridge browser extension (pushes via POST), and the on-demand
+ * broadcast readers — kept alive by pinging /api/x/watch for the handles passed in `watch`, so X
+ * chat works for whatever channel is on screen without pre-listing handles server-side.
  */
-export function createXChatProvider(): ChatProvider {
+export function createXChatProvider(opts?: { watch?: string[] }): ChatProvider {
+  const watch = opts?.watch ?? [];
   return {
     id: "x:chat",
     start(sink: ChatSink): ProviderHandle {
       let stopped = false;
-      let timerId: ReturnType<typeof setInterval> | null = null;
+      let pollTimer: ReturnType<typeof setInterval> | null = null;
+      let watchTimer: ReturnType<typeof setInterval> | null = null;
       // Track IDs already emitted this session so we don't re-emit on each poll.
       const emitted = new Set<string>();
 
       sink.status?.("connecting");
+
+      const ping = () => {
+        for (const handle of watch) {
+          fetch(`/api/x/watch?handle=${encodeURIComponent(handle)}`, { cache: "no-store" }).catch(() => {});
+        }
+      };
 
       const poll = async () => {
         if (stopped) return;
@@ -59,13 +71,18 @@ export function createXChatProvider(): ChatProvider {
         }
       };
 
+      if (watch.length > 0) {
+        ping();
+        watchTimer = setInterval(ping, WATCH_PING_MS);
+      }
       poll();
-      timerId = setInterval(poll, POLL_MS);
+      pollTimer = setInterval(poll, POLL_MS);
 
       return {
         stop() {
           stopped = true;
-          if (timerId) clearInterval(timerId);
+          if (pollTimer) clearInterval(pollTimer);
+          if (watchTimer) clearInterval(watchTimer);
         },
       };
     },

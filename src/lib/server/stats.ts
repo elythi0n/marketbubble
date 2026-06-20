@@ -15,6 +15,8 @@
  */
 
 import type { Streamer } from "@/lib/streamers/mock";
+import { normalizeXSource } from "@/lib/streamers/x-source";
+import { getXSourceStatus } from "@/lib/x/broadcast/manager";
 import { getDb } from "./db";
 
 const LIVE_SAMPLE_MS = 60_000;
@@ -62,6 +64,24 @@ async function sampleOnce(roster: Streamer[], log: (l: string) => void): Promise
         rows.push([`viewers:kick:${s.id}`, d.live ? (d.viewerCount ?? 0) : 0]);
         anyLive ||= d.live;
       }
+    }
+  }
+
+  // X viewers — one row per unique broadcast account, read straight from the bridge's in-memory
+  // status. A shared show account (e.g. MarketBubble) lives on several hosts' xBroadcasts but is one
+  // room, so we de-dupe by normalized handle and sample it once. The analytics board sums every
+  // `viewers:*` series per bucket, so this slots into the combined-viewers total automatically.
+  const xSeen = new Set<string>();
+  for (const s of roster) {
+    const xSources = s.xBroadcasts?.length ? s.xBroadcasts : s.handles.x ? [s.handles.x] : [];
+    for (const src of xSources) {
+      const key = normalizeXSource(src);
+      if (!key || xSeen.has(key)) continue;
+      xSeen.add(key);
+      const st = getXSourceStatus(key);
+      if (!st) continue; // bridge isn't tracking this handle (not watched / never live)
+      rows.push([`viewers:x:${key}`, st.live ? st.viewers : 0]);
+      anyLive ||= st.live;
     }
   }
 
@@ -148,8 +168,12 @@ function prune(log: (l: string) => void) {
   }
 }
 
-/** Start the sampling loop (call once at boot, only when the database is enabled). */
-export function startStatsSampler(roster: Streamer[], log = (l: string) => console.log(`[stats] ${l}`)): () => void {
+/**
+ * Start the sampling loop (call once at boot, only when the database is enabled). `getRoster` is
+ * resolved every pass — not captured once — so streamers added at runtime (admin control room) or
+ * edited in the roster file get sampled too, instead of only the boot snapshot.
+ */
+export function startStatsSampler(getRoster: () => Streamer[], log = (l: string) => console.log(`[stats] ${l}`)): () => void {
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -160,7 +184,7 @@ export function startStatsSampler(roster: Streamer[], log = (l: string) => conso
     if (stopped) return;
     let anyLive = false;
     try {
-      anyLive = await sampleOnce(roster, log);
+      anyLive = await sampleOnce(getRoster(), log);
     } catch (err) {
       log(`sample failed: ${err}`);
     }
@@ -169,7 +193,7 @@ export function startStatsSampler(roster: Streamer[], log = (l: string) => conso
 
   // First sample after one live-interval — the HTTP server isn't listening yet at boot.
   timer = setTimeout(tick, LIVE_SAMPLE_MS);
-  log(`sampler started (${roster.length} roster entries, ${RETENTION_MS / 86_400_000}d retention)`);
+  log(`sampler started (live-roster, ${RETENTION_MS / 86_400_000}d retention)`);
 
   return () => {
     stopped = true;

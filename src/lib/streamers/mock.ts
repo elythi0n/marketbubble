@@ -19,6 +19,8 @@ export interface Streamer {
   livePlatforms?: Platform[];
   /** Live viewer count per platform, for the sidebar's per-platform breakdown. */
   viewersByPlatform?: Partial<Record<Platform, number>>;
+  /** Normalized handle of the live X broadcast — lets the stat band de-dupe a shared show account. */
+  xSource?: string;
   /** Live stream thumbnail URL, filled by useStreamers from the platform API. */
   thumbnail?: string;
   /** Recurring slot, shown when the channel is offline. */

@@ -26,7 +26,6 @@ export type ShareCard =
       /** Hours live / session count that day; omitted when the loaded window doesn't cover it. */
       hours?: number;
       sessions?: number;
-      channels: Array<{ name: string; platform: string; peak: number }>;
     }
   | {
       kind: "giveaway";
@@ -52,7 +51,7 @@ export type ShareCard =
 const W = 1080;
 const H = 1350;
 
-const BG = "#c9c7d1";
+const BG = "#f1ede2";
 const INK = "#232122";
 const MUTED_INK = "rgba(35,33,34,0.56)";
 const HAIRLINE = "rgba(35,33,34,0.25)";
@@ -231,7 +230,7 @@ function sectionLabel(ctx: CanvasRenderingContext2D, text: string, color: string
   ctx.stroke();
 }
 
-function paintDayCard(ctx: CanvasRenderingContext2D, card: Extract<ShareCard, { kind: "day" }>, display: string) {
+function paintDayCard(ctx: CanvasRenderingContext2D, card: Extract<ShareCard, { kind: "day" }>, display: string, opt: ShareOptions) {
   paintBase(ctx, card.dateLabel, "live analytics");
 
   sectionLabel(ctx, "PEAK COMBINED VIEWERS", MUTED_INK, 480);
@@ -243,30 +242,13 @@ function paintDayCard(ctx: CanvasRenderingContext2D, card: Extract<ShareCard, { 
   ctx.textBaseline = "middle";
   stampText(ctx, big, W / 2, 640);
 
-  if (card.hours !== undefined || card.sessions !== undefined) {
-    const parts: string[] = [];
-    if (card.hours !== undefined) parts.push(`${card.hours.toFixed(1)} hours live`);
-    if (card.sessions !== undefined) parts.push(`${card.sessions} session${card.sessions === 1 ? "" : "s"}`);
+  const parts: string[] = [];
+  if (opt.hours && card.hours !== undefined) parts.push(`${card.hours.toFixed(1)} hours live`);
+  if (opt.sessions && card.sessions !== undefined) parts.push(`${card.sessions} session${card.sessions === 1 ? "" : "s"}`);
+  if (parts.length > 0) {
     ctx.font = `500 31px ${SANS}`;
     ctx.fillStyle = MUTED_INK;
     ctx.fillText(parts.join("   ·   "), W / 2, 780);
-  }
-
-  // Channel rows: outlined pills, ink on stock.
-  const chips = card.channels.slice(0, 3).map((c) => `${c.name}   ↑ ${fmt(c.peak)}`);
-  ctx.font = `600 28px ${SANS}`;
-  const chipH = 66;
-  let y = 866;
-  for (const chip of chips) {
-    const w = ctx.measureText(chip).width + 64;
-    ctx.strokeStyle = HAIRLINE;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect((W - w) / 2, y, w, chipH, chipH / 2);
-    ctx.stroke();
-    ctx.fillStyle = INK;
-    ctx.fillText(chip, W / 2, y + chipH / 2 + 1);
-    y += chipH + 20;
   }
 }
 
@@ -332,7 +314,7 @@ function drawSessionCurve(ctx: CanvasRenderingContext2D, points: Array<[number, 
   });
 }
 
-function paintSessionCard(ctx: CanvasRenderingContext2D, card: Extract<ShareCard, { kind: "session" }>, display: string) {
+function paintSessionCard(ctx: CanvasRenderingContext2D, card: Extract<ShareCard, { kind: "session" }>, display: string, opt: ShareOptions) {
   paintBase(ctx, card.dateLabel, `stream session · ${card.platform}`);
 
   sectionLabel(ctx, "STREAM SESSION", MUTED_INK, 400);
@@ -343,29 +325,42 @@ function paintSessionCard(ctx: CanvasRenderingContext2D, card: Extract<ShareCard
   ctx.textBaseline = "middle";
   stampText(ctx, card.streamer, W / 2, 545);
 
-  ctx.font = `500 31px ${SANS}`;
-  ctx.fillStyle = MUTED_INK;
-  ctx.fillText(`${card.startLabel} → ${card.endLabel}   ·   ${card.durationLabel}`, W / 2, 665);
+  // Optional blocks flow vertically from here, so toggling any off reflows cleanly (no gaps).
+  let y = 660;
 
-  if (card.points.length > 1) drawSessionCurve(ctx, card.points, 170, 750, W - 340, 240);
-
-  // Peak / average pills side by side.
-  const chips = [`↑ ${fmt(card.peak)} peak`, `ø ${fmt(card.avg)} average`];
-  ctx.font = `600 28px ${SANS}`;
-  const chipH = 66;
-  const gap = 22;
-  const widths = chips.map((t) => ctx.measureText(t).width + 64);
-  let x = (W - widths.reduce((a, b) => a + b, 0) - gap) / 2;
-  for (let i = 0; i < chips.length; i++) {
-    ctx.strokeStyle = HAIRLINE;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(x, 1066, widths[i], chipH, chipH / 2);
-    ctx.stroke();
-    ctx.fillStyle = INK;
+  if (opt.range) {
+    ctx.font = `500 31px ${SANS}`;
+    ctx.fillStyle = MUTED_INK;
     ctx.textAlign = "center";
-    ctx.fillText(chips[i], x + widths[i] / 2, 1066 + chipH / 2 + 1);
-    x += widths[i] + gap;
+    ctx.fillText(`${card.startLabel} → ${card.endLabel}   ·   ${card.durationLabel}`, W / 2, y);
+    y += 85;
+  }
+
+  if (opt.graph && card.points.length > 1) {
+    drawSessionCurve(ctx, card.points, 170, y, W - 340, 240);
+    y += 240 + 70;
+  }
+
+  const chips: string[] = [];
+  if (opt.peak) chips.push(`↑ ${fmt(card.peak)} peak`);
+  if (opt.average) chips.push(`ø ${fmt(card.avg)} average`);
+  if (chips.length > 0) {
+    ctx.font = `600 28px ${SANS}`;
+    const chipH = 66;
+    const gap = 22;
+    const widths = chips.map((t) => ctx.measureText(t).width + 64);
+    let x = (W - widths.reduce((a, b) => a + b, 0) - (chips.length - 1) * gap) / 2;
+    for (let i = 0; i < chips.length; i++) {
+      ctx.strokeStyle = HAIRLINE;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, widths[i], chipH, chipH / 2);
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      ctx.textAlign = "center";
+      ctx.fillText(chips[i], x + widths[i] / 2, y + chipH / 2 + 1);
+      x += widths[i] + gap;
+    }
   }
 }
 
@@ -379,11 +374,42 @@ function shareText(card: ShareCard): string {
   return `${card.winner} won the giveaway`;
 }
 
+/** Which optional elements a card exposes as toggles. Only data-backed ones are offered. */
+export type ShareOptions = Record<string, boolean>;
+interface ToggleDef {
+  key: string;
+  label: string;
+}
+function togglesFor(card: ShareCard): ToggleDef[] {
+  if (card.kind === "session") {
+    const t: ToggleDef[] = [{ key: "range", label: "Time & duration" }];
+    if (card.points.length > 1) t.push({ key: "graph", label: "Viewer graph" });
+    t.push({ key: "peak", label: "Peak" }, { key: "average", label: "Average" });
+    return t;
+  }
+  if (card.kind === "day") {
+    const t: ToggleDef[] = [];
+    if (card.hours !== undefined) t.push({ key: "hours", label: "Hours live" });
+    if (card.sessions !== undefined) t.push({ key: "sessions", label: "Sessions" });
+    return t;
+  }
+  return [];
+}
+
 export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose: () => void }) {
   const { call } = useAdmin();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [options, setOptions] = useState<ShareOptions>({});
+
+  const toggles = card ? togglesFor(card) : [];
+
+  // Reset toggles (all on) whenever a new card opens.
+  useEffect(() => {
+    if (!card) return;
+    setOptions(Object.fromEntries(togglesFor(card).map((t) => [t.key, true])));
+  }, [card]);
 
   useEffect(() => {
     setCopied(false);
@@ -393,14 +419,14 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
       if (stale) return;
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) return;
-      if (card.kind === "day") paintDayCard(ctx, card, display);
-      else if (card.kind === "session") paintSessionCard(ctx, card, display);
+      if (card.kind === "day") paintDayCard(ctx, card, display, options);
+      else if (card.kind === "session") paintSessionCard(ctx, card, display, options);
       else paintGiveawayCard(ctx, card, display);
     });
     return () => {
       stale = true;
     };
-  }, [card]);
+  }, [card, options]);
 
   useEffect(() => {
     if (!card) return;
@@ -500,6 +526,32 @@ export function ShareDialog({ card, onClose }: { card: ShareCard | null; onClose
           height={H}
           className="mx-auto h-auto max-h-[62vh] w-auto max-w-full rounded-xl border border-hairline"
         />
+
+        {toggles.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Show</span>
+            {toggles.map((t) => {
+              const on = options[t.key] !== false;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setOptions((o) => ({ ...o, [t.key]: !on }))}
+                  aria-pressed={on}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-medium transition-colors",
+                    on
+                      ? "border-transparent bg-overlay-medium text-foreground"
+                      : "border-hairline-strong bg-overlay-weak text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <span className={cn("size-1.5 rounded-full", on ? "bg-feed-ok" : "bg-muted-foreground/40")} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => void copyImage()} className={GHOST_BTN}>

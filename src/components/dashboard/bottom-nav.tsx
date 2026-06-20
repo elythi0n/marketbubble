@@ -14,11 +14,11 @@ interface NavItem {
   icon: ComponentType<{ className?: string; strokeWidth?: number }>;
 }
 
-// Five equal slots: Stream · Markets · News (center) · Ranks · About. On the stream page the
-// first slot transforms into "Channels" (the channel-switcher sheet) since the Stream link
+// Five equal slots: Watch · Markets · News (center) · Ranks · About. On the watch page the
+// first slot transforms into "Channels" (the channel-switcher sheet) since the Watch link
 // itself would be a no-op there.
 const NAV: NavItem[] = [
-  { href: "/",            label: "Stream",  icon: Radio },
+  { href: "/watch",       label: "Watch",   icon: Radio },
   { href: "/markets",     label: "Markets", icon: LineChart },
   { href: "/news",        label: "News",    icon: Newspaper },
   { href: "/leaderboard", label: "Ranks",   icon: Trophy },
@@ -50,8 +50,9 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
  */
 export function BottomNav({ onOpenChannels, liveCount }: { onOpenChannels?: () => void; liveCount?: number }) {
   const pathname = usePathname();
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  const onStream = isActive("/") && !!onOpenChannels;
+  const isActive = (href: string) =>
+    href === "/watch" ? pathname === "/watch" || pathname.startsWith("/watch/") : pathname.startsWith(href);
+  const onStream = isActive("/watch") && !!onOpenChannels;
 
   return (
     <nav

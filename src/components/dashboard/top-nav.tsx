@@ -42,7 +42,10 @@ export function TopNav() {
       {/* Center: primary navigation (brand face, uppercase) */}
       <nav aria-label="Primary" className="flex items-center gap-1 justify-self-center">
         {NAV_SECTIONS.map((section) => {
-          const active = section.href === "/" ? pathname === "/" : pathname.startsWith(section.href);
+          const active =
+            section.href === "/watch"
+              ? pathname === "/watch" || pathname.startsWith("/watch/")
+              : pathname.startsWith(section.href);
           return (
             <Link
               key={section.href}
@@ -68,7 +71,7 @@ export function TopNav() {
       <TooltipProvider>
       <div className="flex items-center justify-self-end gap-2.5">
         {/* Live / Demo segmented control (hidden when demo is disabled for this build) */}
-        {DEMO_ENABLED && demoOn && pathname === "/" ? (
+        {DEMO_ENABLED && demoOn && pathname === "/watch" ? (
         <div className="flex items-center gap-0.5 rounded-md border border-hairline bg-overlay-weak p-0.5">
           <Tooltip>
             <TooltipTrigger
@@ -115,7 +118,7 @@ export function TopNav() {
 
         {/* View-mode button — icon swaps with the user's last-chosen mode. Click toggles that mode
             on/off; hover reveals a small menu to switch between Stage / Theater / TV. */}
-        {pathname === "/" ? <ViewModeButton /> : null}
+        {pathname === "/watch" ? <ViewModeButton /> : null}
 
         <a
           href="https://polymarket.com/?utm_source=marketbubble&utm_medium=referral&utm_campaign=presented_by"

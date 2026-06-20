@@ -481,17 +481,25 @@ export function AnalyticsBoard({
     // Session-derived extras only when the loaded window actually covers that day.
     const covered = sessions !== null && now - sessionRange <= dayStart;
     const overlapping = (sessions ?? []).filter((s) => s.start < dayEnd && (s.ongoing ? now : s.end) > dayStart!);
-    const overlapMs = overlapping.reduce(
-      (n, s) => n + (Math.min(s.ongoing ? now : s.end, dayEnd) - Math.max(s.start, dayStart!)),
-      0,
-    );
-    const byChannel = new Map<string, { name: string; platform: string; peak: number }>();
-    for (const s of overlapping) {
-      const key = `${s.platform}:${s.streamerId}`;
-      const name = streamers.find((x) => x.id === s.streamerId)?.name ?? s.streamerId;
-      const cur = byChannel.get(key);
-      if (!cur || s.peak > cur.peak) byChannel.set(key, { name, platform: s.platform, peak: s.peak });
+    // "Hours live" is wall-clock — the UNION of session intervals (clipped to the day), so
+    // simulcasting on Twitch + Kick + X doesn't multiply the duration. Merge overlapping intervals.
+    const intervals = overlapping
+      .map((s) => [Math.max(s.start, dayStart!), Math.min(s.ongoing ? now : s.end, dayEnd)] as [number, number])
+      .filter(([a, b]) => b > a)
+      .sort((a, b) => a[0] - b[0]);
+    let liveMs = 0;
+    let curStart = -1;
+    let curEnd = -1;
+    for (const [a, b] of intervals) {
+      if (a > curEnd) {
+        if (curEnd > curStart) liveMs += curEnd - curStart;
+        curStart = a;
+        curEnd = b;
+      } else if (b > curEnd) {
+        curEnd = b;
+      }
     }
+    if (curEnd > curStart) liveMs += curEnd - curStart;
 
     setShare({
       kind: "day",
@@ -501,9 +509,8 @@ export function AnalyticsBoard({
         day: "numeric",
       }),
       peak,
-      hours: covered ? overlapMs / 3600_000 : undefined,
+      hours: covered ? liveMs / 3600_000 : undefined,
       sessions: covered ? overlapping.length : undefined,
-      channels: [...byChannel.values()].sort((a, b) => b.peak - a.peak),
     });
   };
 

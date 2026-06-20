@@ -63,7 +63,17 @@ export function StatBand() {
   // all live channels, and chat-derived stats reflect the unified feed.
   const liveStreamers = streamers.filter((s) => s.live);
   const anyLive = liveStreamers.length > 0;
-  const viewers = liveStreamers.reduce((sum, s) => sum + (s.viewers || 0), 0);
+  // Total reach across live channels. Twitch/Kick counts are per-channel; the X audience is de-duped
+  // by broadcast — a shared show account (e.g. MarketBubble) rides on several hosts but is one room,
+  // so it's counted once rather than once per host.
+  const xByBroadcast = new Map<string, number>();
+  let viewers = 0;
+  for (const s of liveStreamers) {
+    viewers += (s.viewersByPlatform?.twitch ?? 0) + (s.viewersByPlatform?.kick ?? 0);
+    const x = s.viewersByPlatform?.x;
+    if (x != null) xByBroadcast.set(s.xSource ?? s.id, x);
+  }
+  for (const x of xByBroadcast.values()) viewers += x;
   // When nothing is live, fall back to a schedule for the countdown: the selected channel's, else
   // any roster entry's, else the show's default slot (roster overrides carry no schedule).
   const schedule = channel?.schedule ?? streamers.find((s) => s.schedule)?.schedule ?? DEFAULT_SCHEDULE;

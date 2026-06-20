@@ -17,7 +17,7 @@ import { markDockActivity } from "@/lib/dock-activity";
 import { useSettings } from "@/lib/settings/settings-context";
 import { useFilteredMessages } from "@/lib/settings/use-filtered-messages";
 import { useChannel } from "@/lib/streamers/channel-context";
-import { primaryPlatform, type Streamer } from "@/lib/streamers/mock";
+import { type Streamer } from "@/lib/streamers/mock";
 import { useStageMode } from "@/lib/stage-mode-context";
 import { PLATFORM_LABEL, PLATFORMS, type FeedMessage } from "@/lib/feed/types";
 import { cn } from "@/lib/utils";
@@ -127,7 +127,11 @@ function ChannelFilter({
                   >
                     {shown ? <Check className="size-3" strokeWidth={3} /> : null}
                   </span>
-                  <PlatformGlyph platform={primaryPlatform(s)} className={cn("size-3.5 flex-none", !s.live && "opacity-50")} />
+                  <span className={cn("flex flex-none items-center gap-1", !s.live && "opacity-50")}>
+                    {s.platforms.map((p) => (
+                      <PlatformGlyph key={p} platform={p} className="size-3.5" />
+                    ))}
+                  </span>
                   <span className={cn("min-w-0 flex-1 truncate", !s.live && "text-muted-foreground")}>{s.name}</span>
                   <span className="flex-none font-mono text-[0.64rem] tabular-nums text-muted-foreground">
                     {s.live ? formatCount(s.viewers) : "offline"}

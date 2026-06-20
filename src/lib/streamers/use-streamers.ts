@@ -7,8 +7,8 @@ import type { Platform } from "@/lib/feed/types";
 import { fetchKickStreamStatus } from "./kick-status";
 import { getHandle, type Streamer } from "./mock";
 
-const POLL_MS = 60_000;
-const SELECTED_POLL_MS = 30_000;
+const POLL_MS = 30_000;
+const SELECTED_POLL_MS = 15_000;
 /** How many consecutive failed polls may reuse the last-known status before degrading to offline. */
 const MAX_HELD_MISSES = 2;
 
@@ -20,6 +20,8 @@ interface MergedStatus {
   livePlatforms?: Platform[];
   viewersByPlatform?: Partial<Record<Platform, number>>;
   thumbnail?: string;
+  /** Normalized handle of the live X broadcast (for de-duping a shared show account in totals). */
+  xSource?: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
     // demo X accounts still read as live.
     if (!s.platforms.includes("twitch") && !s.platforms.includes("kick")) {
       const xHandle = s.handles.x;
+      const xKey = xHandle?.trim().replace(/^@/, "").toLowerCase();
       if (xHandle) {
         try {
           const r = await fetch(`/api/x/stream?handle=${encodeURIComponent(xHandle)}`, { cache: "no-store" });
@@ -64,7 +67,7 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
             if (d.tracked) {
               if (d.live) {
                 const viewers = d.viewers ?? s.viewers;
-                return [s.id, { live: true, viewers, title: d.title || s.title, livePlatform: "x", livePlatforms: ["x"], viewersByPlatform: { x: viewers } }];
+                return [s.id, { live: true, viewers, title: d.title || s.title, livePlatform: "x", livePlatforms: ["x"], viewersByPlatform: { x: viewers }, xSource: xKey }];
               }
               return [s.id, { live: false, viewers: 0, title: s.title }];
             }
@@ -75,7 +78,7 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
       }
       // Not tracked by the bridge (e.g. demo without X_BROADCAST_SOURCES): honor the static config.
       return [s.id, s.live
-        ? { live: true, viewers: s.viewers, title: s.title, livePlatform: "x", livePlatforms: ["x"], viewersByPlatform: { x: s.viewers } }
+        ? { live: true, viewers: s.viewers, title: s.title, livePlatform: "x", livePlatforms: ["x"], viewersByPlatform: { x: s.viewers }, xSource: xKey }
         : { live: false, viewers: 0, title: s.title }];
     }
 
@@ -89,6 +92,15 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
     let kickThumb: string | undefined;
     let twitchKnown = false;
     let kickKnown = false;
+    // X broadcast via the server bridge — additive: a channel can be live on X alongside (or
+    // instead of) Twitch/Kick, so we poll it even for multi-platform channels.
+    let xLive = false;
+    let xViewers = 0;
+    let xTitle = "";
+    let xKnown = false;
+    // Normalized handle of the live X broadcast, so the stat band can de-dupe a shared show account
+    // (e.g. MarketBubble in several hosts' xBroadcasts) instead of counting it once per host.
+    let xSource: string | undefined;
 
     const promises: Promise<void>[] = [];
 
@@ -125,26 +137,41 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
       );
     }
 
+    // X occupancy comes from the channel's broadcast accounts (xBroadcasts — the host's own handle
+    // PLUS a shared show account like MarketBubble), not necessarily handles.x: during the show the
+    // live broadcast (and any control-room override) is the shared account. Query each and take the
+    // first live one (personal handle preferred), so a host simulcasting on X shows an X count too.
+    // Only trust the bridge when it's actually tracking the source (`tracked`).
+    const xSources = s.xBroadcasts?.length ? s.xBroadcasts : s.handles.x ? [s.handles.x] : [];
+    if (s.platforms.includes("x") && xSources.length > 0) {
+      promises.push(
+        (async () => {
+          for (const src of xSources) {
+            try {
+              const r = await fetch(`/api/x/stream?handle=${encodeURIComponent(src)}`, { cache: "no-store" });
+              if (!r.ok) continue;
+              const d = (await r.json()) as { tracked?: boolean; live?: boolean; viewers?: number; title?: string };
+              if (!d?.tracked) continue;
+              xKnown = true;
+              if (d.live) {
+                xLive = true;
+                xViewers = d.viewers ?? 0;
+                xTitle = d.title ?? "";
+                xSource = src.trim().replace(/^@/, "").toLowerCase();
+                break; // first live broadcast wins
+              }
+            } catch {
+              /* try the next source */
+            }
+          }
+        })(),
+      );
+    }
+
     await Promise.all(promises);
 
     // If we got no response from any platform, skip the update.
-    if (!twitchKnown && !kickKnown) return null;
-
-    const live = twitchLive || kickLive;
-
-    // Prefer the platform with more viewers; fall back to whichever is live.
-    let livePlatform: Platform | undefined;
-    if (kickLive && twitchLive) {
-      livePlatform = kickViewers >= twitchViewers ? "kick" : "twitch";
-    } else if (kickLive) {
-      livePlatform = "kick";
-    } else if (twitchLive) {
-      livePlatform = "twitch";
-    }
-
-    const viewers = livePlatform === "kick" ? kickViewers : twitchViewers;
-    const title = livePlatform === "kick" ? kickTitle : twitchTitle;
-    const thumbnail = livePlatform === "kick" ? kickThumb : twitchThumb;
+    if (!twitchKnown && !kickKnown && !xKnown) return null;
 
     const livePlatforms: Platform[] = [];
     const viewersByPlatform: Partial<Record<Platform, number>> = {};
@@ -156,8 +183,37 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
       livePlatforms.push("kick");
       viewersByPlatform.kick = kickViewers;
     }
+    if (xLive) {
+      livePlatforms.push("x");
+      viewersByPlatform.x = xViewers;
+    }
 
-    return [s.id, { live, viewers, title, livePlatform, livePlatforms, viewersByPlatform, thumbnail }];
+    const live = livePlatforms.length > 0;
+
+    // Primary player platform: prefer a video platform (Twitch/Kick), by viewer count, so the center
+    // stage embeds a real player. X broadcasts have no embeddable video, so X becomes primary only
+    // when nothing with video is live (then the pane shows the X "live thread"). Either way the X
+    // viewer count rides along in viewersByPlatform and surfaces in the sidebar's per-platform badge.
+    let livePlatform: Platform | undefined;
+    if (kickLive && twitchLive) {
+      livePlatform = kickViewers >= twitchViewers ? "kick" : "twitch";
+    } else if (kickLive) {
+      livePlatform = "kick";
+    } else if (twitchLive) {
+      livePlatform = "twitch";
+    } else if (xLive) {
+      livePlatform = "x";
+    }
+
+    // Per-streamer headline = total reach across every platform they're live on (drives the sidebar
+    // pill and "… watching"). title/thumbnail still come from the primary video platform.
+    const viewers =
+      (twitchLive ? twitchViewers : 0) + (kickLive ? kickViewers : 0) + (xLive ? xViewers : 0);
+    const title =
+      livePlatform === "kick" ? kickTitle : livePlatform === "x" ? xTitle : twitchTitle;
+    const thumbnail = livePlatform === "kick" ? kickThumb : livePlatform === "twitch" ? twitchThumb : undefined;
+
+    return [s.id, { live, viewers, title, livePlatform, livePlatforms, viewersByPlatform, thumbnail, xSource }];
   }
 
   // Full-roster polling loop. Re-runs when the roster set changes so a new roster polls right away.
@@ -239,6 +295,7 @@ export function useStreamers(roster: Streamer[], selectedId?: string): UseStream
       livePlatforms: st.livePlatforms,
       viewersByPlatform: st.viewersByPlatform,
       thumbnail: st.thumbnail,
+      xSource: st.xSource,
     };
   });
 

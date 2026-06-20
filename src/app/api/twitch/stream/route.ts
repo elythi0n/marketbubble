@@ -24,7 +24,7 @@ async function fetchViaGQL(login: string): Promise<StreamStatusPayload | null> {
       method: "POST",
       headers: { "Client-ID": GQL_CLIENT_ID, "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables: { login } }),
-      next: { revalidate: 30 },
+      next: { revalidate: 15 },
     });
 
     if (!res.ok) return null;
@@ -80,7 +80,7 @@ async function fetchViaHelix(login: string): Promise<StreamStatusPayload | null>
   try {
     const res = await fetch(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(login)}`, {
       headers: { Authorization: `Bearer ${appToken}`, "Client-Id": process.env.TWITCH_CLIENT_ID! },
-      next: { revalidate: 30 },
+      next: { revalidate: 15 },
     });
     if (!res.ok) return null;
     const data = await res.json() as { data: { viewer_count: number; title: string; thumbnail_url?: string }[] };
@@ -107,6 +107,6 @@ export async function GET(req: NextRequest) {
   const result = (await fetchViaHelix(login)) ?? (await fetchViaGQL(login)) ?? UNKNOWN;
 
   return NextResponse.json(result, {
-    headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=15" },
+    headers: { "Cache-Control": "public, max-age=15, stale-while-revalidate=10" },
   });
 }

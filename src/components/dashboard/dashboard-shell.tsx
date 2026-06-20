@@ -104,16 +104,20 @@ function FeedBridge({ children }: { children: ReactNode }) {
   // connection set stable across live/offline transitions (no reconnect churn).
   const sources = mergeAll ? streamers : selected ? [selected] : [];
 
-  // The X chat provider polls the shared /api/x/chat buffer (browser-extension + server bridge).
-  // Attach it whenever an active source broadcasts on X — in demo too, so X-only channels get chat.
-  const hasXSource = sources.some((s) => s.handles.x);
+  // X broadcast accounts among the active sources. Use each channel's xBroadcasts (the host's handle
+  // plus any shared show account like MarketBubble) — that's the account actually broadcasting, not
+  // necessarily handles.x. The provider pings /api/x/watch for these so the server reads the live
+  // broadcast on demand (alongside the extension + boot bridge). In demo too, for X-only channels.
+  const xWatch = Array.from(
+    new Set(sources.flatMap((s) => (s.xBroadcasts?.length ? s.xBroadcasts : s.handles.x ? [s.handles.x] : []))),
+  );
 
   const makeProviders = () => [
     ...sources.flatMap((s) => [
       ...(s.handles.twitch ? [createTwitchIRCProvider({ channel: s.handles.twitch })] : []),
       ...(s.handles.kick ? [createKickProvider({ slug: s.handles.kick })] : []),
     ]),
-    ...(hasXSource ? [createXChatProvider()] : []),
+    ...(xWatch.length > 0 ? [createXChatProvider({ watch: xWatch })] : []),
   ];
 
   // This key encodes the active source set so connections rebuild only when that set changes,

@@ -40,7 +40,7 @@ export default async function SharePage({ params }: Params) {
         className="max-h-[80dvh] w-auto rounded-2xl border border-hairline shadow-[var(--shadow-modal)]"
       />
       <Link
-        href="/"
+        href="/watch"
         className="rounded-lg border border-hairline-strong bg-overlay-weak px-4 py-2 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-overlay-medium"
       >
         Watch live on {siteName}
